@@ -35,7 +35,7 @@
             android:layout_height="40dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="16dp"
-            app:indicatorColor="@color/primary"
+            app:indicatorColor="?attr/colorBrandContent"
             app:indicatorName="BallPulseIndicator" />
 
         <LinearLayout
@@ -49,7 +49,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                app:cardBackgroundColor="@color/primary"
+                app:cardBackgroundColor="?attr/colorBrandSurface"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp">
 
@@ -98,7 +98,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/stats_week"
-                        android:textColor="#8A7A60"
+                        android:textColor="@color/text_label"
                         android:textSize="11sp" />
 
                     <TextView
@@ -106,7 +106,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:textColor="@color/primary"
+                        android:textColor="?attr/colorBrandContent"
                         android:textSize="22sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -124,10 +124,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="6dp"
                 android:layout_weight="1"
-                app:cardBackgroundColor="#F0E8D6"
+                app:cardBackgroundColor="@color/card_surface"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="1dp"
-                app:strokeColor="#E0D6C2"
+                app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -140,7 +140,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/stats_total"
-                        android:textColor="#8A7A60"
+                        android:textColor="@color/text_label"
                         android:textSize="11sp" />
 
                     <TextView
@@ -148,7 +148,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:textColor="@color/primary"
+                        android:textColor="?attr/colorBrandContent"
                         android:textSize="22sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -159,10 +159,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="6dp"
                 android:layout_weight="1"
-                app:cardBackgroundColor="#F0E8D6"
+                app:cardBackgroundColor="@color/card_surface"
                 app:cardCornerRadius="14dp"
                 app:cardElevation="1dp"
-                app:strokeColor="#E0D6C2"
+                app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -175,7 +175,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/stats_minutes"
-                        android:textColor="#8A7A60"
+                        android:textColor="@color/text_label"
                         android:textSize="11sp" />
 
                     <TextView
@@ -183,7 +183,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:textColor="@color/primary"
+                        android:textColor="?attr/colorBrandContent"
                         android:textSize="22sp"
                         android:textStyle="bold" />
                 </LinearLayout>
@@ -196,7 +196,7 @@
             android:layout_marginTop="14dp"
             app:cardCornerRadius="16dp"
             app:cardElevation="1dp"
-            app:strokeColor="#E0D6C2"
+            app:strokeColor="?attr/colorOutline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -226,10 +226,10 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
             android:layout_marginBottom="16dp"
-            app:cardBackgroundColor="@color/paper"
+            app:cardBackgroundColor="?attr/colorSurface"
             app:cardCornerRadius="18dp"
             app:cardElevation="2dp"
-            app:strokeColor="#E0D6C2"
+            app:strokeColor="?attr/colorOutline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -291,7 +291,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
                     android:layout_marginTop="10dp"
-                    android:background="#E0D6C2" />
+                    android:background="?attr/colorOutline" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -352,7 +352,7 @@
                     android:minLines="6"
                     android:padding="12dp"
                     android:textColor="@color/ink_text"
-                    android:textColorHint="#A89B82"
+                    android:textColorHint="@color/hint_text"
                     android:textSize="15sp" />
 
                 <LinearLayout
@@ -399,9 +399,9 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:backgroundTint="@color/primary"
+                    android:backgroundTint="?attr/colorBrandSurface"
                     android:text="@string/save"
-                    android:textColor="#FFFFFF" />
+                    android:textColor="@color/on_primary" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>

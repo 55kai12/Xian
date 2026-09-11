@@ -2,12 +2,17 @@ package com.xian.focus.data
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 
 @Dao
 interface PomodoroRecordDao {
     @Insert
     suspend fun insertRecord(record: PomodoroRecord): Long
+
+    /** CSV 恢复专用，撞 id 的行跳过。 */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFromBackup(records: List<PomodoroRecord>)
 
     @Query(
         """

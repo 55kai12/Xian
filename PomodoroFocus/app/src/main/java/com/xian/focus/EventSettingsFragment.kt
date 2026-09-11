@@ -7,8 +7,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import com.xian.focus.data.FocusRepository
 import com.xian.focus.databinding.FragmentEventSettingsBinding
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class EventSettingsFragment : Fragment() {
@@ -16,12 +20,21 @@ class EventSettingsFragment : Fragment() {
     private var _binding: FragmentEventSettingsBinding? = null
     private val binding get() = _binding!!
 
+    @Inject
+    lateinit var repository: FocusRepository
+
     private val prefs by lazy {
         requireContext().getSharedPreferences("event_settings", 0)
     }
 
-    private val sortOptions = arrayOf("按剩余天数", "按目标日期", "按创建时间")
     private val sortValues = arrayOf("days_remaining", "target_date", "created_at")
+
+    private val sortResIds = arrayOf(
+        R.string.sort_days_remaining, R.string.sort_target_date, R.string.sort_created_at
+    )
+
+    /** 文案要跟着语言走，所以每次现取，不做字段初始化。 */
+    private fun sortLabels() = sortResIds.map { getString(it) }.toTypedArray()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,11 +59,11 @@ class EventSettingsFragment : Fragment() {
 
         binding.eventReminderSwitch.isChecked = reminderEnabled
         binding.reminderDaysSection.visibility = if (reminderEnabled) View.VISIBLE else View.GONE
-        binding.reminderDaysText.text = "$reminderDays 天"
+        binding.reminderDaysText.text = getString(R.string.days_count, reminderDays)
         binding.autoLinkTaskSwitch.isChecked = autoLink
 
         val sortIndex = sortValues.indexOf(sortBy).coerceAtLeast(0)
-        binding.eventSortValueText.text = sortOptions[sortIndex]
+        binding.eventSortValueText.text = getString(sortResIds[sortIndex])
 
         binding.showCompletedSwitch.isChecked = prefs.getBoolean("show_completed", true)
         binding.showStrikethroughSwitch.isChecked = prefs.getBoolean("show_strikethrough", true)
@@ -67,42 +80,45 @@ class EventSettingsFragment : Fragment() {
         binding.eventReminderSwitch.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("reminder_enabled", isChecked).apply()
             binding.reminderDaysSection.visibility = if (isChecked) View.VISIBLE else View.GONE
+            resyncCountdownReminders()
         }
 
         binding.reminderDaysSection.setOnClickListener {
             val current = prefs.getInt("reminder_days", 1)
-            val options = arrayOf("1 天", "3 天", "7 天", "14 天", "30 天")
             val values = intArrayOf(1, 3, 7, 14, 30)
+            val options = values.map { getString(R.string.days_count, it) }.toTypedArray()
             val selected = values.indexOf(current).coerceAtLeast(0)
             AlertDialog.Builder(requireContext())
-                .setTitle("提前提醒天数")
+                .setTitle(R.string.event_reminder_days_title)
                 .setSingleChoiceItems(options, selected) { dialog, which ->
                     prefs.edit().putInt("reminder_days", values[which]).apply()
-                    binding.reminderDaysText.text = options[which]
+                    binding.reminderDaysText.text = getString(R.string.days_count, values[which])
                     dialog.dismiss()
+                    resyncCountdownReminders()
                 }
-                .setNegativeButton("取消", null)
+                .setNegativeButton(R.string.cancel, null)
                 .show()
         }
 
         binding.autoLinkTaskSwitch.setOnCheckedChangeListener { _, isChecked ->
             prefs.edit().putBoolean("auto_link_task", isChecked).apply()
             if (!isChecked) {
-                Toast.makeText(requireContext(), "已关闭，新建事件将不再生成关联任务", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.event_auto_link_off, Toast.LENGTH_SHORT).show()
             }
         }
 
         binding.eventSortCard.setOnClickListener {
             val current = prefs.getString("sort_by", "days_remaining")
             val selected = sortValues.indexOf(current).coerceAtLeast(0)
+            val labels = sortLabels()
             AlertDialog.Builder(requireContext())
-                .setTitle("事件排序方式")
-                .setSingleChoiceItems(sortOptions, selected) { dialog, which ->
+                .setTitle(R.string.event_sort_title)
+                .setSingleChoiceItems(labels, selected) { dialog, which ->
                     prefs.edit().putString("sort_by", sortValues[which]).apply()
-                    binding.eventSortValueText.text = sortOptions[which]
+                    binding.eventSortValueText.text = getString(sortResIds[which])
                     dialog.dismiss()
                 }
-                .setNegativeButton("取消", null)
+                .setNegativeButton(R.string.cancel, null)
                 .show()
         }
 
@@ -127,5 +143,13 @@ class EventSettingsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    /** 开关或提前天数一变，所有事件的提醒都要重排（幂等，直接全量重算最省心）。 */
+    private fun resyncCountdownReminders() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val countdowns = runCatching { repository.getAllCountdownsOnce() }.getOrNull() ?: return@launch
+            countdowns.forEach { CountdownReminderScheduler.sync(requireContext(), it) }
+        }
     }
 }

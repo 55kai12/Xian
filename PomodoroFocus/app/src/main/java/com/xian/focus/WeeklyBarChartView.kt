@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.ContextCompat
 import com.xian.focus.data.DailyCount
 
 class WeeklyBarChartView @JvmOverloads constructor(
@@ -14,7 +15,7 @@ class WeeklyBarChartView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private val barPaint = Paint().apply {
-        color = Color.parseColor("#C9A961")
+        color = ContextCompat.getColor(context, R.color.theme_qinglv_accent)
         isAntiAlias = true
     }
     private val textPaint = Paint().apply {

@@ -10,14 +10,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#FFFFFF">
+    android:background="@color/card_background">
 
     <!-- 深绿头部 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="?attr/colorPrimary"
+        android:background="?attr/colorBrandSurface"
         android:paddingTop="16dp">
 
         <!-- 顶部栏：菜单 + 贤 + 运势 -->
@@ -36,7 +36,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/calendar_filter"
                 app:srcCompat="@drawable/ic_hamburger"
-                app:tint="#FFFFFF" />
+                app:tint="@color/on_primary" />
 
             <TextView
                 android:id="@+id/calendarTitle"
@@ -44,8 +44,8 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:gravity="center"
-                android:text="贤"
-                android:textColor="#FFFFFF"
+                android:text="@app_name"
+                android:textColor="@color/on_primary"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
@@ -84,13 +84,13 @@
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
-                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周一" android:textColor="#D8E6DF" android:textSize="11sp" />
-                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周二" android:textColor="#D8E6DF" android:textSize="11sp" />
-                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周三" android:textColor="#D8E6DF" android:textSize="11sp" />
-                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周四" android:textColor="#D8E6DF" android:textSize="11sp" />
-                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周五" android:textColor="#D8E6DF" android:textSize="11sp" />
-                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周六" android:textColor="#D8E6DF" android:textSize="11sp" />
-                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周日" android:textColor="#D8E6DF" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_mon" android:textColor="@color/calendar_chip" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_tue" android:textColor="@color/calendar_chip" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_wed" android:textColor="@color/calendar_chip" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_thu" android:textColor="@color/calendar_chip" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_fri" android:textColor="@color/calendar_chip" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_sat" android:textColor="@color/calendar_chip" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="@string/weekday_sun" android:textColor="@color/calendar_chip" android:textSize="11sp" />
             </LinearLayout>
 
             <!-- A single CalendarView is clipped to its first week when collapsed. -->
@@ -107,12 +107,12 @@
                     android:layout_height="264dp"
                     app:month_view="com.xian.focus.CircleMonthView"
                     app:week_view="com.xian.focus.CircleWeekView"
-                    app:selected_theme_color="#D8E6DF"
-                    app:selected_text_color="#27463A"
-                    app:selected_lunar_text_color="#27463A"
+                    app:selected_theme_color="@color/calendar_chip"
+                    app:selected_text_color="@color/calendar_chip_text"
+                    app:selected_lunar_text_color="@color/calendar_chip_text"
                     app:week_background="@android:color/transparent"
                     app:week_line_background="@android:color/transparent"
-                    app:week_text_color="#D8E6DF"
+                    app:week_text_color="@color/calendar_chip"
                     app:week_bar_height="0dp"
                     app:week_text_size="11sp" />
 
@@ -133,7 +133,7 @@
                 android:padding="5dp"
                 android:scaleType="center"
                 app:srcCompat="@drawable/ic_calendar_handle"
-                app:tint="#88FFFFFF" />
+                app:tint="@color/nav_icon_dim" />
         </com.xian.focus.SwipeInterceptorLayout>
     </LinearLayout>
 
@@ -141,7 +141,7 @@
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#D8CDB8" />
+        android:background="@color/nav_divider" />
 
     <!-- 空状态 -->
     <TextView
@@ -151,7 +151,7 @@
         android:layout_marginTop="32dp"
         android:gravity="center"
         android:text="@string/empty_pending"
-        android:textColor="#999999"
+        android:textColor="@color/text_tertiary"
         android:textSize="14sp"
         android:visibility="gone" />
 
@@ -169,7 +169,7 @@
             android:paddingTop="4dp"
             android:paddingBottom="80dp"
             android:clipToPadding="false"
-            android:background="#FFFFFF" />
+            android:background="@color/card_background" />
 
         <!-- 新增按钮（悬浮） -->
         <com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -179,7 +179,7 @@
             android:layout_gravity="bottom|end"
             android:layout_margin="16dp"
             android:contentDescription="@string/add_study_task"
-            app:backgroundTint="?attr/colorPrimary"
+            app:backgroundTint="?attr/colorBrandSurface"
             app:elevation="6dp"
             app:srcCompat="@android:drawable/ic_input_add"
             app:tint="@android:color/white" />
@@ -193,7 +193,7 @@
     android:layout_height="match_parent"
     android:layout_gravity="start"
     android:orientation="vertical"
-    android:background="#F5EFE0"
+    android:background="?attr/colorSurface"
     android:fitsSystemWindows="true">
 
     <!-- 抽屉头部 -->
@@ -201,7 +201,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="#3B5B4E"
+        android:background="?attr/colorBrandSurface"
         android:paddingHorizontal="20dp"
         android:paddingTop="32dp"
         android:paddingBottom="20dp">
@@ -209,8 +209,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="更多功能"
-            android:textColor="#F5EFE0"
+            android:text="@string/more_features"
+            android:textColor="@color/on_primary"
             android:textSize="20sp"
             android:textStyle="bold" />
 
@@ -218,8 +218,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="贤 · 辅助工具"
-            android:textColor="#B8C9C0"
+            android:text="@string/more_features_subtitle"
+            android:textColor="@color/on_primary_muted"
             android:textSize="12sp" />
     </LinearLayout>
 
@@ -244,16 +244,16 @@
             <ImageView
                 android:layout_width="22dp"
                 android:layout_height="22dp"
-                android:contentDescription="倒数日"
+                android:contentDescription="@string/countdown_title"
                 android:src="@android:drawable/ic_menu_day"
-                app:tint="#3B5B4E" />
+                app:tint="?attr/colorBrandContent" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="倒数日"
-                android:textColor="#333333"
+                android:text="@string/countdown_title"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp" />
         </LinearLayout>
     </LinearLayout>

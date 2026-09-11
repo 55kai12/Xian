@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:color="#6B5D4A" />
+    <item android:color="@color/secondary_text" />
 </selector>

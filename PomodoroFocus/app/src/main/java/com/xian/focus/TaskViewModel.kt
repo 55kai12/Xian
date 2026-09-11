@@ -1,11 +1,13 @@
 ﻿package com.xian.focus
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xian.focus.data.FocusRepository
 import com.xian.focus.data.Subtask
 import com.xian.focus.data.Task
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +16,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TaskViewModel @Inject constructor(
-    private val repository: FocusRepository
+    private val repository: FocusRepository,
+    @ApplicationContext private val appContext: Context
 ) : ViewModel() {
 
     private val _pendingTasks = MutableStateFlow<List<Task>>(emptyList())
@@ -38,6 +41,17 @@ class TaskViewModel @Inject constructor(
         refresh()
         refreshGroups()
         refreshSubtasks()
+        rescheduleReminders()
+    }
+
+    /**
+     * 冷启动时按库里的任务整体重建提醒闹钟。
+     * 只靠「保存任务时排闹钟」的话，升级前就存在的任务、以及从倒数日那边建的任务
+     * 永远不会被提醒 —— 又是一次静默失效。
+     * 幂等：requestCode 就是任务 id，重复排等于原地覆盖。
+     */
+    private fun rescheduleReminders() = viewModelScope.launch {
+        runCatching { repository.getAllTasks() }.getOrNull()?.forEach(::syncReminder)
     }
 
     fun setGroupFilter(group: String?) {
@@ -50,16 +64,19 @@ class TaskViewModel @Inject constructor(
         subtaskTitles.filter { it.isNotBlank() }.forEach {
             repository.insertSubtask(Subtask(taskId = taskId, title = it.trim()))
         }
+        syncReminder(task.copy(id = taskId))
         doRefresh()
     }
 
     fun updateTask(task: Task) = execute {
         repository.updateTask(task)
+        syncReminder(task)
         doRefresh()
     }
 
     fun updateTaskWithSubtasks(task: Task, subtaskTitles: List<String>) = execute {
         repository.updateTask(task)
+        syncReminder(task)
         // 保留已有子任务的完成状态。
         // 旧实现是无条件「删光再重插」，而 Subtask.isCompleted 默认 false，
         // 于是用户哪怕只改了个标题，所有已勾选的子任务也会被静默重置（数据丢失、无提示）。
@@ -89,6 +106,7 @@ class TaskViewModel @Inject constructor(
     }
 
     fun deleteTask(task: Task) = execute {
+        TaskReminderScheduler.cancel(appContext, task.id)
         repository.deleteTask(task)
         doRefresh()
     }
@@ -116,9 +134,28 @@ class TaskViewModel @Inject constructor(
                 repository.deleteCompletedSnapshot(task.templateId, occurrenceDate)
             }
             // 普通任务：正常切换完成状态
-            else -> repository.updateTask(task.copy(isCompleted = !task.isCompleted))
+            else -> {
+                val updated = task.copy(isCompleted = !task.isCompleted)
+                repository.updateTask(updated)
+                syncReminder(updated)
+            }
         }
         doRefresh()
+    }
+
+    /**
+     * 任务增删改后同步到期提醒闹钟。
+     *
+     * 只处理有截止日期的普通任务。重复任务的模板 dueDate 会随当天推进，
+     * 而闹钟是一次性的，这里不做每日重排 —— 滚动规则没人验证过，
+     * 与其塞一版可能会错发/漏发的实现，不如先明确留白。
+     */
+    private fun syncReminder(task: Task) {
+        if (task.repeatRule == REPEAT_NONE && task.dueDate != null && !task.isCompleted) {
+            TaskReminderScheduler.schedule(appContext, task)
+        } else {
+            TaskReminderScheduler.cancel(appContext, task.id)
+        }
     }
 
     fun refresh() = viewModelScope.launch { doRefresh() }
@@ -159,7 +196,14 @@ class TaskViewModel @Inject constructor(
     fun clearError() { _errorMessage.value = null }
 
     companion object {
+        /** 仅作内部哨兵值，不直接展示。 */
         const val ALL_GROUPS = "全部"
+
+        /**
+         * 注意：分类名是**用户数据**，会写进 tasks.listType。
+         * 所以它是中文常量而不是字符串资源 —— 翻译它会让老任务的分类凭空消失。
+         * 界面上的默认分类名由各处的 getString(R.string.category_*) 提供。
+         */
         const val DEFAULT_GROUP = "未分类"
         const val REPEAT_NONE = "none"
         const val REPEAT_DAILY = "daily"

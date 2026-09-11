@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.util.AttributeSet
+import androidx.core.content.ContextCompat
 import com.haibin.calendarview.Calendar
 import com.haibin.calendarview.WeekView
 import kotlin.math.min
@@ -14,7 +15,7 @@ class CircleWeekView @JvmOverloads constructor(
 ) : WeekView(context) {
 
     private val holidayPaint = Paint().apply {
-        color = 0xFFE67E22.toInt()
+        color = ContextCompat.getColor(context, R.color.holiday_text)
         isAntiAlias = true
         style = Paint.Style.FILL
     }
@@ -49,7 +50,7 @@ class CircleWeekView @JvmOverloads constructor(
 
         // 法定节假日标记：在日期底部画小圆点
         if (HolidayStore.isShowHolidayEnabled(context) &&
-            HolidayStore.isHoliday(calendar.month, calendar.day)
+            HolidayStore.isHoliday(calendar.year, calendar.month, calendar.day)
         ) {
             canvas.drawCircle(
                 centerX,

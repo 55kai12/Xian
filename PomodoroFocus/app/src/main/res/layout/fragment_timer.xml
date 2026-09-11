@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             app:cardCornerRadius="20dp"
             app:cardElevation="2dp"
-            app:strokeColor="#E0D6C2"
+            app:strokeColor="?attr/colorOutline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -33,7 +33,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:text="@string/status_idle"
-                    android:textColor="@color/primary"
+                    android:textColor="?attr/colorBrandContent"
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
@@ -151,7 +151,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/lock_notice"
-            android:textColor="#666666"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

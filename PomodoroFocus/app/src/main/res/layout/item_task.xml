@@ -9,7 +9,7 @@
     app:cardCornerRadius="0dp"
     app:cardElevation="0dp"
     app:strokeWidth="0dp"
-    app:cardBackgroundColor="#FFFFFF">
+    app:cardBackgroundColor="@color/card_background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -32,7 +32,7 @@
                 android:layout_height="28dp"
                 android:gravity="center"
                 android:text="1"
-                android:textColor="#999999"
+                android:textColor="@color/text_tertiary"
                 android:textSize="13sp"
                 android:background="@drawable/bg_task_number" />
 
@@ -54,7 +54,7 @@
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:maxLines="1"
-                        android:textColor="#333333"
+                        android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
 
@@ -63,7 +63,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="2dp"
                         android:layout_gravity="center_vertical"
-                        android:background="#9E9E9E"
+                        android:background="@color/completed_grey"
                         android:visibility="gone" />
                 </FrameLayout>
 
@@ -79,7 +79,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:drawablePadding="2dp"
-                        android:textColor="#3B5B4E"
+                        android:textColor="?attr/colorBrandContent"
                         android:textSize="11sp"
                         android:visibility="gone" />
 
@@ -109,16 +109,16 @@
                     android:layout_width="36dp"
                     android:layout_height="36dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="开始贤时"
+                    android:contentDescription="@string/start_pomodoro_desc"
                     app:srcCompat="@android:drawable/ic_lock_idle_alarm"
-                    app:tint="#3B5B4E" />
+                    app:tint="?attr/colorBrandContent" />
 
                 <TextView
                     android:id="@+id/taskCountText"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:textColor="#3B5B4E"
+                    android:textColor="?attr/colorBrandContent"
                     android:textSize="13sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -132,7 +132,7 @@
             android:layout_marginTop="6dp"
             android:maxLines="2"
             android:ellipsize="end"
-            android:textColor="#666666"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp"
             android:visibility="gone" />
 
@@ -142,7 +142,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="3dp"
-            android:textColor="#C9A961"
+            android:textColor="?attr/colorSecondary"
             android:textSize="11sp"
             android:visibility="gone" />
 
@@ -161,8 +161,8 @@
                 android:layout_height="wrap_content"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="3dp"
-                android:text="收起"
-                android:textColor="#3B5B4E"
+                android:text="@string/collapse"
+                android:textColor="?attr/colorBrandContent"
                 android:textSize="12sp"
                 android:background="?attr/selectableItemBackground" />
 
@@ -189,8 +189,8 @@
                 android:layout_height="wrap_content"
                 android:paddingHorizontal="8dp"
                 android:paddingVertical="3dp"
-                android:text="图片"
-                android:textColor="#3B5B4E"
+                android:text="@review_images"
+                android:textColor="?attr/colorBrandContent"
                 android:textSize="12sp"
                 android:background="?attr/selectableItemBackground" />
 
@@ -200,9 +200,9 @@
                 android:layout_height="160dp"
                 android:layout_marginTop="6dp"
                 android:scaleType="centerCrop"
-                android:background="#F0EBE0"
+                android:background="@color/card_surface_alt"
                 android:visibility="gone"
-                android:contentDescription="任务图片" />
+                android:contentDescription="@string/task_image" />
         </LinearLayout>
 
         <!-- 操作按钮 -->
@@ -244,7 +244,7 @@
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
                 android:text="@string/delete_task"
-                android:textColor="#C62828"
+                android:textColor="@color/danger"
                 android:textSize="11sp"
                 android:paddingHorizontal="2dp"
                 android:visibility="gone" />

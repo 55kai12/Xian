@@ -2,6 +2,7 @@ package com.xian.focus
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -17,8 +18,6 @@ class CountdownAdapter(
     private val onItemLongClick: (Countdown) -> Unit
 ) : ListAdapter<Countdown, CountdownAdapter.CountdownViewHolder>(CountdownDiffCallback) {
 
-    private val dateFormat = SimpleDateFormat("yyyy年MM月dd日", Locale.getDefault())
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CountdownViewHolder {
         val binding = ItemCountdownBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return CountdownViewHolder(binding)
@@ -33,6 +32,12 @@ class CountdownAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(countdown: Countdown) {
+            val context = binding.root.context
+            // 日期格式随语言走，所以格式化器在这里按 Context 建（列表很短，开销可忽略）。
+            val dateFormat = SimpleDateFormat(
+                context.getString(R.string.countdown_date_format),
+                Locale.getDefault()
+            )
             binding.countdownTitleText.text = countdown.title
             binding.countdownColorBar.setBackgroundColor(countdown.color)
 
@@ -42,17 +47,19 @@ class CountdownAdapter(
 
             val effectiveDate = viewModel.getEffectiveTargetDate(countdown)
             binding.countdownDateText.text = dateFormat.format(Date(effectiveDate)) +
-                    if (countdown.repeatYearly) " · 每年" else ""
+                    if (countdown.repeatYearly) context.getString(R.string.countdown_yearly_suffix) else ""
 
             val days = viewModel.getDaysRemaining(countdown)
             if (days >= 0) {
                 binding.countdownDaysText.text = days.toString()
-                binding.countdownDaysLabel.text = "天后"
+                binding.countdownDaysLabel.text = context.getString(R.string.countdown_days_left)
                 binding.countdownDaysText.setTextColor(countdown.color)
             } else {
                 binding.countdownDaysText.text = (-days).toString()
-                binding.countdownDaysLabel.text = "天前"
-                binding.countdownDaysText.setTextColor(0xFF999999.toInt())
+                binding.countdownDaysLabel.text = context.getString(R.string.countdown_days_past)
+                binding.countdownDaysText.setTextColor(
+                    ContextCompat.getColor(context, R.color.text_tertiary)
+                )
             }
 
             binding.root.setOnClickListener { onItemClick(countdown) }

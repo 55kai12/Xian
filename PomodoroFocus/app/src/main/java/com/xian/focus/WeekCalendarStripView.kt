@@ -8,6 +8,7 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.content.ContextCompat
 import java.util.Calendar
 import kotlin.math.min
 
@@ -22,19 +23,23 @@ class WeekCalendarStripView @JvmOverloads constructor(
         textSize = dp(26f)
     }
     private val currentDatePaint = Paint(datePaint).apply { color = Color.WHITE }
-    private val selectedDatePaint = Paint(datePaint).apply { color = Color.parseColor("#27463A") }
-    private val selectedCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Color.parseColor("#D8E6DF") }
+    private val selectedDatePaint = Paint(datePaint).apply {
+        color = ContextCompat.getColor(context, R.color.calendar_chip_text)
+    }
+    private val selectedCirclePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ContextCompat.getColor(context, R.color.calendar_chip)
+    }
 
     private val ringBackgroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = dp(3.5f)
-        color = 0x40FFFFFF.toInt()
+        color = ContextCompat.getColor(context, R.color.calendar_scrim)
     }
     private val ringForegroundPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = dp(3.5f)
         strokeCap = Paint.Cap.ROUND
-        color = Color.parseColor("#E8D5A3")
+        color = ContextCompat.getColor(context, R.color.calendar_gold_light)
     }
     private val ringRect = RectF()
 

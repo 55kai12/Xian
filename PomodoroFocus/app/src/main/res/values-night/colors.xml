@@ -1,0 +1,79 @@
+<resources>
+    <!--
+      深色模式配色（系统开启深色时自动生效）
+      原则：
+        - 4 套主题的「色相」保留，只改明暗
+        - 主色拆两个角色：primary 变深(托白字)，primary_content 变浅(压在深卡上可读)
+        - 一切中性色翻面
+        - 主色底上的内容色(on_primary 等)与日历色不动 —— 它们本来就叠在深色块上
+    -->
+
+    <!-- ===== 青绿 ===== -->
+    <color name="theme_qinglv_primary">#33564A</color>
+    <color name="theme_qinglv_primary_content">#8FC0A8</color>
+    <color name="theme_qinglv_primary_variant">#1F3A31</color>
+    <color name="theme_qinglv_accent">#D4B87A</color>
+    <color name="theme_qinglv_surface">#191C1A</color>
+
+    <!-- ===== 朱砂 ===== -->
+    <color name="theme_zhusha_primary">#6E2626</color>
+    <color name="theme_zhusha_primary_content">#E29A9A</color>
+    <color name="theme_zhusha_primary_variant">#4A1717</color>
+    <color name="theme_zhusha_accent">#D4B87A</color>
+    <color name="theme_zhusha_surface">#1F1917</color>
+
+    <!-- ===== 黛蓝 ===== -->
+    <color name="theme_dailan_primary">#2C455C</color>
+    <color name="theme_dailan_primary_content">#8FB4D4</color>
+    <color name="theme_dailan_primary_variant">#1E3145</color>
+    <color name="theme_dailan_accent">#C0AC80</color>
+    <color name="theme_dailan_surface">#171A1E</color>
+
+    <!-- ===== 玄墨 ===== -->
+    <color name="theme_xuanmo_primary">#262626</color>
+    <color name="theme_xuanmo_primary_content">#C9C4BA</color>
+    <color name="theme_xuanmo_primary_variant">#141414</color>
+    <color name="theme_xuanmo_accent">#A08A6A</color>
+    <color name="theme_xuanmo_surface">#121212</color>
+
+    <!-- ===== 正文与次要文字 ===== -->
+    <color name="ink_text">#E6E1D6</color>
+    <color name="text_primary">#E6E1D6</color>
+    <color name="text_secondary">#ADA69A</color>
+    <color name="text_tertiary">#8B857A</color>
+    <color name="text_label">#A89C86</color>
+    <color name="hint_text">#857B6B</color>
+    <color name="text_dark_brown">#C6BCA8</color>
+    <color name="secondary_text">#ADA69A</color>
+
+    <!-- ===== 卡片与背景 ===== -->
+    <color name="card_background">#22211E</color>
+    <color name="card_surface">#2A2822</color>
+    <color name="card_surface_alt">#2A2822</color>
+    <color name="pale_grey">#2A2A28</color>
+    <color name="nav_divider">#3A3730</color>
+    <color name="muted_grey">#3A3833</color>
+    <color name="completed_grey">#706B62</color>
+    <color name="pin_dot_empty">#55514A</color>
+    <color name="nav_inactive">#9A948A</color>
+    <color name="diary_dot">#55514A</color>
+    <color name="divider">#3A3730</color>
+
+    <!-- ===== 筛选胶囊（未选中态）===== -->
+    <color name="chip_unselected_bg">#2E2D2A</color>
+
+    <!-- ===== 节假日字样：深色底上提亮 ===== -->
+    <color name="holiday_text">#F0904A</color>
+
+    <!-- ===== 状态色（深色底上要提亮）===== -->
+    <color name="success">#6FBF97</color>
+    <color name="danger">#E06B6B</color>
+    <color name="danger_alt">#E06B6B</color>
+    <color name="warning_orange">#F07A4A</color>
+    <color name="delete_red">#E06B6B</color>
+    <color name="due_text">#D9A62E</color>
+    <color name="overdue_text">#E07A7A</color>
+
+    <!-- ===== 主色底上的次要文字，深色下略降饱和 ===== -->
+    <color name="on_primary_muted">#A8BAB1</color>
+</resources>

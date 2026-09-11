@@ -1,0 +1,387 @@
+<resources>
+    <string name="app_name">Xian</string>
+    <string name="tab_timer">Focus</string>
+    <string name="tab_tasks">Tasks</string>
+    <string name="default_timer">25:00</string>
+    <string name="goal_initial">Today: 0/8</string>
+    <string name="goal_progress_format">Today: %1$d/%2$d</string>
+
+    <string name="status_idle">Ready</string>
+    <string name="status_focusing">Focusing</string>
+    <string name="status_short_break">Short break</string>
+    <string name="status_long_break">Long break</string>
+    <string name="status_paused">Paused</string>
+
+    <string name="start_focus">Start focus</string>
+    <string name="restart_focus">Restart</string>
+    <string name="resume">Resume</string>
+    <string name="pause">Pause</string>
+    <string name="reset">Reset</string>
+    <string name="set_daily_goal">Set daily goal</string>
+    <string name="timer_settings">Timer settings</string>
+    <string name="timer_settings_title">Durations (minutes)</string>
+    <string name="focus_minutes_hint">minutes</string>
+    <string name="focus_hours_hint">hours</string>
+    <string name="unit_hours">h</string>
+    <string name="unit_minutes">min</string>
+    <string name="short_break_minutes_hint">Short break, 1-60 min</string>
+    <string name="long_break_minutes_hint">Long break, 1-60 min</string>
+    <string name="daily_goal_dialog_title">Daily focus goal</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="dialog_confirm">Got it</string>
+
+    <string name="group_filter_hint">Filter by group</string>
+    <string name="task_name_hint">Enter task name</string>
+    <string name="label_task_name">Task name</string>
+    <string name="label_category">Category</string>
+    <string name="label_remark">Note</string>
+    <string name="task_meta_format">Category: %1$s · Priority: %2$s</string>
+    <string name="task_name_required">Enter a task name first</string>
+    <string name="task_pomodoro_count">%1$d/%2$d</string>
+    <string name="priority_high">High</string>
+    <string name="priority_medium">Medium</string>
+    <string name="priority_low">Low</string>
+    <string name="start_task">Start</string>
+    <string name="task_selected">Selected</string>
+    <string name="complete_task">Complete</string>
+    <string name="restore_task">Restore</string>
+    <string name="delete_task">Delete</string>
+
+    <string name="timer_channel_name">Focus timer</string>
+    <string name="timer_channel_description">Shows the focus and break countdown</string>
+    <string name="finish_channel_name">Focus finished</string>
+    <string name="finish_channel_description">Alerts you when a focus session ends</string>
+    <string name="focus_finished_title">Session complete</string>
+    <string name="focus_finished_text">Nice work. Time for a break.</string>
+
+    <string name="focus_stats">Stats</string>
+    <string name="lock_enable">Enable lock</string>
+    <string name="lock_disable">Disable lock</string>
+    <string name="lock_back_blocked">Focusing - back key is locked</string>
+    <string name="lock_notice">The lock only blocks the back key and hides system navigation. The Home and Recents keys are system-level and cannot be fully blocked by a normal app.</string>
+    <string name="focus_stats_title">Focus stats</string>
+    <string name="stats_today_format">Completed today: %1$d</string>
+    <string name="stats_week_format">Last 7 days: %1$d</string>
+    <string name="stats_total_format">All time: %1$d</string>
+    <string name="stats_minutes_format">Total focus: %1$d min</string>
+
+    <string name="tab_pending">Pending</string>
+    <string name="tab_completed">Completed</string>
+    <string name="add_task">New task</string>
+    <string name="add_study_task">New task</string>
+    <string name="study_subject_hint">Category</string>
+    <string name="note_hint">Note</string>
+    <string name="no_due_date">No due date</string>
+    <string name="task_due_format">Due: %1$s</string>
+    <string name="overdue">Overdue</string>
+    <string name="priority_label">Priority</string>
+    <string name="estimated_pomodoro_hint">Estimated sessions</string>
+    <string name="empty_pending">No pending tasks. Tap below to add one.</string>
+    <string name="empty_completed">No completed tasks yet</string>
+
+    <string name="accessibility_description">Used for focus lock: detects when you leave Xian and shows a full-screen lock overlay. It never reads or stores any input.</string>
+    <string name="overlay_permission_title">Display over other apps needed</string>
+    <string name="overlay_permission_message">The lock needs to show a full-screen overlay above other apps. Please allow "Display over other apps" in settings.</string>
+    <string name="accessibility_permission_title">Accessibility service needed</string>
+    <string name="accessibility_permission_message">The lock uses an accessibility service to detect when you leave Xian and raise the lock overlay. Please enable "Xian Lock Service" in accessibility settings.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="lock_overlay_title">Focus lock active</string>
+    <string name="lock_overlay_subtitle">Please return to Xian and keep going. Long-press the button below to exit the lock.</string>
+    <string name="long_press_exit">Long-press to exit lock</string>
+    <string name="long_press_required">Long press is required to exit the lock</string>
+
+    <string name="custom_lock">Custom lock</string>
+    <string name="custom_lock_dialog_title">Custom lock</string>
+    <string name="lock_duration">Lock duration</string>
+    <string name="custom_minutes_hint">Custom minutes</string>
+    <string name="whitelist_apps">Allowed apps</string>
+    <string name="whitelist_format">%1$d allowed apps selected</string>
+    <string name="start_lock_machine">Start lock</string>
+    <string name="stop_lock_machine">Stop lock</string>
+    <string name="lock_machine_running">Locked: %1$s left</string>
+    <string name="lock_machine_finished">Lock finished</string>
+    <string name="lock_machine_notification">Custom lock running</string>
+    <string name="no_whitelist_apps">No allowed apps</string>
+    <string name="duration_15">15</string>
+    <string name="duration_30">30</string>
+    <string name="duration_60">60</string>
+    <string name="duration_90">90</string>
+    <string name="category_color">Category color</string>
+    <string name="no_due_time">No due time</string>
+    <string name="calendar_filter">Calendar filter</string>
+    <string name="clear_filter">Clear filter</string>
+    <string name="selected_date_format">Selected: %1$s</string>
+    <string name="app_lock">App lock</string>
+    <string name="set_pin_hint">Enter a 4-digit PIN</string>
+    <string name="pin_wrong">Wrong PIN</string>
+    <string name="pin_locked_title">Enter app PIN</string>
+    <string name="weekly_chart_title">Last 7 days</string>
+    <string name="workload_label">Workload</string>
+    <string name="repeat_label">Repeat</string>
+    <string name="repeat_none">Never</string>
+    <string name="repeat_daily">Daily</string>
+    <string name="repeat_weekly">Weekly</string>
+    <string name="repeat_monthly">Monthly</string>
+    <string name="calendar_reminder">Add to system calendar</string>
+    <string name="subtask_label">Subtasks</string>
+    <string name="add_subtask">Add subtask</string>
+    <string name="custom_color">Custom color</string>
+    <string name="workload_light">Light (1)</string>
+    <string name="workload_medium">Moderate (3)</string>
+    <string name="workload_heavy">Heavy (5)</string>
+    <string name="workload_custom">Custom</string>
+    <string name="calendar_no_due">Pick a due date before adding to the system calendar</string>
+    <string name="tab_lock">Lock</string>
+    <string name="lock_not_running">Not locked</string>
+    <string name="lock_running">Locked</string>
+    <string name="lock_permissions_title">Required permissions</string>
+    <string name="lock_page_notice">The lock needs the overlay and accessibility permissions. Once enabled, switching to any app or the home screen outside the allowed list shows the lock overlay; long-press the exit button on the overlay to end the lock. On some phones you also need to allow autostart and background running.</string>
+    <string name="back_to_app">Back to the app</string>
+    <string name="boot_restore_lock">Restore lock after reboot</string>
+    <string name="tab_review">Review</string>
+    <string name="tab_profile">Me</string>
+    <string name="profile_title">Me</string>
+    <string name="appearance_settings">Appearance</string>
+    <string name="fortune_title">Fortune</string>
+    <string name="theme_settings">Theme</string>
+    <string name="wallpaper_settings">Custom wallpaper</string>
+    <string name="theme_title">Theme</string>
+    <string name="theme_qinglv">Ink Green</string>
+    <string name="theme_zhusha">Cinnabar</string>
+    <string name="theme_dailan">Distant Blue</string>
+    <string name="theme_xuanmo">Black Ink</string>
+    <string name="review_title">Daily review</string>
+    <string name="review_today">Completed today: %1$d</string>
+    <string name="review_week">Last 7 days: %1$d</string>
+    <string name="review_total">All time: %1$d</string>
+    <string name="review_minutes">Total focus: %1$d min</string>
+    <string name="review_rating">Today</string>
+    <string name="rating_low">So-so</string>
+    <string name="rating_medium">Good</string>
+    <string name="rating_high">Great</string>
+    <string name="review_note_hint">Write today\'s review: wins, problems, tomorrow\'s plan...</string>
+    <string name="review_saved">Review saved</string>
+    <string name="prev_day">Previous day</string>
+    <string name="next_day">Next day</string>
+    <string name="pick_date">Pick a date</string>
+    <string name="diary_content">Diary</string>
+    <string name="data_export">Data export</string>
+    <string name="data_export_desc">Export all tasks and focus records as CSV</string>
+    <string name="export_data">Export data</string>
+    <string name="exporting">Exporting...</string>
+    <string name="export_done">Export complete</string>
+    <string name="review_chart_title">Last 7 days trend</string>
+    <string name="lock_mode_immediate">Lock now</string>
+    <string name="lock_mode_scheduled">Scheduled lock</string>
+    <string name="scheduled_start_time">Start time</string>
+    <string name="scheduled_end_time">End time</string>
+    <string name="save_schedule">Save schedule</string>
+    <string name="cancel_schedule">Cancel schedule</string>
+    <string name="scheduled_info_format">Scheduled: %1$s - %2$s</string>
+    <string name="no_schedule">No scheduled lock</string>
+    <string name="select_wallpaper">Choose wallpaper</string>
+    <string name="restore_wallpaper">Restore default wallpaper</string>
+    <string name="wallpaper_saved">Wallpaper set</string>
+    <string name="wallpaper_restored">Default wallpaper restored</string>
+    <string name="stats_today">Today</string>
+    <string name="stats_week">7 days</string>
+    <string name="stats_total">All time</string>
+    <string name="stats_minutes">Focus min</string>
+    <string name="focus_minutes_label">Focus length</string>
+    <string name="short_break_label">Short break</string>
+    <string name="long_break_label">Long break</string>
+    <string name="daily_goal_label">Daily goal (sessions)</string>
+    <string name="review_images">Images</string>
+    <string name="review_add_image">Add image</string>
+    <string name="review_remove_image">Remove image</string>
+
+    <string name="task_expand_more">Show more</string>
+    <string name="label_difficulty">Difficulty</string>
+    <string name="label_repeat">Repeat</string>
+    <string name="insert_image">Insert image</string>
+    <string name="task_image_preview">Task image preview</string>
+    <string name="task_image">Task image</string>
+    <string name="unit_pomodoro_suffix">sessions</string>
+    <string name="unit_minute_full">min</string>
+    <string name="action_back">Back</string>
+    <string name="countdown_title">Countdowns</string>
+    <string name="add_countdown">Add countdown</string>
+    <string name="countdown_empty">No countdowns yet\nTap + in the top right to add one</string>
+    <string name="event_settings_title">Event settings</string>
+    <string name="event_reminder">Event reminders</string>
+    <string name="event_reminder_desc">Send a notification before the due date</string>
+    <string name="reminder_days_label">Remind me ahead by</string>
+    <string name="reminder_days_default">1 day</string>
+    <string name="auto_create_task">Auto-create linked task</string>
+    <string name="auto_create_task_desc">Create an event task on the matching date in the task list</string>
+    <string name="event_sort_label">Sort events by</string>
+    <string name="sort_by_days_left">Days left</string>
+    <string name="display_settings">Display</string>
+    <string name="show_completed_events">Show completed events</string>
+    <string name="show_completed_events_desc">Controls the list and schedule overview, including widgets</string>
+    <string name="show_completed_strike">Strike through completed</string>
+    <string name="show_event_index">Show event order numbers</string>
+    <string name="show_event_note">Show event notes</string>
+    <string name="show_holiday_mark">Show public holiday markers</string>
+    <string name="daily_blessing">Daily blessing</string>
+    <string name="not_blessed_yet">Not yet today</string>
+    <string name="settings_desc">Daily goal, about, clear data</string>
+    <string name="daily_goal_title">Daily focus goal</string>
+    <string name="event_settings_desc">Reminders, linked tasks, sorting</string>
+    <string name="about_title">About</string>
+    <string name="clear_all_data">Clear all data</string>
+    <string name="weekday_mon">Mon</string>
+    <string name="weekday_tue">Tue</string>
+    <string name="weekday_wed">Wed</string>
+    <string name="weekday_thu">Thu</string>
+    <string name="weekday_fri">Fri</string>
+    <string name="weekday_sat">Sat</string>
+    <string name="weekday_sun">Sun</string>
+    <string name="more_features">More</string>
+    <string name="more_features_subtitle">Xian · Utilities</string>
+    <string name="subtask_name_hint">Subtask name</string>
+    <string name="start_pomodoro_desc">Start focus</string>
+    <string name="collapse">Collapse</string>
+    <string name="settings_title">Settings</string>
+
+    <string name="health_title">Status</string>
+    <string name="health_desc">What the lock needs in order to work - a missing item makes it fail silently</string>
+    <string name="health_accessibility">Accessibility service</string>
+    <string name="health_overlay">Display over other apps</string>
+    <string name="health_notification">Notification permission</string>
+    <string name="health_battery">Battery optimization</string>
+    <string name="health_ok">Ready</string>
+    <string name="health_missing">Off</string>
+
+    <!-- Due reminders (tasks and countdowns share one channel) -->
+    <string name="reminder_channel_name">Due reminders</string>
+    <string name="reminder_channel_description">Alerts when a task or countdown falls due</string>
+    <string name="reminder_task_title">Task due</string>
+    <string name="reminder_countdown_title">Countdown</string>
+
+    <!-- Data import (CSV restore) -->
+    <string name="data_import">Data import</string>
+    <string name="data_import_desc">Restore from an exported CSV backup; rows with an existing ID are skipped</string>
+    <string name="import_data">Import data</string>
+    <string name="importing">Importing…</string>
+    <string name="import_failed">Import failed - make sure you picked a CSV exported by this app</string>
+    <string name="import_nothing">No restorable data found in that file</string>
+    <string name="import_done">Restored %1$d records</string>
+    <string name="import_confirm_message">Tasks, subtasks, focus records, countdowns and review diaries will be restored from the selected CSV.\nRows whose ID already exists are not overwritten, and diary images cannot be restored.</string>
+
+    <!-- ===== Daily fortune ===== -->
+    <string name="fortune_level_supreme">Great fortune</string>
+    <string name="fortune_level_high">Good fortune</string>
+    <string name="fortune_level_mid">Fair fortune</string>
+    <string name="fortune_level_calm">Peaceful fortune</string>
+    <string name="fortune_level_small">Small fortune</string>
+    <string name="fortune_msg_supreme">Your mind is clear today - good for hard problems. Focus will pay off.</string>
+    <string name="fortune_msg_high">Go with the flow today. Following your plan tends to bring unexpected help.</string>
+    <string name="fortune_msg_mid">Steady progress today. Small gains add up - keep going and you will see the difference.</string>
+    <string name="fortune_msg_calm">A day to slow down and hold what you have. Finish what is right in front of you.</string>
+    <string name="fortune_msg_small">A few bumps today. Adjust your pace and start again - things will improve.</string>
+    <string name="fortune_draw">Draw a stick</string>
+    <string name="fortune_interpret">Read the meaning</string>
+    <string name="fortune_bless">Make a wish</string>
+    <string name="fortune_blessed">Wished</string>
+    <string name="fortune_bless_done">Wish recorded - may today go well</string>
+    <string name="fortune_stick">Draw</string>
+    <string name="fortune_stick_revealed">Draw\n%1$s</string>
+    <string name="fortune_none">No fortune yet</string>
+    <string name="fortune_empty">No fortune record yet.</string>
+    <string name="fortune_summary">Wished %1$d times · latest: %2$s</string>
+    <string name="fortune_detail">Latest: %1$s\n\nMeaning: %2$s\n\nTimes wished: %3$d</string>
+    <string name="fortune_history">Fortune history</string>
+    <string name="save_failed">Save failed: %1$s</string>
+    <string name="export_failed">Export failed</string>
+    <string name="task_collapse_more">Show less</string>
+    <string name="diary_date_format">MMMM d, EEEE</string>
+
+    <!-- ===== Accessibility labels and expand/collapse ===== -->
+    <string name="a11y_complete_task">Complete task</string>
+    <string name="a11y_restore_task">Restore task</string>
+    <string name="a11y_complete_subtask">Complete subtask</string>
+    <string name="a11y_restore_subtask">Restore subtask</string>
+    <string name="subtask_expand_count">Show %1$d/%2$d</string>
+    <string name="subtask_collapse_count">Hide %1$d/%2$d</string>
+    <string name="image_expand">Show image</string>
+    <string name="image_collapse">Hide image</string>
+
+    <!-- ===== Task form ===== -->
+    <string name="estimated_pomodoros_label">Estimated sessions (pomodoros)</string>
+    <string name="category_life">Life</string>
+    <string name="category_work">Work</string>
+    <string name="category_custom_hint">Custom category</string>
+    <string name="category_add">Add category</string>
+    <string name="due_today">Today</string>
+    <string name="due_tomorrow">Tomorrow</string>
+    <string name="due_pick_date">Pick a date</string>
+    <string name="due_none">No date</string>
+    <string name="dialog_edit_task">Edit task</string>
+    <string name="task_delete">Delete task</string>
+    <string name="task_delete_confirm">Delete this task?</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_ok">OK</string>
+    <string name="action_clear">Clear</string>
+
+    <!-- ===== Settings ===== -->
+    <string name="goal_summary">%1$d sessions a day</string>
+    <string name="goal_input_hint">Enter your daily session goal</string>
+    <string name="goal_dialog_title">Daily session goal</string>
+    <string name="goal_updated">Daily goal updated to %1$d</string>
+    <string name="goal_invalid">Enter a number greater than 0</string>
+    <string name="about_version">Xian v%1$s</string>
+    <string name="about_message">Xian v%1$s\n\nA Chinese-style focus companion\n\nFeatures:\n· Task list and pomodoro timer\n· App lock for deep focus\n· Review and diary\n· Countdowns\n· Daily fortune</string>
+    <string name="clear_data">Clear all data</string>
+    <string name="clear_data_confirm">Clear all tasks, focus records, countdowns, diaries and settings? This cannot be undone.</string>
+    <string name="clear_nothing">Nothing to clear</string>
+    <string name="clear_done">All data cleared</string>
+
+    <!-- ===== Countdowns ===== -->
+    <string name="countdown_name_hint">Countdown name</string>
+    <string name="countdown_note_hint">Note (optional)</string>
+    <string name="countdown_target_date">Target date: %1$s</string>
+    <string name="countdown_repeat_yearly">Repeat yearly</string>
+    <string name="countdown_repeat_yearly_on">✓ Repeat yearly</string>
+    <string name="countdown_color_pick">Pick a colour</string>
+    <string name="countdown_add">Add countdown</string>
+    <string name="countdown_edit">Edit countdown</string>
+    <string name="countdown_name_required">Enter a name</string>
+    <string name="countdown_delete">Delete countdown</string>
+    <string name="countdown_delete_confirm">Delete "%1$s"?</string>
+    <string name="countdown_linked_task">Linked to a countdown</string>
+    <string name="countdown_days_left">days left</string>
+    <string name="countdown_days_past">days ago</string>
+    <string name="countdown_yearly_suffix"> · Yearly</string>
+    <string name="countdown_date_format">MMM d, yyyy</string>
+
+    <!-- ===== Event settings ===== -->
+    <string name="event_sort_title">Sort events by</string>
+    <string name="sort_days_remaining">Days remaining</string>
+    <string name="sort_target_date">Target date</string>
+    <string name="sort_created_at">Created time</string>
+    <string name="event_reminder_days_title">Remind ahead by</string>
+    <string name="days_count">%1$d days</string>
+    <string name="event_auto_link_off">Turned off - new events will no longer create a linked task</string>
+
+    <!-- ===== Misc ===== -->
+    <string name="duration_minutes">%1$d min</string>
+    <string name="holiday_new_year">New Year</string>
+    <string name="holiday_labour">Labour Day</string>
+    <string name="holiday_national">National Day</string>
+    <string name="holiday_spring_festival">Spring Festival</string>
+    <string name="holiday_qingming">Qingming</string>
+    <string name="holiday_duanwu">Dragon Boat Festival</string>
+    <string name="holiday_mid_autumn">Mid-Autumn Festival</string>
+
+    <string-array name="calendar_weekday_short">
+        <item>M</item>
+        <item>T</item>
+        <item>W</item>
+        <item>T</item>
+        <item>F</item>
+        <item>S</item>
+        <item>S</item>
+    </string-array>
+</resources>

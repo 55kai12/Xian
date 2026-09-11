@@ -2,6 +2,8 @@ package com.xian.focus
 
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.view.View
+import androidx.core.content.ContextCompat
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.components.XAxis
@@ -19,11 +21,11 @@ import com.xian.focus.data.DailyCount
  */
 object XianCharts {
 
-    private const val COLOR_PRIMARY = "#3B5B4E"
-    private const val COLOR_GOLD = "#C9A961"
-    private const val COLOR_GOLD_LIGHT = "#E8D5A3"
-    private const val COLOR_GRID = "#E0D6C2"
-    private const val COLOR_TEXT = "#5A4E3A"
+    /** 从当前主题取色，跟随主题与昼夜切换 */
+    private fun accent(view: View) =
+        view.context.themedColor(R.attr.colorBrandAccent, R.color.theme_qinglv_accent)
+    private fun grid(view: View) = ContextCompat.getColor(view.context, R.color.divider)
+    private fun label(view: View) = ContextCompat.getColor(view.context, R.color.text_dark_brown)
 
     fun setBarData(chart: BarChart, data: List<DailyCount>) {
         applyBarStyle(chart, data.map { it.dayLabel })
@@ -31,11 +33,11 @@ object XianCharts {
             BarEntry(index.toFloat(), item.count.toFloat())
         }
         val set = BarDataSet(entries, "").apply {
-            color = Color.parseColor(COLOR_GOLD)
-            valueTextColor = Color.parseColor(COLOR_TEXT)
+            color = accent(chart)
+            valueTextColor = label(chart)
             valueTextSize = 11f
             setDrawValues(true)
-            barShadowColor = Color.parseColor("#F0E8D6")
+            barShadowColor = ContextCompat.getColor(chart.context, R.color.card_surface)
         }
         chart.data = BarData(set).apply {
             barWidth = 0.45f
@@ -52,10 +54,10 @@ object XianCharts {
         val set = LineDataSet(entries, "").apply {
             color = Color.WHITE
             lineWidth = 2.5f
-            setCircleColor(Color.parseColor("#FFFFFF"))
+            setCircleColor(Color.WHITE)
             circleRadius = 4f
             setDrawCircleHole(false)
-            valueTextColor = Color.parseColor("#FFFFFF")
+            valueTextColor = Color.WHITE
             valueTextSize = 10f
             setDrawValues(false)
             setDrawFilled(false)
@@ -80,10 +82,10 @@ object XianCharts {
         chart.axisRight.isEnabled = false
         chart.axisLeft.apply {
             setDrawGridLines(true)
-            gridColor = Color.parseColor(COLOR_GRID)
+            gridColor = grid(chart)
             setDrawAxisLine(true)
-            axisLineColor = Color.parseColor(COLOR_GRID)
-            textColor = Color.parseColor(COLOR_TEXT)
+            axisLineColor = grid(chart)
+            textColor = label(chart)
             textSize = 10f
             axisMinimum = 0f
             granularity = 1f
@@ -92,8 +94,8 @@ object XianCharts {
             position = XAxis.XAxisPosition.BOTTOM
             setDrawGridLines(false)
             setDrawAxisLine(true)
-            axisLineColor = Color.parseColor(COLOR_GRID)
-            textColor = Color.parseColor(COLOR_TEXT)
+            axisLineColor = grid(chart)
+            textColor = label(chart)
             textSize = 10f
             granularity = 1f
             valueFormatter = IndexAxisValueFormatter(labels)

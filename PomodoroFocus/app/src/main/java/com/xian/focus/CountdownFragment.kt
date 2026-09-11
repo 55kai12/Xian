@@ -9,6 +9,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -107,24 +108,27 @@ class CountdownFragment : Fragment() {
         }
 
         val titleInput = EditText(requireContext()).apply {
-            hint = "倒数日名称"
+            hint = getString(R.string.countdown_name_hint)
             setText(countdown?.title ?: "")
             textSize = 16f
         }
         dialogView.addView(titleInput)
 
         val noteInput = EditText(requireContext()).apply {
-            hint = "备注（选填）"
+            hint = getString(R.string.countdown_note_hint)
             setText(countdown?.note ?: "")
             textSize = 14f
         }
         dialogView.addView(noteInput)
 
+        fun targetDateLabel(): String =
+            getString(R.string.countdown_target_date, dateFormat.format(Date(selectedTargetDate)))
+
         val dateButton = TextView(requireContext()).apply {
-            text = "目标日期：" + dateFormat.format(Date(selectedTargetDate))
+            text = targetDateLabel()
             textSize = 14f
             setPadding(0, 32, 0, 0)
-            setTextColor(0xFF3B5B4E.toInt())
+            setTextColor(requireContext().themedColor(R.attr.colorBrandContent, R.color.theme_qinglv_primary_content))
             setOnClickListener {
                 val cal = Calendar.getInstance().apply { timeInMillis = selectedTargetDate }
                 DatePickerDialog(
@@ -134,7 +138,7 @@ class CountdownFragment : Fragment() {
                             set(year, month, day, 0, 0, 0)
                             set(Calendar.MILLISECOND, 0)
                         }.timeInMillis
-                        text = "目标日期：" + dateFormat.format(Date(selectedTargetDate))
+                        text = targetDateLabel()
                     },
                     cal.get(Calendar.YEAR),
                     cal.get(Calendar.MONTH),
@@ -150,22 +154,28 @@ class CountdownFragment : Fragment() {
             gravity = android.view.Gravity.CENTER_VERTICAL
             setPadding(0, 24, 0, 0)
         }
+        // 用布尔量记状态，而不是去判断文案里有没有「✓」—— 文案是要翻译的，靠它做逻辑一翻就废。
+        var repeatChecked = countdown?.repeatYearly == true
         val repeatText = TextView(requireContext()).apply {
-            text = if (countdown?.repeatYearly == true) "✓ 每年重复" else "每年重复"
+            text = getString(
+                if (repeatChecked) R.string.countdown_repeat_yearly_on else R.string.countdown_repeat_yearly
+            )
             textSize = 14f
-            setTextColor(0xFF333333.toInt())
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnClickListener {
-                val isChecked = text.toString().startsWith("✓")
-                text = if (isChecked) "每年重复" else "✓ 每年重复"
+                repeatChecked = !repeatChecked
+                text = getString(
+                    if (repeatChecked) R.string.countdown_repeat_yearly_on else R.string.countdown_repeat_yearly
+                )
             }
         }
         repeatRow.addView(repeatText)
         if (countdown != null) {
             val deleteButton = TextView(requireContext()).apply {
-                text = "删除"
+                text = getString(R.string.action_delete)
                 textSize = 14f
-                setTextColor(0xFFCC3333.toInt())
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.danger_alt))
                 setPadding(24, 0, 0, 0)
                 setOnClickListener {
                     viewModel.deleteCountdown(countdown)
@@ -178,10 +188,10 @@ class CountdownFragment : Fragment() {
 
         // 颜色选择
         val colorLabel = TextView(requireContext()).apply {
-            text = "选择颜色"
+            text = getString(R.string.countdown_color_pick)
             textSize = 14f
             setPadding(0, 24, 0, 8)
-            setTextColor(0xFF666666.toInt())
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
         }
         dialogView.addView(colorLabel)
 
@@ -194,14 +204,18 @@ class CountdownFragment : Fragment() {
                 background = android.graphics.drawable.GradientDrawable().apply {
                     shape = android.graphics.drawable.GradientDrawable.OVAL
                     setColor(color)
-                    if (color == selectedColor) setStroke(4, 0xFF333333.toInt())
+                    if (color == selectedColor) {
+                        setStroke(4, ContextCompat.getColor(requireContext(), R.color.text_primary))
+                    }
                 }
                 setOnClickListener {
                     selectedColor = color
                     for (i in 0 until colorRow.childCount) {
                         (colorRow.getChildAt(i).background as? android.graphics.drawable.GradientDrawable)?.setStroke(0, 0)
                     }
-                    (background as? android.graphics.drawable.GradientDrawable)?.setStroke(4, 0xFF333333.toInt())
+                    (background as? android.graphics.drawable.GradientDrawable)?.setStroke(
+                        4, ContextCompat.getColor(requireContext(), R.color.text_primary)
+                    )
                 }
             }
             colorRow.addView(colorCircle)
@@ -209,15 +223,15 @@ class CountdownFragment : Fragment() {
         dialogView.addView(colorRow)
 
         currentDialog = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(if (countdown == null) "添加倒数日" else "编辑倒数日")
+            .setTitle(getString(if (countdown == null) R.string.countdown_add else R.string.countdown_edit))
             .setView(dialogView)
-            .setPositiveButton("保存") { _, _ ->
+            .setPositiveButton(R.string.save) { _, _ ->
                 val title = titleInput.text.toString().trim()
                 if (title.isEmpty()) {
-                    Toast.makeText(requireContext(), "请输入名称", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), R.string.countdown_name_required, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                val repeatYearly = repeatText.text.toString().startsWith("✓")
+                val repeatYearly = repeatChecked
                 if (countdown == null) {
                     viewModel.addCountdown(
                         Countdown(
@@ -241,16 +255,16 @@ class CountdownFragment : Fragment() {
                     )
                 }
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
     private fun showDeleteDialog(countdown: Countdown) {
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("删除倒数日")
-            .setMessage("确定要删除「${countdown.title}」吗？")
-            .setPositiveButton("删除") { _, _ -> viewModel.deleteCountdown(countdown) }
-            .setNegativeButton("取消", null)
+            .setTitle(R.string.countdown_delete)
+            .setMessage(getString(R.string.countdown_delete_confirm, countdown.title))
+            .setPositiveButton(R.string.action_delete) { _, _ -> viewModel.deleteCountdown(countdown) }
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 

@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import androidx.core.content.ContextCompat
 import java.util.Calendar
 import java.util.Locale
 
@@ -16,39 +17,40 @@ class MonthCalendarView @JvmOverloads constructor(
 ) : View(context, attrs) {
 
     private val textPaint = Paint().apply {
-        color = -0x1000000
-        textSize = 30f
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-    }
-    private val headerPaint = Paint().apply {
-        color = Color.parseColor("#8A7A60")
-        textSize = 26f
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-    }
-    private val todayPaint = Paint().apply {
-        color = Color.parseColor("#C9A961")
-        isAntiAlias = true
-    }
-    private val selectedPaint = Paint().apply {
-        color = Color.parseColor("#3B5B4E")
-        isAntiAlias = true
-    }
-    private val selectedTextPaint = Paint().apply {
-        color = -0x1
-        textSize = 30f
-        textAlign = Paint.Align.CENTER
-        isAntiAlias = true
-    }
-    private val otherMonthPaint = Paint().apply {
-        color = Color.parseColor("#C0B8A8")
+        color = ContextCompat.getColor(context, R.color.ink_text)
         textSize = 30f
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
     }
 
-    private val weekdayLabels = arrayOf("一", "二", "三", "四", "五", "六", "日")
+    private val headerPaint = Paint().apply {
+        color = ContextCompat.getColor(context, R.color.text_label)
+        textSize = 26f
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+    }
+    private val todayPaint = Paint().apply {
+        color = context.themedColor(R.attr.colorBrandAccent, R.color.theme_qinglv_accent)
+        isAntiAlias = true
+    }
+    private val selectedPaint = Paint().apply {
+        color = context.themedColor(R.attr.colorBrandContent, R.color.theme_qinglv_primary_content)
+        isAntiAlias = true
+    }
+    private val selectedTextPaint = Paint().apply {
+        color = ContextCompat.getColor(context, R.color.on_primary)
+        textSize = 30f
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+    }
+    private val otherMonthPaint = Paint().apply {
+        color = ContextCompat.getColor(context, R.color.calendar_grid)
+        textSize = 30f
+        textAlign = Paint.Align.CENTER
+        isAntiAlias = true
+    }
+
+    private val weekdayLabels = context.resources.getStringArray(R.array.calendar_weekday_short)
     private var monthStartMillis = 0L
     private var selectedDate: Long? = null
     private val todayMillis = startOfDay(System.currentTimeMillis())

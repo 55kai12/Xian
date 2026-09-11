@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@color/pale_grey"
     android:gravity="center"
     android:orientation="vertical"
     android:padding="32dp">
@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/lock_overlay_title"
-        android:textColor="#333333"
+        android:textColor="@color/text_primary"
         android:textSize="22sp"
         android:textStyle="bold" />
 
@@ -20,7 +20,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:textColor="#D84315"
+        android:textColor="@color/warning_orange"
         android:textSize="36sp"
         android:textStyle="bold" />
 
@@ -29,7 +29,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="@string/lock_overlay_subtitle"
-        android:textColor="#666666"
+        android:textColor="@color/text_secondary"
         android:textSize="13sp" />
 
     <ScrollView
@@ -52,7 +52,7 @@
         android:layout_marginTop="8dp"
         android:gravity="center"
         android:text="@string/no_whitelist_apps"
-        android:textColor="#999999"
+        android:textColor="@color/text_tertiary"
         android:textSize="13sp" />
 
     <Button

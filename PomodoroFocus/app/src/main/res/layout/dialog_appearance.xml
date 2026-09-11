@@ -61,7 +61,7 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="12dp"
-            android:background="#E0D6C2" />
+            android:background="?attr/colorOutline" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -84,9 +84,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:backgroundTint="@color/primary"
+            android:backgroundTint="?attr/colorBrandSurface"
             android:text="@string/select_wallpaper"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/on_primary" />
 
         <Button
             android:id="@+id/restoreWallpaperButton"

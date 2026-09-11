@@ -1,0 +1,16 @@
+<resources>
+    <!--
+      品牌色的两个角色。
+      拆开的原因：colorPrimary 在浅色下既能当底色也能当文字色，
+      但深色模式下这两个需求相反 —— 底色要偏深（托住白字），
+      文字要偏亮（压在深色卡片上才看得清）。
+      所以各给一个属性，浅色下同值，深色下分道扬镳。
+    -->
+    <attr name="colorBrandSurface" format="color" />
+    <attr name="colorBrandContent" format="color" />
+    <!--
+      点缀色（金/黄）。单独定义而不是用 appcompat 的 colorSecondary：
+      非传递 R 类下 Kotlin 里取不到 appcompat 的 attr，自己声明最省事。
+    -->
+    <attr name="colorBrandAccent" format="color" />
+</resources>

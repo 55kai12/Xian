@@ -10,6 +10,7 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.xian.focus.data.AppDatabase
@@ -63,17 +64,56 @@ class SettingsFragment : Fragment() {
         }
         binding.aboutCard.setOnClickListener { showAboutDialog() }
         binding.clearDataCard.setOnClickListener { showClearDataDialog() }
+        refreshHealth()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 用户从系统设置页返回时，状态自动更新
+        if (_binding != null) refreshHealth()
+    }
+
+    /**
+     * 刷新「锁机运行状态」四项前提。
+     * 之前锁机在任何一项缺失时都只是静默失效，用户无从判断问题出在哪，
+     * 现在直接把缺什么摆出来，点一下就能去开。
+     */
+    private fun refreshHealth() {
+        val items = LockHealth.check(requireContext())
+        val rows = listOf(
+            binding.healthRowAccessibility to binding.healthStatusAccessibility,
+            binding.healthRowOverlay to binding.healthStatusOverlay,
+            binding.healthRowNotification to binding.healthStatusNotification,
+            binding.healthRowBattery to binding.healthStatusBattery
+        )
+        items.forEachIndexed { index, item ->
+            val (row, status) = rows[index]
+            status.setText(if (item.granted) R.string.health_ok else R.string.health_missing)
+            status.setTextColor(
+                ContextCompat.getColor(
+                    requireContext(),
+                    if (item.granted) R.color.success else R.color.danger_alt
+                )
+            )
+            row.setOnClickListener { openHealthSettings(item.settingsIntent) }
+        }
+    }
+
+    private fun openHealthSettings(intent: Intent) {
+        runCatching { startActivity(intent) }.onFailure {
+            runCatching { startActivity(Intent(android.provider.Settings.ACTION_SETTINGS)) }
+        }
     }
 
     private fun updateDailyGoalText() {
-        binding.dailyGoalValueText.text = "每天 ${goalPrefs.getDailyGoal()} 个贤时"
+        binding.dailyGoalValueText.text = getString(R.string.goal_summary, goalPrefs.getDailyGoal())
     }
 
     private fun updateVersionText() {
         val versionName = requireContext().packageManager
             .getPackageInfo(requireContext().packageName, 0)
             .versionName
-        binding.versionText.text = "贤 v$versionName"
+        binding.versionText.text = getString(R.string.about_version, versionName)
     }
 
     private fun showDailyGoalDialog() {
@@ -81,26 +121,30 @@ class SettingsFragment : Fragment() {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
             setText(goalPrefs.getDailyGoal().toString())
             setSelection(text.length)
-            hint = "输入每日目标贤时数"
+            hint = getString(R.string.goal_input_hint)
         }
         val container = LinearLayout(requireContext()).apply {
             setPadding(48, 24, 48, 0)
             addView(input)
         }
         AlertDialog.Builder(requireContext())
-            .setTitle("设置每日贤时目标")
+            .setTitle(R.string.goal_dialog_title)
             .setView(container)
-            .setPositiveButton("保存") { _, _ ->
+            .setPositiveButton(R.string.save) { _, _ ->
                 val value = input.text.toString().toIntOrNull()
                 if (value != null && value >= 1) {
                     goalPrefs.setDailyGoal(value)
                     updateDailyGoalText()
-                    Toast.makeText(requireContext(), "已更新为每天 $value 个贤时", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.goal_updated, value),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    Toast.makeText(requireContext(), "请输入大于0的数字", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), R.string.goal_invalid, Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("取消", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -108,20 +152,19 @@ class SettingsFragment : Fragment() {
         val versionName = requireContext().packageManager
             .getPackageInfo(requireContext().packageName, 0)
             .versionName
-        val message = "贤 v$versionName\n\n中国古风专注助手\n\n功能：\n· 任务清单与番茄钟\n· 锁机专注\n· 个性化复盘与日记\n· 倒数日\n· 每日祈福"
         AlertDialog.Builder(requireContext())
-            .setTitle("关于贤")
-            .setMessage(message)
-            .setPositiveButton("确定", null)
+            .setTitle(R.string.about_title)
+            .setMessage(getString(R.string.about_message, versionName))
+            .setPositiveButton(R.string.action_ok, null)
             .show()
     }
 
     private fun showClearDataDialog() {
         AlertDialog.Builder(requireContext())
-            .setTitle("清除所有数据")
-            .setMessage("确定要清除所有任务、专注记录、倒数日、日记和全部设置吗？此操作不可恢复。")
-            .setPositiveButton("清除") { _, _ -> clearAllData() }
-            .setNegativeButton("取消", null)
+            .setTitle(R.string.clear_data)
+            .setMessage(R.string.clear_data_confirm)
+            .setPositiveButton(R.string.action_clear) { _, _ -> clearAllData() }
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -161,7 +204,7 @@ class SettingsFragment : Fragment() {
                 runCatching { appContext.getExternalFilesDir(null)?.listFiles()?.forEach { it.delete() } }
             }
 
-            Toast.makeText(requireContext(), "所有数据已清除", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), R.string.clear_done, Toast.LENGTH_LONG).show()
             restartToFreshState()
         }
     }

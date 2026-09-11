@@ -3,6 +3,7 @@ package com.xian.focus.data
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 
@@ -40,6 +41,14 @@ interface TaskDao {
 
     @Insert
     suspend fun insertTask(task: Task): Long
+
+    /**
+     * CSV 恢复专用：按原 id 批量写回。
+     * 用 IGNORE 而不是默认的 ABORT —— 把备份导进一台已有数据的手机时，
+     * 撞 id 的行应当跳过，而不是让整次导入崩掉。
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertTasksFromBackup(tasks: List<Task>)
 
     @Update
     suspend fun updateTask(task: Task)

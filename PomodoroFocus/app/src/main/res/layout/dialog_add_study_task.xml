@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             app:cardCornerRadius="12dp"
             app:cardElevation="1dp"
-            app:strokeColor="#E0D6C2"
+            app:strokeColor="?attr/colorOutline"
             app:strokeWidth="1dp">
 
             <LinearLayout
@@ -45,7 +45,7 @@
                     android:maxLines="1"
                     android:padding="10dp"
                     android:textColor="@color/ink_text"
-                    android:textColorHint="#A89B82"
+                    android:textColorHint="@color/hint_text"
                     android:textSize="15sp" />
 
                 <TextView
@@ -71,7 +71,7 @@
                     android:maxLines="1"
                     android:padding="10dp"
                     android:textColor="@color/ink_text"
-                    android:textColorHint="#A89B82"
+                    android:textColorHint="@color/hint_text"
                     android:textSize="15sp"
                     android:visibility="gone" />
 
@@ -98,7 +98,7 @@
                     android:minLines="2"
                     android:padding="10dp"
                     android:textColor="@color/ink_text"
-                    android:textColorHint="#A89B82"
+                    android:textColorHint="@color/hint_text"
                     android:textSize="15sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -108,7 +108,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="展开更多" />
+            android:text="@string/task_expand_more" />
 
         <LinearLayout
             android:id="@+id/moreOptionsContainer"
@@ -132,7 +132,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="任务难度"
+                    android:text="@string/label_difficulty"
                     android:textColor="@color/ink_text"
                     android:textSize="12sp" />
 
@@ -140,7 +140,7 @@
                     android:id="@+id/prioritySpinner"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
-                    android:contentDescription="任务难度" />
+                    android:contentDescription="@string/label_difficulty" />
             </LinearLayout>
 
             <LinearLayout
@@ -153,7 +153,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="是否重复"
+                    android:text="@string/label_repeat"
                     android:textColor="@color/ink_text"
                     android:textSize="12sp" />
 
@@ -258,14 +258,14 @@
                 android:id="@+id/insertImageButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="插入图片" />
+                android:text="@string/insert_image" />
 
             <ImageView
                 android:id="@+id/imagePreview"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
                 android:layout_marginStart="12dp"
-                android:contentDescription="任务图片预览"
+                android:contentDescription="@string/task_image_preview"
                 android:scaleType="centerCrop"
                 android:visibility="gone" />
         </LinearLayout>

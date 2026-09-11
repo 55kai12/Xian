@@ -18,7 +18,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/lock_not_running"
-            android:textColor="@color/primary"
+            android:textColor="?attr/colorBrandContent"
             android:textSize="18sp"
             android:textStyle="bold" />
 
@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:textColor="#D84315"
+            android:textColor="@color/warning_orange"
             android:textSize="28sp"
             android:textStyle="bold"
             android:visibility="gone" />
@@ -148,7 +148,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="@string/no_schedule"
-                android:textColor="@color/primary"
+                android:textColor="?attr/colorBrandContent"
                 android:textSize="14sp" />
 
             <LinearLayout
@@ -200,7 +200,7 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:layout_marginVertical="16dp"
-            android:background="#DDDDDD" />
+            android:background="@color/muted_grey" />
 
         <TextView
             android:layout_width="match_parent"
@@ -237,7 +237,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:text="@string/lock_page_notice"
-            android:textColor="#666666"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

@@ -3,7 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#CC000000"
+    android:background="@color/scrim"
     tools:ignore="Overdraw"
     android:gravity="center"
     android:orientation="vertical"
@@ -13,7 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/lock_overlay_title"
-        android:textColor="#FFFFFF"
+        android:textColor="@color/on_primary"
         android:textSize="28sp"
         android:textStyle="bold" />
 
@@ -23,7 +23,7 @@
         android:layout_marginTop="12dp"
         android:gravity="center"
         android:text="@string/lock_overlay_subtitle"
-        android:textColor="#EEEEEE"
+        android:textColor="@color/on_primary_dim"
         android:textSize="15sp" />
 
     <Button
@@ -32,5 +32,5 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:text="@string/long_press_exit"
-        android:textColor="#FFFFFF" />
+        android:textColor="@color/on_primary" />
 </LinearLayout>

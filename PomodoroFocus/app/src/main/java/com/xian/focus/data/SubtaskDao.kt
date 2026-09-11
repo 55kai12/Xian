@@ -2,6 +2,7 @@ package com.xian.focus.data
 
 import androidx.room.Dao
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 
@@ -9,6 +10,10 @@ import androidx.room.Update
 interface SubtaskDao {
     @Insert
     suspend fun insert(subtask: Subtask): Long
+
+    /** CSV 恢复专用，撞 id 的行跳过。 */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFromBackup(subtasks: List<Subtask>)
 
     @Update
     suspend fun update(subtask: Subtask)

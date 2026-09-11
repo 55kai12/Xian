@@ -61,8 +61,12 @@ class TaskAdapter(
         private val binding: ItemTaskBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        private val context get() = binding.root.context
+
+        /** 语义色一律走 colors.xml，好让深色模式跟着翻面。 */
+        private fun color(colorRes: Int) = ContextCompat.getColor(context, colorRes)
+
         fun bind(task: Task, number: Int) {
-            val context = binding.root.context
             val isSelected = task.id == (selectedTaskIdProvider?.invoke() ?: selectedTaskId)
             binding.root.isSelected = isSelected
 
@@ -76,12 +80,14 @@ class TaskAdapter(
                 else -> ""
             }
             binding.taskNumberText.setTextColor(
-                if (task.isCompleted) 0xFFFFFFFF.toInt() else 0xFF999999.toInt()
+                if (task.isCompleted) color(R.color.on_primary) else color(R.color.text_tertiary)
             )
             binding.taskNumberText.setBackgroundResource(
                 if (task.isCompleted) R.drawable.bg_task_number_completed else R.drawable.bg_task_number
             )
-            binding.taskNumberText.contentDescription = if (task.isCompleted) "恢复任务" else "完成任务"
+            binding.taskNumberText.contentDescription = context.getString(
+                if (task.isCompleted) R.string.a11y_restore_task else R.string.a11y_complete_task
+            )
             binding.taskNumberText.setOnClickListener { onToggleTask(task) }
             binding.taskNumberText.alpha = 1f
             binding.root.setOnClickListener { onEditTask(task) }
@@ -93,7 +99,9 @@ class TaskAdapter(
                     binding.taskTitleText.paint.measureText(title).toInt()
                 } else 0
             }
-            binding.taskTitleText.setTextColor(if (task.isCompleted) 0xFF9E9E9E.toInt() else 0xFF333333.toInt())
+            binding.taskTitleText.setTextColor(
+                if (task.isCompleted) color(R.color.completed_grey) else color(R.color.text_primary)
+            )
             binding.taskCountText.text = "${task.completedPomodoros}/${task.estimatedPomodoros}"
 
             val description = if (showNote) task.description?.takeIf { it.isNotBlank() } else null
@@ -102,9 +110,9 @@ class TaskAdapter(
 
             // 重复标签
             val repeatLabel = when (task.repeatRule) {
-                TaskViewModel.REPEAT_DAILY -> "每天"
-                TaskViewModel.REPEAT_WEEKLY -> "每周"
-                TaskViewModel.REPEAT_MONTHLY -> "每月"
+                TaskViewModel.REPEAT_DAILY -> context.getString(R.string.repeat_daily)
+                TaskViewModel.REPEAT_WEEKLY -> context.getString(R.string.repeat_weekly)
+                TaskViewModel.REPEAT_MONTHLY -> context.getString(R.string.repeat_monthly)
                 else -> null
             }
             if (repeatLabel != null) {
@@ -116,7 +124,7 @@ class TaskAdapter(
 
             // 分类标签
             runCatching {
-                val category = task.listType?.takeIf { it.isNotBlank() && it != "未分类" }
+                val category = task.listType?.takeIf { it.isNotBlank() && it != TaskViewModel.DEFAULT_GROUP }
                 if (category != null) {
                     binding.taskCategoryTag.text = category
                     val catColor = GroupColorStore.colorFor(context, category)
@@ -154,7 +162,11 @@ class TaskAdapter(
             }
             binding.subtaskSection.visibility = View.VISIBLE
             val isExpanded = expandedTaskIds.contains(task.id)
-            binding.subtaskToggleButton.text = if (isExpanded) "收起 $done/$total" else "展开 $done/$total"
+            binding.subtaskToggleButton.text = if (isExpanded) {
+                context.getString(R.string.subtask_collapse_count, done, total)
+            } else {
+                context.getString(R.string.subtask_expand_count, done, total)
+            }
             binding.subtaskContainer.visibility = if (isExpanded) View.VISIBLE else View.GONE
 
             if (isExpanded) {
@@ -172,14 +184,22 @@ class TaskAdapter(
                             (18 * resources.displayMetrics.density).toInt()
                         )
                         setImageResource(if (st.isCompleted) android.R.drawable.radiobutton_on_background else android.R.drawable.radiobutton_off_background)
-                        setColorFilter(if (st.isCompleted) 0xFF3B5B4E.toInt() else 0xFF999999.toInt())
-                        contentDescription = if (st.isCompleted) "恢复子任务" else "完成子任务"
+                        setColorFilter(
+                            if (st.isCompleted) {
+                                context.themedColor(R.attr.colorBrandContent, R.color.theme_qinglv_primary_content)
+                            } else {
+                                color(R.color.text_tertiary)
+                            }
+                        )
+                        contentDescription = context.getString(
+                            if (st.isCompleted) R.string.a11y_restore_subtask else R.string.a11y_complete_subtask
+                        )
                         setOnClickListener { onToggleSubtask(st) }
                     }
                     val title = android.widget.TextView(binding.root.context).apply {
                         text = "${index + 1}. ${st.title}"
                         textSize = 13f
-                        setTextColor(if (st.isCompleted) 0xFF999999.toInt() else 0xFF555555.toInt())
+                        setTextColor(if (st.isCompleted) color(R.color.text_tertiary) else color(R.color.text_secondary))
                         paint.isStrikeThruText = st.isCompleted
                         setPadding((8 * resources.displayMetrics.density).toInt(), 0, 0, 0)
                     }
@@ -207,7 +227,11 @@ class TaskAdapter(
             }
             binding.imageSection.visibility = View.VISIBLE
             val isExpanded = imageExpandedTaskIds.contains(task.id)
-            binding.imageToggleButton.text = if (isExpanded) "收起图片" else "查看图片"
+            binding.imageToggleButton.text = if (isExpanded) {
+                context.getString(R.string.image_collapse)
+            } else {
+                context.getString(R.string.image_expand)
+            }
             binding.taskImageView.visibility = if (isExpanded) View.VISIBLE else View.GONE
             if (isExpanded) {
                 runCatching {

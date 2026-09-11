@@ -27,6 +27,14 @@ class CountdownViewModel @Inject constructor(
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
     init {
+        // 冷启动重建提醒闹钟：升级前就有的事件、以及重启后丢失的闹钟都靠这一步补回来
+        // （幂等，requestCode 固定，重复排等于原地覆盖）。放在 collect 外面，避免每次
+        // 数据变动都全量重排一遍。
+        viewModelScope.launch {
+            runCatching { repository.getAllCountdownsOnce() }
+                .getOrNull()
+                ?.forEach { CountdownReminderScheduler.sync(context, it) }
+        }
         viewModelScope.launch {
             repository.getAllCountdowns().collect { list ->
                 _countdowns.value = when (getSortBy()) {
@@ -49,7 +57,7 @@ class CountdownViewModel @Inject constructor(
             linkedTaskId = repository.insertTask(
             Task(
                 title = countdown.title,
-                description = "倒数日关联任务",
+                description = context.getString(R.string.countdown_linked_task),
                 priority = 0,
                 estimatedPomodoros = 0,
                 completedPomodoros = 0,
@@ -59,16 +67,20 @@ class CountdownViewModel @Inject constructor(
                 createdAt = System.currentTimeMillis(),
                 sortOrder = System.currentTimeMillis(),
                 imageUri = null,
+                // 分类名是用户数据（写进 tasks.listType），刻意保持中文常量，不随界面语言变。
                 listType = "倒数日",
                 repeatRule = if (countdown.repeatYearly) "yearly" else "none"
             )
             ).toInt()
         }
-        repository.updateCountdown(countdown.copy(id = countdownId, linkedTaskId = linkedTaskId))
+        val saved = countdown.copy(id = countdownId, linkedTaskId = linkedTaskId)
+        repository.updateCountdown(saved)
+        CountdownReminderScheduler.sync(context, saved)
     }
 
     fun updateCountdown(countdown: Countdown) = execute {
         repository.updateCountdown(countdown)
+        CountdownReminderScheduler.sync(context, countdown)
         // 同步更新关联任务
         if (countdown.linkedTaskId > 0) {
             val task = repository.getTaskById(countdown.linkedTaskId)
@@ -86,6 +98,7 @@ class CountdownViewModel @Inject constructor(
     }
 
     fun deleteCountdown(countdown: Countdown) = execute {
+        CountdownReminderScheduler.cancel(context, countdown.id)
         repository.deleteCountdown(countdown)
         // 同步删除关联任务
         if (countdown.linkedTaskId > 0) {
@@ -96,17 +109,9 @@ class CountdownViewModel @Inject constructor(
         }
     }
 
-    /** 计算倒数日的有效目标日期（处理每年重复） */
-    fun getEffectiveTargetDate(countdown: Countdown): Long {
-        if (!countdown.repeatYearly) return countdown.targetDate
-        val now = java.util.Calendar.getInstance()
-        val target = java.util.Calendar.getInstance().apply { timeInMillis = countdown.targetDate }
-        target.set(java.util.Calendar.YEAR, now.get(java.util.Calendar.YEAR))
-        if (target.timeInMillis < now.timeInMillis) {
-            target.add(java.util.Calendar.YEAR, 1)
-        }
-        return target.timeInMillis
-    }
+    /** 计算倒数日的有效目标日期（处理每年重复）。口径收在 [CountdownReminderScheduler] 里，提醒与列表共用。 */
+    fun getEffectiveTargetDate(countdown: Countdown): Long =
+        CountdownReminderScheduler.effectiveTargetDate(countdown)
 
     /** 计算剩余天数（正数=还有几天，负数=已过几天） */
     fun getDaysRemaining(countdown: Countdown): Int {

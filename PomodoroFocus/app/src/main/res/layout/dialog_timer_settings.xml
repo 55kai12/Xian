@@ -41,7 +41,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="8dp"
                 android:text="@string/unit_hours"
-                android:textColor="#8A7A60"
+                android:textColor="@color/text_label"
                 android:textSize="14sp" />
 
             <EditText
@@ -61,7 +61,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="@string/unit_minutes"
-                android:textColor="#8A7A60"
+                android:textColor="@color/text_label"
                 android:textSize="14sp" />
         </LinearLayout>
 

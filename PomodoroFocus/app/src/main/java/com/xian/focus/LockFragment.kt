@@ -159,7 +159,7 @@ class LockFragment : Fragment() {
             return
         }
         LockMachineService.start(requireContext(), duration.coerceIn(1, 600), selectedWhitelist)
-        Toast.makeText(requireContext(), getString(R.string.lock_machine_running, "${duration}分钟"), Toast.LENGTH_SHORT).show()
+        Toast.makeText(requireContext(), getString(R.string.lock_machine_running, getString(R.string.duration_minutes, duration)), Toast.LENGTH_SHORT).show()
         updateUi()
     }
 

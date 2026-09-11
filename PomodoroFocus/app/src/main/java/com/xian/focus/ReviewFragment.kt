@@ -12,6 +12,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -32,7 +33,10 @@ class ReviewFragment : Fragment() {
     private val binding get() = _binding!!
     private val statsViewModel: StatsViewModel by activityViewModels()
     private val dateKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    private val diaryDisplayFormat = SimpleDateFormat("M月d日 EEEE", Locale.getDefault())
+
+    /** 日期显示格式随语言走，不能用字段初始化（那时 Fragment 还没 attach）。 */
+    private fun diaryDisplayFormat() =
+        SimpleDateFormat(getString(R.string.diary_date_format), Locale.getDefault())
     private var currentDiaryDate: Long = startOfDay(System.currentTimeMillis())
     private var statsLoaded = false
     private var weeklyLoaded = false
@@ -144,7 +148,7 @@ class ReviewFragment : Fragment() {
     private fun imagesKey(): String = "images_${diaryKey()}"
 
     private fun loadDiary() {
-        binding.diaryDateText.text = diaryDisplayFormat.format(Date(currentDiaryDate))
+        binding.diaryDateText.text = diaryDisplayFormat().format(Date(currentDiaryDate))
         val prefs = prefs()
         val note = prefs.getString("note_${diaryKey()}", "").orEmpty()
         val rating = prefs.getInt("rating_${diaryKey()}", 0)
@@ -180,7 +184,7 @@ class ReviewFragment : Fragment() {
             val imageView = ImageView(requireContext()).apply {
                 layoutParams = FrameLayout.LayoutParams(size, size)
                 scaleType = ImageView.ScaleType.CENTER_CROP
-                setBackgroundColor(0xFFF0E8D6.toInt())
+                setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.card_surface))
                 runCatching {
                     setImageURI(Uri.parse(uriStr))
                 }
@@ -195,7 +199,7 @@ class ReviewFragment : Fragment() {
                 }
                 setImageResource(android.R.drawable.ic_menu_close_clear_cancel)
                 background = null
-                setColorFilter(0xFFFFFFFF.toInt())
+                setColorFilter(ContextCompat.getColor(requireContext(), R.color.white))
                 contentDescription = getString(R.string.review_remove_image)
                 setOnClickListener {
                     currentImageUris.removeAt(index)
@@ -241,7 +245,11 @@ class ReviewFragment : Fragment() {
         val rating = prefs.getInt("rating_${diaryKey()}", 0)
         val hasContent = note.isNotBlank() || rating > 0 || currentImageUris.isNotEmpty()
         (binding.diaryIndicatorDot.background as? android.graphics.drawable.GradientDrawable)?.setColor(
-            if (hasContent) 0xFFC9A961.toInt() else 0xFFC8C0B0.toInt()
+            if (hasContent) {
+                requireContext().themedColor(R.attr.colorBrandAccent, R.color.theme_qinglv_accent)
+            } else {
+                ContextCompat.getColor(requireContext(), R.color.diary_dot)
+            }
         )
     }
 

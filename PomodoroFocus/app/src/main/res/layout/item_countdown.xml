@@ -7,7 +7,7 @@
     android:layout_marginTop="8dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
-    app:cardBackgroundColor="#FFFFFF">
+    app:cardBackgroundColor="@color/card_background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -28,7 +28,7 @@
                 android:id="@+id/countdownOrderText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#999999"
+                android:textColor="@color/text_tertiary"
                 android:textSize="12sp"
                 android:visibility="gone" />
 
@@ -37,7 +37,7 @@
                 android:layout_width="4dp"
                 android:layout_height="40dp"
                 android:layout_marginTop="2dp"
-                android:background="#3B5B4E" />
+                android:background="?attr/colorBrandSurface" />
         </LinearLayout>
 
         <!-- 中间：标题 + 备注 + 日期 -->
@@ -51,7 +51,7 @@
                 android:id="@+id/countdownTitleText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textColor="#333333"
+                android:textColor="@color/text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:maxLines="1"
@@ -62,7 +62,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:textColor="#999999"
+                android:textColor="@color/text_tertiary"
                 android:textSize="12sp"
                 android:maxLines="1"
                 android:ellipsize="end"
@@ -73,7 +73,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:textColor="#999999"
+                android:textColor="@color/text_tertiary"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -89,7 +89,7 @@
                 android:id="@+id/countdownDaysText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#3B5B4E"
+                android:textColor="?attr/colorBrandContent"
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
@@ -97,7 +97,7 @@
                 android:id="@+id/countdownDaysLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="#999999"
+                android:textColor="@color/text_tertiary"
                 android:textSize="11sp"
                 android:layout_marginTop="2dp" />
         </LinearLayout>

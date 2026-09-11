@@ -25,6 +25,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.flask.colorpicker.ColorPickerView
 import com.flask.colorpicker.builder.ColorPickerDialogBuilder
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -111,7 +112,7 @@ class TasksFragment : Fragment() {
             binding.calendarTitle.text = if (showMonth) {
                 "${binding.monthCalendar.curYear}.${binding.monthCalendar.curMonth}"
             } else {
-                "贤"
+                getString(R.string.app_name)
             }
         }
         fun showCalendarView(showMonth: Boolean) {
@@ -364,25 +365,42 @@ class TasksFragment : Fragment() {
         val context = requireContext()
         val dialogDensity = resources.displayMetrics.density
         fun dp(v: Int) = (v * dialogDensity).toInt()
-        val fortunes = listOf("上上签", "上吉签", "中吉签", "平安签", "小吉签")
+        val fortunes = listOf(
+            R.string.fortune_level_supreme,
+            R.string.fortune_level_high,
+            R.string.fortune_level_mid,
+            R.string.fortune_level_calm,
+            R.string.fortune_level_small
+        )
         val interpretations = listOf(
-            "今日思路清晰，适合攻克难题，专注会带来好收获。",
-            "今日顺势而为，按计划推进，容易得到意外助力。",
-            "今日稳中有进，积少成多，坚持就会看见变化。",
-            "今日宜静心守成，放慢脚步，先把眼前事情做好。",
-            "今日略有波折，调整节奏再出发，结果会逐渐变好。"
+            R.string.fortune_msg_supreme,
+            R.string.fortune_msg_high,
+            R.string.fortune_msg_mid,
+            R.string.fortune_msg_calm,
+            R.string.fortune_msg_small
         )
         val index = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR) % fortunes.size
+        val fortuneName = getString(fortunes[index])
+        val interpretation = getString(interpretations[index])
         val root = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(24), dp(16), dp(24), dp(12)) }
         val circleSize = dp(120)
+        val brandSurface = context.themedColor(R.attr.colorBrandSurface, R.color.theme_qinglv_primary)
+        val brandContent = context.themedColor(R.attr.colorBrandContent, R.color.theme_qinglv_primary_content)
         val drawButton = TextView(context).apply {
-            text = "签"; gravity = Gravity.CENTER; textSize = 26f; setTextColor(Color.WHITE)
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(0xFF3B5B4E.toInt()) }
+            text = getString(R.string.fortune_stick); gravity = Gravity.CENTER; textSize = 26f
+            setTextColor(ContextCompat.getColor(context, R.color.on_primary))
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(brandSurface) }
             layoutParams = LinearLayout.LayoutParams(circleSize, circleSize); elevation = 8f
         }
-        val result = TextView(context).apply { gravity = Gravity.CENTER; textSize = 20f; setTextColor(0xFF3B5B4E.toInt()); visibility = View.GONE }
-        val explanation = TextView(context).apply { gravity = Gravity.CENTER; textSize = 14f; setTextColor(0xFF555555.toInt()); visibility = View.GONE }
-        val action = com.google.android.material.button.MaterialButton(context).apply { text = "开始抽签"; isAllCaps = false; layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(16) } }
+        val result = TextView(context).apply {
+            gravity = Gravity.CENTER; textSize = 20f; setTextColor(brandContent); visibility = View.GONE
+        }
+        val explanation = TextView(context).apply {
+            gravity = Gravity.CENTER; textSize = 14f
+            setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+            visibility = View.GONE
+        }
+        val action = com.google.android.material.button.MaterialButton(context).apply { text = getString(R.string.fortune_draw); isAllCaps = false; layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(16) } }
         root.addView(drawButton)
         root.addView(result, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(12) })
         root.addView(explanation, LinearLayout.LayoutParams(-1, dp(64)).apply { topMargin = dp(4) })
@@ -394,19 +412,28 @@ class TasksFragment : Fragment() {
                 0 -> {
                     state = 1; action.isEnabled = false
                     drawButton.animate().rotationYBy(720f).scaleX(0.8f).scaleY(0.8f).setDuration(900).setInterpolator(AccelerateDecelerateInterpolator()).withEndAction {
-                        drawButton.text = "签\n${fortunes[index]}"; drawButton.textSize = 17f
+                        drawButton.text = getString(R.string.fortune_stick_revealed, fortuneName)
+                        drawButton.textSize = 17f
                         drawButton.animate().rotationYBy(720f).scaleX(1f).scaleY(1f).setDuration(600).withEndAction {
-                            result.text = fortunes[index]; result.visibility = View.VISIBLE; action.text = "解签"; action.isEnabled = true
+                            result.text = fortuneName
+                            result.visibility = View.VISIBLE
+                            action.text = getString(R.string.fortune_interpret)
+                            action.isEnabled = true
                         }.start()
                     }.start()
                 }
-                1 -> { state = 2; explanation.text = interpretations[index]; explanation.visibility = View.VISIBLE; action.text = "祈福" }
+                1 -> {
+                    state = 2
+                    explanation.text = interpretation
+                    explanation.visibility = View.VISIBLE
+                    action.text = getString(R.string.fortune_bless)
+                }
                 else -> {
                     val prefs = context.getSharedPreferences("fortune_data", 0)
                     val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                    prefs.edit().putString("date", today).putString("fortune", fortunes[index]).putString("meaning", interpretations[index]).putInt("bless_count", prefs.getInt("bless_count", 0) + 1).apply()
-                    action.text = "已祈福"; action.isEnabled = false
-                    Toast.makeText(context, "祈福成功，愿今日顺遂", Toast.LENGTH_SHORT).show()
+                    prefs.edit().putString("date", today).putString("fortune", fortuneName).putString("meaning", interpretation).putInt("bless_count", prefs.getInt("bless_count", 0) + 1).apply()
+                    action.text = getString(R.string.fortune_blessed); action.isEnabled = false
+                    Toast.makeText(context, R.string.fortune_bless_done, Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -469,7 +496,7 @@ class TasksFragment : Fragment() {
                     runCatching {
                         taskViewModel.errorMessage.collect { msg ->
                             if (!msg.isNullOrBlank()) {
-                                Toast.makeText(requireContext(), "保存失败: $msg", Toast.LENGTH_LONG).show()
+                                Toast.makeText(requireContext(), getString(R.string.save_failed, msg), Toast.LENGTH_LONG).show()
                                 taskViewModel.clearError()
                             }
                         }
@@ -594,9 +621,9 @@ class TasksFragment : Fragment() {
             setPadding(0, dp(8), 0, 0)
         }
         row.addView(TextView(requireContext()).apply {
-            text = "预计贤时（番茄钟个数）"
+            text = getString(R.string.estimated_pomodoros_label)
             textSize = 12f
-            setTextColor(0xFF3B5B4E.toInt())
+            setTextColor(requireContext().themedColor(R.attr.colorBrandContent, R.color.theme_qinglv_primary_content))
         })
         val input = android.widget.EditText(requireContext()).apply {
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
@@ -613,18 +640,35 @@ class TasksFragment : Fragment() {
     private fun estimatedFrom(input: android.widget.EditText): Int =
         (input.text?.toString()?.toIntOrNull() ?: 1).coerceIn(1, MAX_ESTIMATED_POMODOROS)
 
+    /**
+     * 分类 / 日期筛选胶囊的统一外观。
+     * 旧实现写死了青色 + 浅灰，既不跟四套主题、也不跟深色模式，
+     * 深色下会变成浅灰底上的浅灰字。
+     */
+    private fun paintChipView(view: TextView, selected: Boolean, cornerRadiusPx: Float) {
+        val context = requireContext()
+        view.setTextColor(
+            if (selected) ContextCompat.getColor(context, R.color.on_primary)
+            else ContextCompat.getColor(context, R.color.text_secondary)
+        )
+        view.background = GradientDrawable().apply {
+            cornerRadius = cornerRadiusPx
+            setColor(
+                if (selected) context.themedColor(R.attr.colorBrandSurface, R.color.theme_qinglv_primary)
+                else ContextCompat.getColor(context, R.color.chip_unselected_bg)
+            )
+        }
+    }
+
     private fun showAddTaskDialog() {
         val dialogBinding = DialogAddStudyTaskBinding.inflate(layoutInflater)
         val form = dialogBinding.root.getChildAt(0) as? android.widget.LinearLayout
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
         val categoryRow = android.widget.LinearLayout(requireContext()).apply { orientation = android.widget.LinearLayout.HORIZONTAL; setPadding(0, 0, 0, dp(8)) }
-        var selectedCategory = "生活"
+        var selectedCategory = getString(R.string.category_life)
         val categoryChips = mutableListOf<android.widget.TextView>()
-        fun paintChip(view: android.widget.TextView, selected: Boolean) {
-            view.setTextColor(if (selected) Color.WHITE else 0xFF777777.toInt())
-            view.background = GradientDrawable().apply { cornerRadius = dp(22).toFloat(); setColor(if (selected) 0xFF35BDBB.toInt() else 0xFFF4F4F4.toInt()) }
-        }
+        fun paintChip(view: android.widget.TextView, selected: Boolean) = paintChipView(view, selected, dp(22).toFloat())
         fun selectCategory(name: String, clicked: android.widget.TextView) {
             selectedCategory = name; dialogBinding.subjectInput.setText(name)
             categoryChips.forEach { paintChip(it, it === clicked) }
@@ -638,12 +682,12 @@ class TasksFragment : Fragment() {
             categoryChips += chip
             categoryRow.addView(chip, android.widget.LinearLayout.LayoutParams(-2, -2).apply { marginEnd = dp(8) })
         }
-        addCategoryChip("生活"); addCategoryChip("工作")
-        dialogBinding.subjectInput.setText("生活")
+        addCategoryChip(getString(R.string.category_life)); addCategoryChip(getString(R.string.category_work))
+        dialogBinding.subjectInput.setText(getString(R.string.category_life))
         val addCategoryChip = android.widget.TextView(requireContext()).apply { text = "+"; textSize = 16f; gravity = android.view.Gravity.CENTER; setPadding(dp(14), dp(6), dp(14), dp(6)); paintChip(this, false) }
         addCategoryChip.setOnClickListener {
-            val input = android.widget.EditText(requireContext()).apply { hint = "自定义分类" }
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext()).setTitle("添加分类").setView(input).setPositiveButton(R.string.save) { _, _ ->
+            val input = android.widget.EditText(requireContext()).apply { hint = getString(R.string.category_custom_hint) }
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.category_add).setView(input).setPositiveButton(R.string.save) { _, _ ->
                 input.text.toString().trim().takeIf { it.isNotEmpty() }?.let { name -> addCategoryChip(name); selectCategory(name, categoryChips.last()); GroupColorStore.setColor(requireContext(), name, GroupColorStore.palette.first()) }
             }.setNegativeButton(R.string.cancel, null).show()
         }
@@ -657,8 +701,10 @@ class TasksFragment : Fragment() {
             clicked.animate().cancel(); clicked.scaleX = 0.9f; clicked.scaleY = 0.9f
             clicked.animate().scaleX(1f).scaleY(1f).setDuration(160).start()
         }
-        listOf("今天", "明天", "选择日期", "没有日期").forEachIndexed { index, label ->
-            val chip = android.widget.TextView(requireContext()).apply { text = label; textSize = 14f; gravity = android.view.Gravity.CENTER; setPadding(dp(12), dp(7), dp(12), dp(7)) }
+        listOf(
+            R.string.due_today, R.string.due_tomorrow, R.string.due_pick_date, R.string.due_none
+        ).forEachIndexed { index, labelRes ->
+            val chip = android.widget.TextView(requireContext()).apply { text = getString(labelRes); textSize = 14f; gravity = android.view.Gravity.CENTER; setPadding(dp(12), dp(7), dp(12), dp(7)) }
             paintChip(chip, index == 0)
             chip.setOnClickListener { selectedQuickDate = when (index) { 0 -> startOfToday(); 1 -> startOfToday() + DAY_MILLIS; 2 -> { DatePickerDialog(requireContext(), { _, y, m, d -> selectedQuickDate = Calendar.getInstance().apply { set(y,m,d,0,0,0); set(Calendar.MILLISECOND,0) }.timeInMillis; selectDateChip(chip) }, Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH), Calendar.getInstance().get(Calendar.DAY_OF_MONTH)).show(); selectedQuickDate }; else -> null }; if (index != 2) selectDateChip(chip) }
             dateChips += chip
@@ -669,7 +715,9 @@ class TasksFragment : Fragment() {
         dialogBinding.moreOptionsButton.setOnClickListener {
             val expanded = dialogBinding.moreOptionsContainer.visibility == View.VISIBLE
             dialogBinding.moreOptionsContainer.visibility = if (expanded) View.GONE else View.VISIBLE
-            dialogBinding.moreOptionsButton.text = if (expanded) "展开更多" else "收起更多"
+            dialogBinding.moreOptionsButton.text = getString(
+                if (expanded) R.string.task_expand_more else R.string.task_collapse_more
+            )
         }
         val priorities = listOf(
             getString(R.string.priority_high),
@@ -880,11 +928,7 @@ class TasksFragment : Fragment() {
             textSize = 14f
             gravity = android.view.Gravity.CENTER
             setPadding(dp(14), dp(7), dp(14), dp(7))
-            setTextColor(if (selected) Color.WHITE else 0xFF777777.toInt())
-            background = GradientDrawable().apply {
-                cornerRadius = dp(22).toFloat()
-                setColor(if (selected) 0xFF35BDBB.toInt() else 0xFFF4F4F4.toInt())
-            }
+            paintChipView(this, selected, dp(22).toFloat())
         }
 
         dialogBinding.taskTitleInput.setText(task.title)
@@ -961,11 +1005,7 @@ class TasksFragment : Fragment() {
         val categoryChips = mutableListOf<android.widget.TextView>()
         fun paintCategoryChip(chip: android.widget.TextView) {
             val selected = chip.text.toString() == selectedCategory
-            chip.setTextColor(if (selected) Color.WHITE else 0xFF777777.toInt())
-            chip.background = GradientDrawable().apply {
-                cornerRadius = dp(22).toFloat()
-                setColor(if (selected) 0xFF35BDBB.toInt() else 0xFFF4F4F4.toInt())
-            }
+            paintChipView(chip, selected, dp(22).toFloat())
         }
         fun selectCategory(category: String, clicked: android.widget.TextView) {
             selectedCategory = category
@@ -984,14 +1024,18 @@ class TasksFragment : Fragment() {
             chip.setOnClickListener { selectCategory(category, chip) }
             categoryRow.addView(chip, android.widget.LinearLayout.LayoutParams(-2, -2).apply { marginEnd = dp(8) })
         }
-        addCategoryChip("生活")
-        addCategoryChip("工作")
-        if (selectedCategory !in listOf("生活", "工作", "未分类", "")) addCategoryChip(selectedCategory)
+        val categoryLife = getString(R.string.category_life)
+        val categoryWork = getString(R.string.category_work)
+        addCategoryChip(categoryLife)
+        addCategoryChip(categoryWork)
+        if (selectedCategory !in listOf(categoryLife, categoryWork, "", TaskViewModel.DEFAULT_GROUP)) {
+            addCategoryChip(selectedCategory)
+        }
         val addCategory = createChip("+", false)
         addCategory.setOnClickListener {
-            val input = android.widget.EditText(requireContext()).apply { hint = "自定义分类" }
+            val input = android.widget.EditText(requireContext()).apply { hint = getString(R.string.category_custom_hint) }
             com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                .setTitle("添加分类")
+                .setTitle(R.string.category_add)
                 .setView(input)
                 .setPositiveButton(R.string.save) { _, _ ->
                     input.text.toString().trim().takeIf { it.isNotEmpty() }?.let { category ->
@@ -1030,14 +1074,22 @@ class TasksFragment : Fragment() {
                 3 -> selectedDueDate == null
                 else -> selectedDueDate != null && selectedDueDate != startOfToday() && selectedDueDate != startOfToday() + DAY_MILLIS
             }
-            chip.setTextColor(if (isSelected) Color.WHITE else 0xFF777777.toInt())
+            chip.setTextColor(
+                if (isSelected) ContextCompat.getColor(requireContext(), R.color.on_primary)
+                else ContextCompat.getColor(requireContext(), R.color.text_secondary)
+            )
             chip.background = GradientDrawable().apply {
                 cornerRadius = dp(22).toFloat()
-                setColor(if (isSelected) 0xFF35BDBB.toInt() else 0xFFF4F4F4.toInt())
+                setColor(
+                    if (isSelected) requireContext().themedColor(R.attr.colorBrandSurface, R.color.theme_qinglv_primary)
+                    else ContextCompat.getColor(requireContext(), R.color.chip_unselected_bg)
+                )
             }
         }
-        listOf("今天", "明天", "选择日期", "没有日期").forEachIndexed { index, label ->
-            val chip = createChip(label, false)
+        listOf(
+            R.string.due_today, R.string.due_tomorrow, R.string.due_pick_date, R.string.due_none
+        ).forEachIndexed { index, labelRes ->
+            val chip = createChip(getString(labelRes), false)
             chip.setOnClickListener {
                 when (index) {
                     0 -> selectedDueDate = startOfToday()
@@ -1059,19 +1111,19 @@ class TasksFragment : Fragment() {
         }
         lateinit var editDialog: android.app.Dialog
         val deleteTaskButton = android.widget.Button(requireContext()).apply {
-            text = "删除任务"
+            text = getString(R.string.task_delete)
             textSize = 13f
             isAllCaps = false
             minHeight = dp(40)
-            setTextColor(0xFFB3261E.toInt())
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.delete_red))
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_delete_task, 0, 0, 0)
             compoundDrawablePadding = dp(6)
             setOnClickListener {
                 com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                    .setTitle("删除任务")
-                    .setMessage("确认删除该任务吗？")
+                    .setTitle(R.string.task_delete)
+                    .setMessage(R.string.task_delete_confirm)
                     .setNegativeButton(R.string.cancel, null)
-                    .setPositiveButton("删除") { _, _ ->
+                    .setPositiveButton(R.string.action_delete) { _, _ ->
                         taskViewModel.deleteTask(task)
                         editDialog.dismiss()
                     }
@@ -1087,7 +1139,9 @@ class TasksFragment : Fragment() {
         dialogBinding.moreOptionsButton.setOnClickListener {
             val expanded = dialogBinding.moreOptionsContainer.visibility == View.VISIBLE
             dialogBinding.moreOptionsContainer.visibility = if (expanded) View.GONE else View.VISIBLE
-            dialogBinding.moreOptionsButton.text = if (expanded) "展开更多" else "收起更多"
+            dialogBinding.moreOptionsButton.text = getString(
+                if (expanded) R.string.task_expand_more else R.string.task_collapse_more
+            )
         }
         moreRow.addView(dialogBinding.moreOptionsButton)
         moreRow.addView(deleteTaskButton, android.widget.LinearLayout.LayoutParams(-2, dp(40)).apply {
@@ -1126,7 +1180,7 @@ class TasksFragment : Fragment() {
         taskViewModel.subtasks.value.filter { it.taskId == task.id }.forEach { addSubtaskRow(it.title) }
 
         editDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-            .setTitle("编辑任务")
+            .setTitle(R.string.dialog_edit_task)
             .setView(dialogBinding.root)
             .setPositiveButton(R.string.save) { _, _ ->
                 val title = dialogBinding.taskTitleInput.text?.toString()?.trim().orEmpty()

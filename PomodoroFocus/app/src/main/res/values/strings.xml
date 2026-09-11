@@ -195,4 +195,196 @@
     <string name="review_images">图片</string>
     <string name="review_add_image">添加图片</string>
     <string name="review_remove_image">删除图片</string>
+
+
+    <!-- 从布局中提取的硬编码文案 -->
+    <string name="task_expand_more">展开更多</string>
+    <string name="label_difficulty">任务难度</string>
+    <string name="label_repeat">是否重复</string>
+    <string name="insert_image">插入图片</string>
+    <string name="task_image_preview">任务图片预览</string>
+    <string name="task_image">任务图片</string>
+    <string name="unit_pomodoro_suffix">个贤时</string>
+    <string name="unit_minute_full">分钟</string>
+    <string name="action_back">返回</string>
+    <string name="countdown_title">倒数日</string>
+    <string name="add_countdown">添加倒数日</string>
+    <string name="countdown_empty">还没有倒数日\n点击右上角 + 添加</string>
+    <string name="event_settings_title">事件设置</string>
+    <string name="event_reminder">事件到期提醒</string>
+    <string name="event_reminder_desc">到期前发送通知提醒</string>
+    <string name="reminder_days_label">提前提醒天数</string>
+    <string name="reminder_days_default">1 天</string>
+    <string name="auto_create_task">自动生成关联任务</string>
+    <string name="auto_create_task_desc">在任务列表对应日期生成事件任务</string>
+    <string name="event_sort_label">事件排序方式</string>
+    <string name="sort_by_days_left">按剩余天数</string>
+    <string name="display_settings">显示设置</string>
+    <string name="show_completed_events">显示已完成事件</string>
+    <string name="show_completed_events_desc">控制清单和日程概览，包括小组件</string>
+    <string name="show_completed_strike">显示已完成删除线</string>
+    <string name="show_event_index">显示事件顺序数字</string>
+    <string name="show_event_note">显示事件备注</string>
+    <string name="show_holiday_mark">显示法定节假日标记</string>
+    <string name="daily_blessing">每日祈福</string>
+    <string name="not_blessed_yet">尚未祈福</string>
+    <string name="settings_desc">每日目标、关于、清除数据</string>
+    <string name="daily_goal_title">每日贤时目标</string>
+    <string name="event_settings_desc">提醒、关联任务、排序</string>
+    <string name="about_title">关于</string>
+    <string name="clear_all_data">清除所有数据</string>
+    <string name="weekday_mon">周一</string>
+    <string name="weekday_tue">周二</string>
+    <string name="weekday_wed">周三</string>
+    <string name="weekday_thu">周四</string>
+    <string name="weekday_fri">周五</string>
+    <string name="weekday_sat">周六</string>
+    <string name="weekday_sun">周日</string>
+    <string name="more_features">更多功能</string>
+    <string name="more_features_subtitle">贤 · 辅助工具</string>
+    <string name="subtask_name_hint">子任务名称</string>
+    <string name="start_pomodoro_desc">开始贤时</string>
+    <string name="collapse">收起</string>
+    <string name="settings_title">设置</string>
+
+    <!-- 锁机运行状态自检 -->
+    <string name="health_title">运行状态</string>
+    <string name="health_desc">锁机正常工作的前提，缺任何一项都会静默失效</string>
+    <string name="health_accessibility">无障碍服务</string>
+    <string name="health_overlay">悬浮窗权限</string>
+    <string name="health_notification">通知权限</string>
+    <string name="health_battery">电池优化白名单</string>
+    <string name="health_ok">已就绪</string>
+    <string name="health_missing">未开启</string>
+
+    <!-- 到期提醒（任务 / 倒数日共用一条通知渠道） -->
+    <string name="reminder_channel_name">到期提醒</string>
+    <string name="reminder_channel_description">任务或倒数日到点时提醒</string>
+    <string name="reminder_task_title">任务到期</string>
+    <string name="reminder_countdown_title">倒数日提醒</string>
+
+    <!-- 数据导入（CSV 恢复） -->
+    <string name="data_import">数据导入</string>
+    <string name="data_import_desc">从导出的 CSV 备份恢复数据，同 ID 的记录会跳过</string>
+    <string name="import_data">导入数据</string>
+    <string name="importing">正在导入…</string>
+    <string name="import_failed">导入失败，请确认选的是本应用导出的 CSV</string>
+    <string name="import_nothing">该文件里没有可恢复的数据</string>
+    <string name="import_done">已恢复 %1$d 条记录</string>
+    <string name="import_confirm_message">将从所选 CSV 恢复任务、子任务、专注记录、倒数日与复盘日记。\n已存在的相同 ID 记录不会覆盖，日记里的图片无法还原。</string>
+
+    <!-- ===== 每日祈福 ===== -->
+    <string name="fortune_level_supreme">上上签</string>
+    <string name="fortune_level_high">上吉签</string>
+    <string name="fortune_level_mid">中吉签</string>
+    <string name="fortune_level_calm">平安签</string>
+    <string name="fortune_level_small">小吉签</string>
+    <string name="fortune_msg_supreme">今日思路清晰，适合攻克难题，专注会带来好收获。</string>
+    <string name="fortune_msg_high">今日顺势而为，按计划推进，容易得到意外助力。</string>
+    <string name="fortune_msg_mid">今日稳中有进，积少成多，坚持就会看见变化。</string>
+    <string name="fortune_msg_calm">今日宜静心守成，放慢脚步，先把眼前事情做好。</string>
+    <string name="fortune_msg_small">今日略有波折，调整节奏再出发，结果会逐渐变好。</string>
+    <string name="fortune_draw">开始抽签</string>
+    <string name="fortune_interpret">解签</string>
+    <string name="fortune_bless">祈福</string>
+    <string name="fortune_blessed">已祈福</string>
+    <string name="fortune_bless_done">祈福成功，愿今日顺遂</string>
+    <string name="fortune_stick">签</string>
+    <string name="fortune_stick_revealed">签\n%1$s</string>
+    <string name="fortune_none">尚未祈福</string>
+    <string name="fortune_empty">还没有每日祈福记录。</string>
+    <string name="fortune_summary">累计祈福 %1$d 次 · 最近：%2$s</string>
+    <string name="fortune_detail">最近签：%1$s\n\n解签：%2$s\n\n累计祈福：%3$d 次</string>
+    <string name="fortune_history">每日祈福</string>
+    <string name="save_failed">保存失败：%1$s</string>
+    <string name="export_failed">导出失败</string>
+    <string name="task_collapse_more">收起更多</string>
+    <string name="diary_date_format">M月d日 EEEE</string>
+
+    <!-- ===== 无障碍描述与折叠按钮 ===== -->
+    <string name="a11y_complete_task">完成任务</string>
+    <string name="a11y_restore_task">恢复任务</string>
+    <string name="a11y_complete_subtask">完成子任务</string>
+    <string name="a11y_restore_subtask">恢复子任务</string>
+    <string name="subtask_expand_count">展开 %1$d/%2$d</string>
+    <string name="subtask_collapse_count">收起 %1$d/%2$d</string>
+    <string name="image_expand">查看图片</string>
+    <string name="image_collapse">收起图片</string>
+
+    <!-- ===== 任务表单 ===== -->
+    <string name="estimated_pomodoros_label">预计贤时（番茄钟个数）</string>
+    <string name="category_life">生活</string>
+    <string name="category_work">工作</string>
+    <string name="category_custom_hint">自定义分类</string>
+    <string name="category_add">添加分类</string>
+    <string name="due_today">今天</string>
+    <string name="due_tomorrow">明天</string>
+    <string name="due_pick_date">选择日期</string>
+    <string name="due_none">没有日期</string>
+    <string name="dialog_edit_task">编辑任务</string>
+    <string name="task_delete">删除任务</string>
+    <string name="task_delete_confirm">确认删除该任务吗？</string>
+    <string name="action_delete">删除</string>
+    <string name="action_ok">确定</string>
+    <string name="action_clear">清除</string>
+
+    <!-- ===== 设置页 ===== -->
+    <string name="goal_summary">每天 %1$d 个贤时</string>
+    <string name="goal_input_hint">输入每日目标贤时数</string>
+    <string name="goal_dialog_title">设置每日贤时目标</string>
+    <string name="goal_updated">已更新为每天 %1$d 个贤时</string>
+    <string name="goal_invalid">请输入大于0的数字</string>
+    <string name="about_version">贤 v%1$s</string>
+    <string name="about_message">贤 v%1$s\n\n中国古风专注助手\n\n功能：\n· 任务清单与番茄钟\n· 锁机专注\n· 个性化复盘与日记\n· 倒数日\n· 每日祈福</string>
+    <string name="clear_data">清除所有数据</string>
+    <string name="clear_data_confirm">确定要清除所有任务、专注记录、倒数日、日记和全部设置吗？此操作不可恢复。</string>
+    <string name="clear_nothing">删了个寂寞</string>
+    <string name="clear_done">所有数据已清除</string>
+
+    <!-- ===== 倒数日 ===== -->
+    <string name="countdown_name_hint">倒数日名称</string>
+    <string name="countdown_note_hint">备注（选填）</string>
+    <string name="countdown_target_date">目标日期：%1$s</string>
+    <string name="countdown_repeat_yearly">每年重复</string>
+    <string name="countdown_repeat_yearly_on">✓ 每年重复</string>
+    <string name="countdown_color_pick">选择颜色</string>
+    <string name="countdown_add">添加倒数日</string>
+    <string name="countdown_edit">编辑倒数日</string>
+    <string name="countdown_name_required">请输入名称</string>
+    <string name="countdown_delete">删除倒数日</string>
+    <string name="countdown_delete_confirm">确定要删除「%1$s」吗？</string>
+    <string name="countdown_linked_task">倒数日关联任务</string>
+    <string name="countdown_days_left">天后</string>
+    <string name="countdown_days_past">天前</string>
+    <string name="countdown_yearly_suffix"> · 每年</string>
+    <string name="countdown_date_format">yyyy年MM月dd日</string>
+
+    <!-- ===== 事件设置 ===== -->
+    <string name="event_sort_title">事件排序方式</string>
+    <string name="sort_days_remaining">按剩余天数</string>
+    <string name="sort_target_date">按目标日期</string>
+    <string name="sort_created_at">按创建时间</string>
+    <string name="event_reminder_days_title">提前提醒天数</string>
+    <string name="days_count">%1$d 天</string>
+    <string name="event_auto_link_off">已关闭，新建事件将不再生成关联任务</string>
+
+    <!-- ===== 其它 ===== -->
+    <string name="duration_minutes">%1$d分钟</string>
+    <string name="holiday_new_year">元旦</string>
+    <string name="holiday_labour">劳动节</string>
+    <string name="holiday_national">国庆</string>
+    <string name="holiday_spring_festival">春节</string>
+    <string name="holiday_qingming">清明</string>
+    <string name="holiday_duanwu">端午</string>
+    <string name="holiday_mid_autumn">中秋</string>
+
+    <string-array name="calendar_weekday_short">
+        <item>一</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+        <item>日</item>
+    </string-array>
 </resources>

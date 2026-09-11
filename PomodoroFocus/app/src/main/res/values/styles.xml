@@ -1,60 +1,85 @@
 <resources>
-    <style name="Theme.Xian" parent="Theme.Material3.Light.NoActionBar">
+    <!--
+      基础主题：
+        - 父级用 DayNight，系统开深色时自动切到 values-night/colors.xml
+        - 所有颜色改为引用 @color 命名资源，才能被 values-night 覆盖
+        - 主色分两个角色：colorBrandSurface(做底) / colorBrandContent(做字)
+    -->
+    <style name="Theme.Xian" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:fontFamily">sans-serif</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnPrimary">@color/on_primary</item>
         <item name="android:textColorPrimary">@color/default_text_color</item>
         <item name="android:textColorSecondary">@color/secondary_text_color</item>
         <item name="materialButtonStyle">@style/Widget.Xian.Button</item>
         <item name="editTextStyle">@style/Widget.Xian.EditText</item>
         <item name="alertDialogTheme">@style/Theme.Xian.MaterialAlertDialog</item>
         <item name="materialAlertDialogTheme">@style/Theme.Xian.MaterialAlertDialog</item>
-        <item name="colorSecondary">#C9A961</item>
-        <item name="colorOutline">#E0D6C2</item>
+        <item name="colorSecondary">@color/theme_qinglv_accent</item>
+        <item name="colorBrandAccent">@color/theme_qinglv_accent</item>
+        <item name="colorOutline">@color/divider</item>
+        <item name="colorBrandSurface">@color/theme_qinglv_primary</item>
+        <item name="colorBrandContent">@color/theme_qinglv_primary_content</item>
     </style>
 
     <style name="Theme.Xian.Qinglv" parent="Theme.Xian">
-        <item name="colorPrimary">#3B5B4E</item>
-        <item name="colorPrimaryVariant">#2A4238</item>
-        <item name="android:colorAccent">#C9A961</item>
-        <item name="android:windowBackground">#F5EFE0</item>
-        <item name="colorSurface">#F5EFE0</item>
-        <item name="android:statusBarColor">#2A4238</item>
+        <item name="colorPrimary">@color/theme_qinglv_primary</item>
+        <item name="colorPrimaryVariant">@color/theme_qinglv_primary_variant</item>
+        <item name="colorBrandSurface">@color/theme_qinglv_primary</item>
+        <item name="colorBrandContent">@color/theme_qinglv_primary_content</item>
+        <item name="colorSecondary">@color/theme_qinglv_accent</item>
+        <item name="colorBrandAccent">@color/theme_qinglv_accent</item>
+        <item name="android:colorAccent">@color/theme_qinglv_accent</item>
+        <item name="android:windowBackground">@color/theme_qinglv_surface</item>
+        <item name="colorSurface">@color/theme_qinglv_surface</item>
+        <item name="android:statusBarColor">@color/theme_qinglv_primary_variant</item>
     </style>
 
     <style name="Theme.Xian.Zhusha" parent="Theme.Xian">
-        <item name="colorPrimary">#8B2E2E</item>
-        <item name="colorPrimaryVariant">#6E211F</item>
-        <item name="android:colorAccent">#C9A961</item>
-        <item name="android:windowBackground">#F7EEE4</item>
-        <item name="colorSurface">#F7EEE4</item>
-        <item name="android:statusBarColor">#6E211F</item>
+        <item name="colorPrimary">@color/theme_zhusha_primary</item>
+        <item name="colorPrimaryVariant">@color/theme_zhusha_primary_variant</item>
+        <item name="colorBrandSurface">@color/theme_zhusha_primary</item>
+        <item name="colorBrandContent">@color/theme_zhusha_primary_content</item>
+        <item name="colorSecondary">@color/theme_zhusha_accent</item>
+        <item name="colorBrandAccent">@color/theme_zhusha_accent</item>
+        <item name="android:colorAccent">@color/theme_zhusha_accent</item>
+        <item name="android:windowBackground">@color/theme_zhusha_surface</item>
+        <item name="colorSurface">@color/theme_zhusha_surface</item>
+        <item name="android:statusBarColor">@color/theme_zhusha_primary_variant</item>
     </style>
 
     <style name="Theme.Xian.Dailan" parent="Theme.Xian">
-        <item name="colorPrimary">#334E68</item>
-        <item name="colorPrimaryVariant">#243B53</item>
-        <item name="android:colorAccent">#B8A472</item>
-        <item name="android:windowBackground">#F2F0E8</item>
-        <item name="colorSurface">#F2F0E8</item>
-        <item name="android:statusBarColor">#243B53</item>
+        <item name="colorPrimary">@color/theme_dailan_primary</item>
+        <item name="colorPrimaryVariant">@color/theme_dailan_primary_variant</item>
+        <item name="colorBrandSurface">@color/theme_dailan_primary</item>
+        <item name="colorBrandContent">@color/theme_dailan_primary_content</item>
+        <item name="colorSecondary">@color/theme_dailan_accent</item>
+        <item name="colorBrandAccent">@color/theme_dailan_accent</item>
+        <item name="android:colorAccent">@color/theme_dailan_accent</item>
+        <item name="android:windowBackground">@color/theme_dailan_surface</item>
+        <item name="colorSurface">@color/theme_dailan_surface</item>
+        <item name="android:statusBarColor">@color/theme_dailan_primary_variant</item>
     </style>
 
     <style name="Theme.Xian.Xuanmo" parent="Theme.Xian">
-        <item name="colorPrimary">#2B2B2B</item>
-        <item name="colorPrimaryVariant">#1A1A1A</item>
-        <item name="android:colorAccent">#8B7355</item>
-        <item name="android:windowBackground">#F3EEE3</item>
-        <item name="colorSurface">#F3EEE3</item>
-        <item name="android:statusBarColor">#1A1A1A</item>
+        <item name="colorPrimary">@color/theme_xuanmo_primary</item>
+        <item name="colorPrimaryVariant">@color/theme_xuanmo_primary_variant</item>
+        <item name="colorBrandSurface">@color/theme_xuanmo_primary</item>
+        <item name="colorBrandContent">@color/theme_xuanmo_primary_content</item>
+        <item name="colorSecondary">@color/theme_xuanmo_accent</item>
+        <item name="colorBrandAccent">@color/theme_xuanmo_accent</item>
+        <item name="android:colorAccent">@color/theme_xuanmo_accent</item>
+        <item name="android:windowBackground">@color/theme_xuanmo_surface</item>
+        <item name="colorSurface">@color/theme_xuanmo_surface</item>
+        <item name="android:statusBarColor">@color/theme_xuanmo_primary_variant</item>
     </style>
 
     <style name="Theme.PomodoroFocus" parent="Theme.Xian.Qinglv" />
 
     <style name="Widget.Xian.Button" parent="Widget.Material3.Button">
         <item name="cornerRadius">14dp</item>
-        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="backgroundTint">?attr/colorBrandSurface</item>
         <item name="rippleColor">@color/ripple</item>
-        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColor">@color/on_primary</item>
         <item name="android:textSize">15sp</item>
         <item name="android:paddingVertical">11dp</item>
         <item name="elevation">0dp</item>
@@ -63,7 +88,7 @@
 
     <style name="Widget.Xian.Button.Text" parent="Widget.Material3.Button.TextButton">
         <item name="cornerRadius">14dp</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textColor">?attr/colorBrandContent</item>
         <item name="android:textSize">15sp</item>
     </style>
 

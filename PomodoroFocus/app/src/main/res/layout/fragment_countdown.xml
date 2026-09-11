@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#F5EFE0"
+    android:background="?attr/colorSurface"
     android:fitsSystemWindows="true">
 
     <!-- 顶部标题栏 -->
@@ -22,17 +22,17 @@
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="返回"
+            android:contentDescription="@string/action_back"
             app:srcCompat="@android:drawable/ic_media_previous"
-            app:tint="#3B5B4E" />
+            app:tint="?attr/colorBrandContent" />
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="倒数日"
-            android:textColor="#3B5B4E"
+            android:text="@string/countdown_title"
+            android:textColor="?attr/colorBrandContent"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -40,10 +40,10 @@
             android:id="@+id/addCountdownButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:contentDescription="添加倒数日"
+            android:contentDescription="@string/add_countdown"
             app:srcCompat="@android:drawable/ic_input_add"
-            app:tint="#FFFFFF"
-            app:backgroundTint="#3B5B4E"
+            app:tint="@color/on_primary"
+            app:backgroundTint="?attr/colorBrandSurface"
             app:fabSize="mini" />
     </LinearLayout>
 
@@ -54,8 +54,8 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="还没有倒数日\n点击右上角 + 添加"
-        android:textColor="#999999"
+        android:text="@string/countdown_empty"
+        android:textColor="@color/text_tertiary"
         android:textSize="14sp"
         android:visibility="gone" />
 

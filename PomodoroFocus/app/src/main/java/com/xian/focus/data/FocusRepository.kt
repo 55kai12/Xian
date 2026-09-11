@@ -38,6 +38,24 @@ class FocusRepository(
         taskDao.insertTask(task)
     }
 
+    // ---- CSV 恢复：按原 id 批量写回，撞 id 的行由 DAO 跳过（不覆盖已有数据）。 ----
+
+    suspend fun restoreTasks(tasks: List<Task>) = withContext(Dispatchers.IO) {
+        if (tasks.isNotEmpty()) taskDao.insertTasksFromBackup(tasks)
+    }
+
+    suspend fun restoreSubtasks(subtasks: List<Subtask>) = withContext(Dispatchers.IO) {
+        if (subtasks.isNotEmpty()) subtaskDao.insertFromBackup(subtasks)
+    }
+
+    suspend fun restoreRecords(records: List<PomodoroRecord>) = withContext(Dispatchers.IO) {
+        if (records.isNotEmpty()) recordDao.insertFromBackup(records)
+    }
+
+    suspend fun restoreCountdowns(countdowns: List<Countdown>) = withContext(Dispatchers.IO) {
+        if (countdowns.isNotEmpty()) countdownDao.insertFromBackup(countdowns)
+    }
+
     suspend fun updateTask(task: Task) = withContext(Dispatchers.IO) {
         taskDao.updateTask(task)
     }

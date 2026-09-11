@@ -16,6 +16,10 @@ interface CountdownDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(countdown: Countdown): Long
 
+    /** CSV 恢复专用：与 [insert] 不同，这里撞 id 时保留库里已有的那条。 */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFromBackup(countdowns: List<Countdown>)
+
     @Update
     suspend fun update(countdown: Countdown)
 

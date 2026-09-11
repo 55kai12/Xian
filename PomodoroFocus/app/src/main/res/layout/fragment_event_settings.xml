@@ -22,7 +22,7 @@
             android:layout_width="36dp"
             android:layout_height="36dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="返回"
+            android:contentDescription="@string/action_back"
             app:srcCompat="@android:drawable/ic_media_previous"
             app:tint="?attr/colorOnSurface" />
 
@@ -31,7 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="事件设置"
+            android:text="@string/event_settings_title"
             android:textColor="?attr/colorOnSurface"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -80,7 +80,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="事件到期提醒"
+                                android:text="@string/event_reminder"
                                 android:textColor="?attr/colorOnSurface"
                                 android:textSize="16sp"
                                 android:textStyle="bold" />
@@ -89,7 +89,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:text="到期前发送通知提醒"
+                                android:text="@string/event_reminder_desc"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textSize="13sp" />
                         </LinearLayout>
@@ -113,7 +113,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="提前提醒天数"
+                            android:text="@string/reminder_days_label"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="14sp" />
 
@@ -121,7 +121,7 @@
                             android:id="@+id/reminderDaysText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="1 天"
+                            android:text="@string/reminder_days_default"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp"
                             android:textStyle="bold" />
@@ -155,7 +155,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="自动生成关联任务"
+                            android:text="@string/auto_create_task"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -164,7 +164,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="在任务列表对应日期生成事件任务"
+                            android:text="@string/auto_create_task_desc"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="13sp" />
                     </LinearLayout>
@@ -204,7 +204,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="事件排序方式"
+                            android:text="@string/event_sort_label"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="16sp"
                             android:textStyle="bold" />
@@ -214,7 +214,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:text="按剩余天数"
+                            android:text="@string/sort_by_days_left"
                             android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="13sp" />
                     </LinearLayout>
@@ -245,7 +245,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="显示设置"
+                        android:text="@string/display_settings"
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="16sp"
                         android:textStyle="bold" />
@@ -267,7 +267,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="显示已完成事件"
+                                android:text="@string/show_completed_events"
                                 android:textColor="?attr/colorOnSurface"
                                 android:textSize="14sp" />
 
@@ -275,7 +275,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="控制清单和日程概览，包括小组件"
+                                android:text="@string/show_completed_events_desc"
                                 android:textColor="?attr/colorOnSurfaceVariant"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -298,7 +298,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="显示已完成删除线"
+                            android:text="@string/show_completed_strike"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp" />
 
@@ -320,7 +320,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="显示事件顺序数字"
+                            android:text="@string/show_event_index"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp" />
 
@@ -342,7 +342,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="显示事件备注"
+                            android:text="@string/show_event_note"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp" />
 
@@ -364,7 +364,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="显示法定节假日标记"
+                            android:text="@string/show_holiday_mark"
                             android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp" />
 

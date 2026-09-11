@@ -13,6 +13,7 @@ import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.squareup.picasso.Picasso
+import com.xian.focus.data.DataRestore
 import com.xian.focus.data.FocusRepository
 import com.xian.focus.databinding.DialogAppearanceBinding
 import com.xian.focus.databinding.FragmentProfileBinding
@@ -45,6 +46,17 @@ class ProfileFragment : Fragment() {
             if (uri != null) saveWallpaper(uri)
         }
 
+    /**
+     * 数据导入：同样走 SAF，不申请存储权限。
+     * MIME 列得宽一些 —— 各家文件管理器对 .csv 的登记不一致
+     * （text/csv、text/comma-separated-values、甚至 application/octet-stream），
+     * 只写 text/csv 的话在某些机型上会看到文件被置灰选不中。
+     */
+    private val importPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) confirmImport(uri)
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -68,16 +80,35 @@ class ProfileFragment : Fragment() {
         }
         val prefs = requireContext().getSharedPreferences("fortune_data", 0)
         binding.fortuneDataText.text = if (prefs.contains("fortune")) {
-            "累计祈福 ${prefs.getInt("bless_count", 0)} 次 · 最近：${prefs.getString("fortune", "")}" 
-        } else "尚未祈福"
+            getString(
+                R.string.fortune_summary,
+                prefs.getInt("bless_count", 0),
+                prefs.getString("fortune", "").orEmpty()
+            )
+        } else {
+            getString(R.string.fortune_none)
+        }
     }
 
     private fun showFortuneData() {
         val prefs = requireContext().getSharedPreferences("fortune_data", 0)
         val fortune = prefs.getString("fortune", null)
         val meaning = prefs.getString("meaning", null)
-        val message = if (fortune == null) "还没有每日祈福记录。" else "最近签：$fortune\n\n解签：$meaning\n\n累计祈福：${prefs.getInt("bless_count", 0)} 次"
-        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext()).setTitle("每日祈福").setMessage(message).setPositiveButton(R.string.dialog_confirm, null).show()
+        val message = if (fortune == null) {
+            getString(R.string.fortune_empty)
+        } else {
+            getString(
+                R.string.fortune_detail,
+                fortune,
+                meaning.orEmpty(),
+                prefs.getInt("bless_count", 0)
+            )
+        }
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.fortune_history)
+            .setMessage(message)
+            .setPositiveButton(R.string.dialog_confirm, null)
+            .show()
     }
 
     private fun updateCurrentThemeText() {
@@ -154,6 +185,8 @@ class ProfileFragment : Fragment() {
     }
 
     private fun exportData() {
+        // 说明：下面 CSV 的表头 / 小节名是**备份文件格式**，刻意保持中文不随语言变，
+        // 否则换语言导出一次、再导回旧文件就对不上了（解析在 data/DataRestore.kt）。
         Toast.makeText(requireContext(), R.string.exporting, Toast.LENGTH_SHORT).show()
         viewLifecycleOwner.lifecycleScope.launch {
             val file = withContext(Dispatchers.IO) {
@@ -274,7 +307,7 @@ class ProfileFragment : Fragment() {
                 startActivity(android.content.Intent.createChooser(intent, getString(R.string.export_data)))
                 Toast.makeText(requireContext(), R.string.export_done, Toast.LENGTH_SHORT).show()
             } else {
-                Toast.makeText(requireContext(), "导出失败", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), R.string.export_failed, Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -282,6 +315,45 @@ class ProfileFragment : Fragment() {
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    /** 导入会往库里写数据且不可逆，先确认再动手。 */
+    private fun confirmImport(uri: Uri) {
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.data_import)
+            .setMessage(R.string.import_confirm_message)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.dialog_confirm) { _, _ -> importData(uri) }
+            .show()
+    }
+
+    private fun importData(uri: Uri) {
+        Toast.makeText(requireContext(), R.string.importing, Toast.LENGTH_SHORT).show()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val report = withContext(Dispatchers.IO) {
+                try {
+                    val text = requireContext().contentResolver.openInputStream(uri)
+                        ?.bufferedReader(Charsets.UTF_8)
+                        ?.use { it.readText() }
+                        ?: return@withContext null
+                    DataRestore.restore(requireContext(), repository, text)
+                } catch (e: Exception) {
+                    null
+                }
+            }
+            when {
+                report == null ->
+                    Toast.makeText(requireContext(), R.string.import_failed, Toast.LENGTH_LONG).show()
+                report.total == 0 ->
+                    Toast.makeText(requireContext(), R.string.import_nothing, Toast.LENGTH_LONG).show()
+                else ->
+                    Toast.makeText(
+                        requireContext(),
+                        getString(R.string.import_done, report.total),
+                        Toast.LENGTH_LONG
+                    ).show()
+            }
+        }
     }
 
     private companion object {
