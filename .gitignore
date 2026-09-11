@@ -1,0 +1,36 @@
+# ---- Android / Gradle 构建产物 ----
+.gradle/
+build/
+*/build/
+app/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# ---- 本机专属配置（含密钥路径，绝不能入库）----
+local.properties
+keystore.properties
+*.jks
+*.keystore
+
+# ---- IDE ----
+.idea/
+*.iml
+*.hprof
+.navigation/
+
+# ---- 操作系统 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 日志与临时文件 ----
+*.log
+*.tmp
+*.bak
+~$*

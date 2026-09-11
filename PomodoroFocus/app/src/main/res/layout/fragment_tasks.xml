@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tasksDrawerLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true">
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFFFFF">
+
+    <!-- 深绿头部 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="?attr/colorPrimary"
+        android:paddingTop="16dp">
+
+        <!-- 顶部栏：菜单 + 贤 + 运势 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingBottom="4dp">
+
+            <ImageButton
+                android:id="@+id/menuButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/calendar_filter"
+                app:srcCompat="@drawable/ic_hamburger"
+                app:tint="#FFFFFF" />
+
+            <TextView
+                android:id="@+id/calendarTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="贤"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/fortuneButton"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:contentDescription="@string/fortune_title"
+                android:scaleType="centerCrop"
+                android:clickable="true"
+                android:focusable="true"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Xian.Circle"
+                app:srcCompat="@drawable/ic_fortune_tube" />
+        </LinearLayout>
+
+        <!-- 日历/趋势/周视图区域（可下拉展开月历） -->
+        <com.xian.focus.SwipeInterceptorLayout
+            android:id="@+id/calendarContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:visibility="visible">
+
+            <!-- 趋势线 -->
+            <com.xian.focus.TrendLineChartView
+                android:id="@+id/trendChart"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="2dp" />
+
+            <LinearLayout
+                android:id="@+id/weekHeader"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周一" android:textColor="#D8E6DF" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周二" android:textColor="#D8E6DF" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周三" android:textColor="#D8E6DF" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周四" android:textColor="#D8E6DF" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周五" android:textColor="#D8E6DF" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周六" android:textColor="#D8E6DF" android:textSize="11sp" />
+                <TextView android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:text="周日" android:textColor="#D8E6DF" android:textSize="11sp" />
+            </LinearLayout>
+
+            <!-- A single CalendarView is clipped to its first week when collapsed. -->
+            <FrameLayout
+                android:id="@+id/calendarDrawer"
+                android:layout_width="match_parent"
+                android:layout_height="96dp"
+                android:clipChildren="true"
+                android:clipToPadding="true">
+
+                <com.haibin.calendarview.CalendarView
+                    android:id="@+id/monthCalendar"
+                    android:layout_width="match_parent"
+                    android:layout_height="264dp"
+                    app:month_view="com.xian.focus.CircleMonthView"
+                    app:week_view="com.xian.focus.CircleWeekView"
+                    app:selected_theme_color="#D8E6DF"
+                    app:selected_text_color="#27463A"
+                    app:selected_lunar_text_color="#27463A"
+                    app:week_background="@android:color/transparent"
+                    app:week_line_background="@android:color/transparent"
+                    app:week_text_color="#D8E6DF"
+                    app:week_bar_height="0dp"
+                    app:week_text_size="11sp" />
+
+                <com.xian.focus.WeekCalendarStripView
+                    android:id="@+id/weekCalendarStrip"
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp" />
+            </FrameLayout>
+
+            <!-- 下拉指示器 -->
+            <ImageView
+                android:id="@+id/calendarPullIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="28dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="0dp"
+                android:contentDescription="@string/calendar_filter"
+                android:padding="5dp"
+                android:scaleType="center"
+                app:srcCompat="@drawable/ic_calendar_handle"
+                app:tint="#88FFFFFF" />
+        </com.xian.focus.SwipeInterceptorLayout>
+    </LinearLayout>
+
+    <!-- 分隔线 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#D8CDB8" />
+
+    <!-- 空状态 -->
+    <TextView
+        android:id="@+id/emptyView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:gravity="center"
+        android:text="@string/empty_pending"
+        android:textColor="#999999"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- 任务列表区域：FrameLayout 让新增按钮悬浮其上 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/tasksRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="4dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="80dp"
+            android:clipToPadding="false"
+            android:background="#FFFFFF" />
+
+        <!-- 新增按钮（悬浮） -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/addTaskButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="16dp"
+            android:contentDescription="@string/add_study_task"
+            app:backgroundTint="?attr/colorPrimary"
+            app:elevation="6dp"
+            app:srcCompat="@android:drawable/ic_input_add"
+            app:tint="@android:color/white" />
+    </FrameLayout>
+</LinearLayout>
+
+<!-- 左侧滑出抽屉 -->
+<LinearLayout
+    android:id="@+id/sideDrawer"
+    android:layout_width="260dp"
+    android:layout_height="match_parent"
+    android:layout_gravity="start"
+    android:orientation="vertical"
+    android:background="#F5EFE0"
+    android:fitsSystemWindows="true">
+
+    <!-- 抽屉头部 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#3B5B4E"
+        android:paddingHorizontal="20dp"
+        android:paddingTop="32dp"
+        android:paddingBottom="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="更多功能"
+            android:textColor="#F5EFE0"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="贤 · 辅助工具"
+            android:textColor="#B8C9C0"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <!-- 功能列表 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="8dp">
+
+        <LinearLayout
+            android:id="@+id/drawerCountdownItem"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:contentDescription="倒数日"
+                android:src="@android:drawable/ic_menu_day"
+                app:tint="#3B5B4E" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:text="倒数日"
+                android:textColor="#333333"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
+
+</androidx.drawerlayout.widget.DrawerLayout>

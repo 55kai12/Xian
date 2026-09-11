@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F5EFE0"
+    android:fitsSystemWindows="true">
+
+    <!-- 顶部标题栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="12dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="返回"
+            app:srcCompat="@android:drawable/ic_media_previous"
+            app:tint="#3B5B4E" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="4dp"
+            android:text="倒数日"
+            android:textColor="#3B5B4E"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/addCountdownButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="添加倒数日"
+            app:srcCompat="@android:drawable/ic_input_add"
+            app:tint="#FFFFFF"
+            app:backgroundTint="#3B5B4E"
+            app:fabSize="mini" />
+    </LinearLayout>
+
+    <!-- 空状态 -->
+    <TextView
+        android:id="@+id/emptyCountdownView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="还没有倒数日\n点击右上角 + 添加"
+        android:textColor="#999999"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <!-- 倒数日列表 -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/countdownRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp" />
+</LinearLayout>

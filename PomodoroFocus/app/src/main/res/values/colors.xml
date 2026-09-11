@@ -1,0 +1,13 @@
+<resources>
+    <color name="primary">#3B5B4E</color>
+    <color name="primary_dark">#2A4238</color>
+    <color name="accent_gold">#C9A961</color>
+    <color name="paper_background">#F5EFE0</color>
+    <color name="paper">#F5EFE0</color>
+    <color name="divider">#E0D6C2</color>
+    <color name="ink_text">#2B2B2B</color>
+    <color name="task_selected_background">#333B5B4E</color>
+    <color name="icon_background">#EFE3C8</color>
+    <color name="due_text">#A67C00</color>
+    <color name="overdue_text">#8B2E2E</color>
+</resources>

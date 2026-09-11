@@ -1,0 +1,96 @@
+<resources>
+    <style name="Theme.Xian" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="android:textColorPrimary">@color/default_text_color</item>
+        <item name="android:textColorSecondary">@color/secondary_text_color</item>
+        <item name="materialButtonStyle">@style/Widget.Xian.Button</item>
+        <item name="editTextStyle">@style/Widget.Xian.EditText</item>
+        <item name="alertDialogTheme">@style/Theme.Xian.MaterialAlertDialog</item>
+        <item name="materialAlertDialogTheme">@style/Theme.Xian.MaterialAlertDialog</item>
+        <item name="colorSecondary">#C9A961</item>
+        <item name="colorOutline">#E0D6C2</item>
+    </style>
+
+    <style name="Theme.Xian.Qinglv" parent="Theme.Xian">
+        <item name="colorPrimary">#3B5B4E</item>
+        <item name="colorPrimaryVariant">#2A4238</item>
+        <item name="android:colorAccent">#C9A961</item>
+        <item name="android:windowBackground">#F5EFE0</item>
+        <item name="colorSurface">#F5EFE0</item>
+        <item name="android:statusBarColor">#2A4238</item>
+    </style>
+
+    <style name="Theme.Xian.Zhusha" parent="Theme.Xian">
+        <item name="colorPrimary">#8B2E2E</item>
+        <item name="colorPrimaryVariant">#6E211F</item>
+        <item name="android:colorAccent">#C9A961</item>
+        <item name="android:windowBackground">#F7EEE4</item>
+        <item name="colorSurface">#F7EEE4</item>
+        <item name="android:statusBarColor">#6E211F</item>
+    </style>
+
+    <style name="Theme.Xian.Dailan" parent="Theme.Xian">
+        <item name="colorPrimary">#334E68</item>
+        <item name="colorPrimaryVariant">#243B53</item>
+        <item name="android:colorAccent">#B8A472</item>
+        <item name="android:windowBackground">#F2F0E8</item>
+        <item name="colorSurface">#F2F0E8</item>
+        <item name="android:statusBarColor">#243B53</item>
+    </style>
+
+    <style name="Theme.Xian.Xuanmo" parent="Theme.Xian">
+        <item name="colorPrimary">#2B2B2B</item>
+        <item name="colorPrimaryVariant">#1A1A1A</item>
+        <item name="android:colorAccent">#8B7355</item>
+        <item name="android:windowBackground">#F3EEE3</item>
+        <item name="colorSurface">#F3EEE3</item>
+        <item name="android:statusBarColor">#1A1A1A</item>
+    </style>
+
+    <style name="Theme.PomodoroFocus" parent="Theme.Xian.Qinglv" />
+
+    <style name="Widget.Xian.Button" parent="Widget.Material3.Button">
+        <item name="cornerRadius">14dp</item>
+        <item name="backgroundTint">?attr/colorPrimary</item>
+        <item name="rippleColor">@color/ripple</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:paddingVertical">11dp</item>
+        <item name="elevation">0dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
+
+    <style name="Widget.Xian.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="cornerRadius">14dp</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="Widget.Xian.EditText" parent="Widget.AppCompat.EditText">
+        <item name="android:background">@drawable/bg_edittext</item>
+        <item name="android:padding">12dp</item>
+        <item name="android:textColor">@color/ink_text</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="Theme.Xian.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.Xian.Medium</item>
+        <item name="android:windowAnimationStyle">@style/Animation.Xian.Dialog</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.Xian.Button</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.Xian.Button.Text</item>
+    </style>
+
+    <style name="ShapeAppearance.Xian.Medium" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerSize">18dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Xian.Circle" parent="ShapeAppearance.Material3.Corner.None">
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="Animation.Xian.Dialog" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/dialog_enter</item>
+        <item name="android:windowExitAnimation">@anim/dialog_exit</item>
+    </style>
+</resources>
