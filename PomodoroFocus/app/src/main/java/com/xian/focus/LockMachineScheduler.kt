@@ -18,6 +18,9 @@ object LockMachineScheduler {
     private const val REQ_START = 1001
     private const val REQ_END = 1002
 
+    /** 重排闹钟时对"当前时刻"留出的安全余量，避免同一秒内反复触发。 */
+    private const val RESCHEDULE_GUARD_MILLIS = 1_000L
+
     fun isEnabled(context: Context): Boolean =
         prefs(context).getBoolean(KEY_ENABLED, false)
 
@@ -51,7 +54,10 @@ object LockMachineScheduler {
             set(Calendar.MINUTE, startMinute % 60)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-            if (timeInMillis <= now) add(Calendar.DAY_OF_MONTH, 1)
+            // 早于（或几乎等于）当前时刻就顺延到明天。
+            // 留 1 秒余量：闹钟触发后立即重排时，若刚好落在同一秒内会被判定为"还没到"，
+            // 从而导致闹钟原地重排、立刻再次触发，形成死循环。
+            if (timeInMillis <= now + RESCHEDULE_GUARD_MILLIS) add(Calendar.DAY_OF_MONTH, 1)
         }
         val durationMinutes = ((endMinute - startMinute) + 1440) % 1440
         val endTime = startCal.timeInMillis + durationMinutes * 60_000L

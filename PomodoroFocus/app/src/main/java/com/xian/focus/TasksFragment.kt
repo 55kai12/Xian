@@ -503,13 +503,20 @@ class TasksFragment : Fragment() {
         val daySnapshots = allTasks
             .filter { it.templateId != 0 && it.dueDate == day }
             .associateBy { it.templateId }
+        val today = startOfDay(System.currentTimeMillis())
         val result = mutableListOf<Task>()
         for (task in allTasks) {
             if (task.templateId != 0) continue
             if (task.repeatRule == TaskViewModel.REPEAT_NONE) {
-                if (task.dueDate == day) result.add(task)
+                // 没有截止日期的普通任务归到「今天」。
+                // 旧实现只比较 dueDate == day，null 永远不相等，于是这类任务
+                // 在任何一天都不显示，用户既看不到、也勾不掉、更删不掉，成为死数据。
+                if (task.dueDate == day || (task.dueDate == null && day == today)) result.add(task)
             } else {
-                val start = task.dueDate ?: continue
+                // 重复任务没填日期时以「创建日期」作为起始锚点。
+                // 旧实现 `task.dueDate ?: continue` 会直接跳过整条任务，让它彻底消失；
+                // 而 weekly/monthly 需要锚点来判断星期几 / 几号，所以不能简单按"每天"处理。
+                val start = task.dueDate ?: startOfDay(task.createdAt)
                 if (day < start || !matchesRepeat(task.repeatRule, start, day)) continue
                 val snapshot = daySnapshots[task.id]
                 if (snapshot != null) result.add(snapshot)
@@ -518,6 +525,15 @@ class TasksFragment : Fragment() {
         }
         return result
     }
+
+    /** 把任意时间戳归零到当天 00:00:00.000，保证与日历上取到的"天"可比较。 */
+    private fun startOfDay(millis: Long): Long = Calendar.getInstance().apply {
+        timeInMillis = millis
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     private fun matchesRepeat(rule: String, start: Long, day: Long): Boolean {
         val startCal = java.util.Calendar.getInstance().apply { timeInMillis = start }
@@ -556,6 +572,46 @@ class TasksFragment : Fragment() {
         taskAdapter.subtasksMap = all.groupBy { it.taskId }
         taskAdapter.notifyItemRangeChanged(0, taskAdapter.itemCount)
     }
+
+    /**
+     * 往「展开更多」区域里插入一行「预计贤时」输入框。
+     *
+     * 之前这个值在保存时被写死为 `val estimated = 1`，后果不只是标签难看得像摆设：
+     * 番茄钟结束后会执行 `isCompleted = count >= estimatedPomodoros`，
+     * 也就是任何任务只要跑完 1 个番茄钟就被自动标记完成，多轮任务根本没法用。
+     * 界面上补上这个输入后，预估与「自动化完成」才真正说得通。
+     *
+     * @return 供调用方读取数值的输入框
+     */
+    private fun addEstimateRow(
+        container: android.widget.LinearLayout,
+        initial: Int
+    ): android.widget.EditText {
+        val density = resources.displayMetrics.density
+        fun dp(value: Int) = (value * density).toInt()
+        val row = android.widget.LinearLayout(requireContext()).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(0, dp(8), 0, 0)
+        }
+        row.addView(TextView(requireContext()).apply {
+            text = "预计贤时（番茄钟个数）"
+            textSize = 12f
+            setTextColor(0xFF3B5B4E.toInt())
+        })
+        val input = android.widget.EditText(requireContext()).apply {
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER
+            setText(initial.coerceIn(1, MAX_ESTIMATED_POMODOROS).toString())
+            setSelection(text.length)
+            hint = "1"
+            textSize = 14f
+        }
+        row.addView(input)
+        container.addView(row, 0)
+        return input
+    }
+
+    private fun estimatedFrom(input: android.widget.EditText): Int =
+        (input.text?.toString()?.toIntOrNull() ?: 1).coerceIn(1, MAX_ESTIMATED_POMODOROS)
 
     private fun showAddTaskDialog() {
         val dialogBinding = DialogAddStudyTaskBinding.inflate(layoutInflater)
@@ -631,6 +687,8 @@ class TasksFragment : Fragment() {
         )
         dialogBinding.repeatSpinner.setItems(repeatOptions)
         dialogBinding.repeatSpinner.selectedIndex = 0
+
+        val estimateInput = addEstimateRow(dialogBinding.moreOptionsContainer, 1)
 
         val subtaskRows = mutableListOf<ItemSubtaskEditBinding>()
         fun renumberSubtasks() {
@@ -758,7 +816,7 @@ class TasksFragment : Fragment() {
                 }
                 val subject = dialogBinding.subjectInput.text?.trim()?.toString()
                     ?.takeIf { it.isNotBlank() } ?: TaskViewModel.DEFAULT_GROUP
-                val estimated = 1
+                val estimated = estimatedFrom(estimateInput)
                 val priority = when (dialogBinding.prioritySpinner.selectedIndex) {
                     0 -> 1
                     1 -> 2
@@ -811,59 +869,6 @@ class TasksFragment : Fragment() {
 
     private fun showEditTaskDialog(task: Task) {
         showEditTaskDialogCompat(task)
-        return
-        val density = resources.displayMetrics.density
-        fun dp(value: Int) = (value * density).toInt()
-        lateinit var saveEdit: () -> Unit
-        var selectedCategory = task.listType.ifBlank { "生活" }
-        fun chip(text: String, selected: Boolean = false) = android.widget.TextView(requireContext()).apply {
-            this.text = text; textSize = 14f; gravity = android.view.Gravity.CENTER
-            setPadding(dp(14), dp(7), dp(14), dp(7)); setTextColor(if (selected) Color.WHITE else 0xFF777777.toInt())
-            background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = dp(22).toFloat(); setColor(if (selected) 0xFF35BDBB.toInt() else 0xFFF4F4F4.toInt()) }
-        }
-        val root = android.widget.LinearLayout(requireContext()).apply { orientation = android.widget.LinearLayout.VERTICAL; setPadding(dp(22), dp(8), dp(22), dp(18)); background = GradientDrawable().apply { cornerRadii = floatArrayOf(dp(26).toFloat(),dp(26).toFloat(),dp(26).toFloat(),dp(26).toFloat(),0f,0f,0f,0f); setColor(Color.WHITE) } }
-        val top = android.widget.LinearLayout(requireContext()).apply { gravity = android.view.Gravity.CENTER_VERTICAL }
-        val categoryViews = mutableListOf<android.widget.TextView>()
-        fun addCategoryChip(name: String) {
-            val view = chip(name, name == selectedCategory).apply {
-                layoutParams = android.widget.LinearLayout.LayoutParams(-2, -2).apply { marginEnd = dp(8) }
-                setOnClickListener { selectedCategory = name; categoryViews.forEach { it.background = GradientDrawable().apply { shape = GradientDrawable.RECTANGLE; cornerRadius = dp(22).toFloat(); setColor(if (it.text == selectedCategory) 0xFF35BDBB.toInt() else 0xFFF4F4F4.toInt()) }; it.setTextColor(if (it.text == selectedCategory) Color.WHITE else 0xFF777777.toInt()) } }
-            }
-            categoryViews += view; top.addView(view)
-        }
-        addCategoryChip("生活"); addCategoryChip("工作")
-        addCategoryChip("+").apply { }
-        top.getChildAt(top.childCount - 1).setOnClickListener {
-            val input = android.widget.EditText(requireContext()).apply { hint = "自定义分类" }
-            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext()).setTitle("添加分类").setView(input).setPositiveButton(R.string.save) { _, _ ->
-                val name = input.text.toString().trim(); if (name.isNotEmpty()) { selectedCategory = name; GroupColorStore.setColor(requireContext(), name, GroupColorStore.palette.first()); addCategoryChip(name) }
-            }.setNegativeButton(R.string.cancel, null).show()
-        }
-        top.addView(android.view.View(requireContext()), android.widget.LinearLayout.LayoutParams(0,1,1f))
-        val add = android.widget.TextView(requireContext()).apply { text = "添加"; textSize = 18f; setTextColor(0xFF20A7A5.toInt()); setPadding(dp(8),dp(6),dp(4),dp(6)); setOnClickListener { saveEdit() } }
-        top.addView(add)
-        root.addView(top)
-        val title = android.widget.EditText(requireContext()).apply { setText(task.title); hint = "准备做什么?"; textSize = 22f; background = null; setSingleLine(true); setPadding(0,dp(20),0,dp(8)) }
-        root.addView(title)
-        val desc = android.widget.EditText(requireContext()).apply { setText(task.description.orEmpty()); hint = "添加描述"; textSize = 16f; background = null; minLines = 2; gravity = android.view.Gravity.TOP; setPadding(0,0,0,dp(8)) }
-        root.addView(desc)
-        var selectedDueDate: Long? = task.dueDate
-        val dates = android.widget.LinearLayout(requireContext()).apply { gravity = android.view.Gravity.CENTER_VERTICAL; setPadding(0,dp(8),0,dp(8)) }
-        val dateViews = mutableListOf<android.widget.TextView>()
-        listOf("今天", "明天", "选择日期  ▾", "没有日期").forEachIndexed { i, text ->
-            val view = chip(text, (i == 0 && task.dueDate != null)).apply { layoutParams = android.widget.LinearLayout.LayoutParams(-2,-2).apply { marginEnd = dp(8) } }
-            view.setOnClickListener {
-                when (i) { 0 -> selectedDueDate = startOfToday(); 1 -> selectedDueDate = startOfToday() + DAY_MILLIS; 2 -> DatePickerDialog(requireContext(), { _, y, m, d -> selectedDueDate = Calendar.getInstance().apply { set(y,m,d,0,0,0); set(Calendar.MILLISECOND,0) }.timeInMillis }, Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH), Calendar.getInstance().get(Calendar.DAY_OF_MONTH)).show(); 3 -> selectedDueDate = null }
-                dateViews.forEach { it.setTextColor(0xFF777777.toInt()) }; view.setTextColor(Color.WHITE)
-            }
-            dateViews += view; dates.addView(view)
-        }
-        root.addView(dates)
-        val more = chip("展开更多 ︿").apply { setTextColor(0xFF20A7A5.toInt()); setOnClickListener { visibility = View.GONE } }
-        root.addView(more)
-        saveEdit = { val value = title.text.toString().trim(); if (value.isNotEmpty()) taskViewModel.updateTask(task.copy(title = value, description = desc.text.toString().trim().takeIf { it.isNotEmpty() }, listType = selectedCategory, dueDate = selectedDueDate)); currentDialog?.dismiss() }
-        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
-        dialog.setContentView(root); dialog.setCanceledOnTouchOutside(true); currentDialog = dialog; dialog.show()
     }
 
     private fun showEditTaskDialogCompat(task: Task) {
@@ -897,6 +902,8 @@ class TasksFragment : Fragment() {
             TaskViewModel.REPEAT_MONTHLY -> 3
             else -> 0
         }
+
+        val estimateInput = addEstimateRow(dialogBinding.moreOptionsContainer, task.estimatedPomodoros)
 
         val form = dialogBinding.root.getChildAt(0) as? android.widget.LinearLayout
         var selectedCategory = task.listType.ifBlank { TaskViewModel.DEFAULT_GROUP }
@@ -1139,6 +1146,7 @@ class TasksFragment : Fragment() {
                         dueDate = selectedDueDate,
                         imageUri = selectedImageUri,
                         priority = dialogBinding.prioritySpinner.selectedIndex + 1,
+                        estimatedPomodoros = estimatedFrom(estimateInput),
                         repeatRule = repeatRule
                     ), subtaskTitles)
                 }
@@ -1147,8 +1155,6 @@ class TasksFragment : Fragment() {
             .create()
         editDialog.show()
     }
-
-    private var currentDialog: android.app.Dialog? = null
 
     private fun launchCalendarIntent(
         title: String,
@@ -1179,5 +1185,7 @@ class TasksFragment : Fragment() {
 
     companion object {
         private const val DAY_MILLIS = 24L * 60L * 60L * 1000L
+        /** 单个任务允许的预计番茄钟数量上限，防止手滑输入离谱数值。 */
+        private const val MAX_ESTIMATED_POMODOROS = 99
     }
 }

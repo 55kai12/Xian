@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 
 @HiltViewModel
@@ -61,9 +60,22 @@ class TaskViewModel @Inject constructor(
 
     fun updateTaskWithSubtasks(task: Task, subtaskTitles: List<String>) = execute {
         repository.updateTask(task)
+        // 保留已有子任务的完成状态。
+        // 旧实现是无条件「删光再重插」，而 Subtask.isCompleted 默认 false，
+        // 于是用户哪怕只改了个标题，所有已勾选的子任务也会被静默重置（数据丢失、无提示）。
+        // 编辑弹窗里每行只带标题、没有 id，所以按标题配对；同名标题按出现顺序逐个消费。
+        val completedByTitle = HashMap<String, ArrayDeque<Boolean>>()
+        repository.getSubtasksByTaskId(task.id).forEach { subtask ->
+            completedByTitle.getOrPut(subtask.title) { ArrayDeque() }.addLast(subtask.isCompleted)
+        }
         repository.deleteSubtasksByTaskId(task.id)
-        subtaskTitles.filter { it.isNotBlank() }.forEach {
-            repository.insertSubtask(Subtask(taskId = task.id, title = it.trim()))
+        subtaskTitles.filter { it.isNotBlank() }.forEach { raw ->
+            val title = raw.trim()
+            val queue = completedByTitle[title]
+            val isCompleted = if (queue.isNullOrEmpty()) false else queue.removeFirst()
+            repository.insertSubtask(
+                Subtask(taskId = task.id, title = title, isCompleted = isCompleted)
+            )
         }
         doRefresh()
     }
@@ -128,16 +140,6 @@ class TaskViewModel @Inject constructor(
 
     fun refreshSubtasks() = viewModelScope.launch {
         _subtasks.value = repository.getAllSubtasks()
-    }
-
-    private fun nextDueDate(current: Long, rule: String): Long {
-        val calendar = Calendar.getInstance().apply { timeInMillis = current }
-        when (rule) {
-            REPEAT_DAILY -> calendar.add(Calendar.DAY_OF_MONTH, 1)
-            REPEAT_WEEKLY -> calendar.add(Calendar.DAY_OF_MONTH, 7)
-            REPEAT_MONTHLY -> calendar.add(Calendar.MONTH, 1)
-        }
-        return calendar.timeInMillis
     }
 
     private fun execute(onFinished: (() -> Unit)? = null, operation: suspend () -> Unit) {

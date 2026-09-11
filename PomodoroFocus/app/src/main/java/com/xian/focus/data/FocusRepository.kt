@@ -1,6 +1,7 @@
 package com.xian.focus.data
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -140,6 +141,11 @@ class FocusRepository(
     }
 
     fun getAllCountdowns() = countdownDao.getAll()
+
+    /** 一次性取回全部倒数日（导 CSV 等只需要当前快照的场景）。 */
+    suspend fun getAllCountdownsOnce(): List<Countdown> = withContext(Dispatchers.IO) {
+        countdownDao.getAll().first()
+    }
 
     suspend fun insertCountdown(countdown: Countdown) = withContext(Dispatchers.IO) {
         countdownDao.insert(countdown)

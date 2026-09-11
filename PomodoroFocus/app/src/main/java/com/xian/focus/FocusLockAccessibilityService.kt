@@ -7,32 +7,38 @@ class FocusLockAccessibilityService : AccessibilityService() {
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val packageName = event.packageName?.toString() ?: return
+        val context = applicationContext
 
-        if (LockMachineController.isActive(applicationContext)) {
-            if (LockMachineController.isAllowed(applicationContext, packageName)) {
+        if (LockMachineController.isActive(context)) {
+            if (LockMachineController.isAllowed(context, packageName)) {
                 if (LockMachineOverlayController.isShowing()) {
-                    LockMachineOverlayController.hide(applicationContext)
+                    LockMachineOverlayController.hide(context)
                 }
             } else {
-                LockMachineOverlayController.show(applicationContext)
+                LockMachineOverlayController.show(context)
             }
             return
         } else if (LockMachineOverlayController.isShowing()) {
-            LockMachineOverlayController.hide(applicationContext)
+            LockMachineOverlayController.hide(context)
         }
 
-        if (!LockController.isLockActive) {
+        // 番茄钟锁机状态改由持久化数据推导，进程被杀后重新拉起依然生效
+        if (!LockController.isLockActive(context)) {
             if (LockOverlayController.isShowing()) {
-                LockOverlayController.hide(applicationContext)
+                LockOverlayController.hide(context)
             }
             return
         }
-        if (packageName == applicationContext.packageName) {
+        val isSelf = packageName == context.packageName
+        // 系统必需组件（来电界面、输入法、状态栏）必须放行，
+        // 否则锁机期间接不了电话，白名单应用里也无法输入文字。
+        val isSystemEssential = SystemAppAllowlist.isEssential(context, packageName)
+        if (isSelf || isSystemEssential) {
             if (LockOverlayController.isShowing()) {
-                LockOverlayController.hide(applicationContext)
+                LockOverlayController.hide(context)
             }
         } else {
-            LockOverlayController.show(applicationContext)
+            LockOverlayController.show(context)
         }
     }
 

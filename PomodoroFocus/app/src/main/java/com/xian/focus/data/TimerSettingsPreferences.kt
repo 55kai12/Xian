@@ -19,7 +19,14 @@ data class TimerSession(
     val remainingSeconds: Int,
     val taskId: Int?,
     val completedPomodoros: Int,
-    val focusStartedAt: Long
+    val focusStartedAt: Long,
+    /**
+     * 当前阶段（专注/短休/长休）应当结束的墙钟时间戳。
+     * 用于按真实时间推算剩余秒数，而不是靠"每秒减一"累加 —— 息屏 / Doze
+     * 会让协程的 delay 被拉长，导致 25 分钟的番茄钟实际跑成半小时以上。
+     * PAUSED 状态或旧版本写入的 session 为 0。
+     */
+    val phaseEndAt: Long = 0L
 )
 
 class TimerSettingsPreferences(context: Context) {
@@ -56,7 +63,8 @@ class TimerSettingsPreferences(context: Context) {
             remainingSeconds = preferences.getInt(KEY_SESSION_REMAINING, 0),
             taskId = preferences.getInt(KEY_SESSION_TASK_ID, -1).takeIf { it >= 0 },
             completedPomodoros = preferences.getInt(KEY_SESSION_COMPLETED, 0),
-            focusStartedAt = preferences.getLong(KEY_SESSION_STARTED_AT, 0L)
+            focusStartedAt = preferences.getLong(KEY_SESSION_STARTED_AT, 0L),
+            phaseEndAt = preferences.getLong(KEY_SESSION_PHASE_END_AT, 0L)
         )
     }
 
@@ -68,6 +76,7 @@ class TimerSettingsPreferences(context: Context) {
             .putInt(KEY_SESSION_TASK_ID, session.taskId ?: -1)
             .putInt(KEY_SESSION_COMPLETED, session.completedPomodoros)
             .putLong(KEY_SESSION_STARTED_AT, session.focusStartedAt)
+            .putLong(KEY_SESSION_PHASE_END_AT, session.phaseEndAt)
             .apply()
     }
 
@@ -79,7 +88,19 @@ class TimerSettingsPreferences(context: Context) {
             .remove(KEY_SESSION_TASK_ID)
             .remove(KEY_SESSION_COMPLETED)
             .remove(KEY_SESSION_STARTED_AT)
+            .remove(KEY_SESSION_PHASE_END_AT)
             .apply()
+    }
+
+    /**
+     * 用户是否开启了「锁机专注」。
+     * 必须持久化：旧实现只存在内存静态变量里，进程被系统回收后重新拉起时
+     * 会变回 false，锁机界面静默消失 —— 这是锁机类应用最忌讳的绕过口。
+     */
+    fun isLockEnabled(): Boolean = preferences.getBoolean(KEY_LOCK_ENABLED, false)
+
+    fun saveLockEnabled(enabled: Boolean) {
+        preferences.edit().putBoolean(KEY_LOCK_ENABLED, enabled).apply()
     }
 
     private companion object {
@@ -95,5 +116,7 @@ class TimerSettingsPreferences(context: Context) {
         const val KEY_SESSION_TASK_ID = "session_task_id"
         const val KEY_SESSION_COMPLETED = "session_completed"
         const val KEY_SESSION_STARTED_AT = "session_started_at"
+        const val KEY_SESSION_PHASE_END_AT = "session_phase_end_at"
+        const val KEY_LOCK_ENABLED = "lock_enabled"
     }
 }

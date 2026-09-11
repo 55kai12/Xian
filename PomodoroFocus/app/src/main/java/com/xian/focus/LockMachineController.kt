@@ -48,5 +48,9 @@ object LockMachineController {
         prefs(context).getStringSet(KEY_WHITELIST, emptySet()) ?: emptySet()
 
     fun isAllowed(context: Context, packageName: String): Boolean =
-        packageName == context.applicationContext.packageName || whitelist(context).contains(packageName)
+        packageName == context.applicationContext.packageName ||
+            // 系统必需组件（来电、输入法、状态栏等）永远放行，
+            // 否则会盖住来电界面和输入法，导致接不了电话、白名单应用里打不了字。
+            SystemAppAllowlist.isEssential(context.applicationContext, packageName) ||
+            whitelist(context).contains(packageName)
 }

@@ -23,8 +23,8 @@ android {
         applicationId = "com.xian.focus"
         minSdk = 26
         targetSdk = 35
-        versionCode = 220
-        versionName = "2.0.20"
+        versionCode = 221
+        versionName = "2.0.21"
     }
 
     signingConfigs {
@@ -40,7 +40,15 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 正式包开启代码压缩 / 混淆与资源压缩。
+            // 之前 release 是完全不处理的裸包：体积偏大，且逻辑对反编译几乎不设防。
+            // 规则见 proguard-rules.pro（第三方控件通过 XML 反射实例化，必须保留）。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -85,6 +93,9 @@ dependencies {
     implementation("com.squareup.picasso:picasso:2.8")
     implementation("com.wang.avi:library:2.1.3")
     implementation("com.haibin:calendarview:3.7.1")
-    implementation("io.github.songlonggithub:uTakePhoto:1.2.0")
+    // 已移除 io.github.songlonggithub:uTakePhoto:1.2.0
+    // 原因：该库的 manifest 会在合并时带进 CAMERA / READ_EXTERNAL_STORAGE /
+    // WRITE_EXTERNAL_STORAGE / ACCESS_COARSE_LOCATION 四个敏感权限。
+    // 唯二用到它的地方（任务插图、壁纸）早就改用系统相册选择器，属于纯多余的依赖。
 }
 

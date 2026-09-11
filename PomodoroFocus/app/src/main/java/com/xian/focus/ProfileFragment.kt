@@ -1,5 +1,6 @@
 package com.xian.focus
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,13 +8,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.RadioButton
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.sl.utakephoto.crop.CropOptions
-import com.sl.utakephoto.exception.TakeException
-import com.sl.utakephoto.manager.ITakePhotoResult
-import com.sl.utakephoto.manager.UTakePhoto
 import com.squareup.picasso.Picasso
 import com.xian.focus.data.FocusRepository
 import com.xian.focus.databinding.DialogAppearanceBinding
@@ -35,6 +33,17 @@ class ProfileFragment : Fragment() {
 
     @Inject
     lateinit var repository: FocusRepository
+
+    /**
+     * 壁纸选择：使用系统相册选择器，零权限。
+     * 旧实现走 uTakePhoto，而该库会在 manifest 合并时带进
+     * CAMERA / READ_EXTERNAL_STORAGE / WRITE_EXTERNAL_STORAGE / ACCESS_COARSE_LOCATION
+     * 四个敏感权限 —— 只为换一张壁纸，性价比完全说不通。
+     */
+    private val wallpaperPicker =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) saveWallpaper(uri)
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -104,28 +113,9 @@ class ProfileFragment : Fragment() {
 
         loadWallpaperPreviewInto(dialogBinding.wallpaperPreview)
         dialogBinding.selectWallpaperButton.setOnClickListener {
-            val cropOptions = CropOptions.Builder()
-                .setAspectX(9)
-                .setAspectY(16)
-                .setWithOwnCrop(true)
-                .create()
-            try {
-                UTakePhoto.with(this)
-                    .openAlbum()
-                    .setCrop(cropOptions)
-                    .build(object : ITakePhotoResult {
-                        override fun takeSuccess(uriList: MutableList<Uri>?) {
-                            val uri = uriList?.firstOrNull() ?: return
-                            saveWallpaper(uri)
-                        }
-                        override fun takeFailure(ex: TakeException?) {
-                            Toast.makeText(requireContext(), R.string.wallpaper_restored, Toast.LENGTH_SHORT).show()
-                        }
-                        override fun takeCancel() = Unit
-                    })
-            } catch (e: Exception) {
-                Toast.makeText(requireContext(), R.string.wallpaper_restored, Toast.LENGTH_SHORT).show()
-            }
+            // 交给系统相册选择器，不再申请任何权限。
+            // 裁剪也不需要：壁纸显示时由 Picasso 的 centerCrop 按版面比例适配。
+            wallpaperPicker.launch(arrayOf("image/*"))
         }
         dialogBinding.restoreWallpaperButton.setOnClickListener {
             WallpaperStore.clear(requireContext())
@@ -169,19 +159,33 @@ class ProfileFragment : Fragment() {
             val file = withContext(Dispatchers.IO) {
                 try {
                     val tasks = repository.getAllTasks()
+                    val subtasks = repository.getAllSubtasks()
                     val records = repository.getAllRecords()
+                    val countdowns = repository.getAllCountdownsOnce()
                     val dir = requireContext().getExternalFilesDir(null) ?: return@withContext null
                     val ts = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
                     val out = File(dir, "xian_data_$ts.csv")
+                    val df = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                    // CSV 转义：含逗号/引号/换行的字段加引号并转义内部引号
+                    fun csv(vararg cells: Any?): String = cells.joinToString(",") { cell ->
+                        val text = cell?.toString().orEmpty()
+                        if (text.any { it == ',' || it == '"' || it == '\n' || it == '\r' }) {
+                            "\"" + text.replace("\"", "\"\"") + "\""
+                        } else {
+                            text
+                        }
+                    }
                     out.printWriter(Charsets.UTF_8).use { w ->
+                        // UTF-8 BOM：不写它的话，Windows 版 Excel 会按系统本地编码解析，
+                        // 中文标题 / 备注一打开全是乱码。
+                        w.print('\uFEFF')
                         w.println("=== 任务数据 ===")
                         w.println("ID,标题,备注,优先级,预计贤时,已完成贤时,是否完成,截止日期,截止时间,创建时间,分类,重复规则")
-                        val df = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                         tasks.forEach { t ->
-                            w.println(listOf(
+                            w.println(csv(
                                 t.id,
-                                "\"${t.title.replace("\"", "\"\"")}\"",
-                                "\"${(t.description ?: "").replace("\"", "\"\"")}\"",
+                                t.title,
+                                t.description ?: "",
                                 t.priority,
                                 t.estimatedPomodoros,
                                 t.completedPomodoros,
@@ -191,14 +195,20 @@ class ProfileFragment : Fragment() {
                                 df.format(Date(t.createdAt)),
                                 t.listType,
                                 t.repeatRule
-                            ).joinToString(","))
+                            ))
+                        }
+                        w.println()
+                        w.println("=== 子任务 ===")
+                        w.println("ID,所属任务ID,标题,是否完成")
+                        subtasks.forEach { s ->
+                            w.println(csv(s.id, s.taskId, s.title, if (s.isCompleted) "是" else "否"))
                         }
                         w.println()
                         w.println("=== 专注记录 ===")
                         w.println("ID,关联任务ID,开始时间,结束时间,类型,是否完成,时长(分钟)")
                         records.forEach { r ->
                             val mins = ((r.endTime - r.startTime) / 60000).toInt()
-                            w.println(listOf(
+                            w.println(csv(
                                 r.id,
                                 r.taskId ?: "",
                                 df.format(Date(r.startTime)),
@@ -206,7 +216,43 @@ class ProfileFragment : Fragment() {
                                 r.type,
                                 if (r.isFinished) "是" else "否",
                                 mins
-                            ).joinToString(","))
+                            ))
+                        }
+                        w.println()
+                        w.println("=== 倒数日 ===")
+                        w.println("ID,标题,目标日期,是否每年重复,备注,创建时间")
+                        countdowns.forEach { c ->
+                            w.println(csv(
+                                c.id,
+                                c.title,
+                                df.format(Date(c.targetDate)),
+                                if (c.repeatYearly) "是" else "否",
+                                c.note,
+                                df.format(Date(c.createdAt))
+                            ))
+                        }
+                        w.println()
+                        // 日记存在 SharedPreferences 里，之前既不在导出范围、也逃过了"清除数据"，
+                        // 等于没有任何备份出口 —— 这里一并导出。
+                        w.println("=== 每日复盘（日记） ===")
+                        w.println("日期,评分(0-3),图片数量,内容")
+                        val diaryPrefs = requireContext()
+                            .getSharedPreferences("review_prefs", android.content.Context.MODE_PRIVATE)
+                        val diaryDates = diaryPrefs.all.keys
+                            .mapNotNull { key ->
+                                DIARY_KEY_PREFIXES.firstOrNull { key.startsWith(it) }
+                                    ?.let { key.removePrefix(it) }
+                            }
+                            .distinct()
+                            .sorted()
+                        diaryDates.forEach { date ->
+                            val note = diaryPrefs.getString("note_$date", "").orEmpty()
+                            val rating = diaryPrefs.getInt("rating_$date", 0)
+                            val imageCount = diaryPrefs.getString("images_$date", "")
+                                ?.split(",")
+                                ?.count { it.isNotBlank() }
+                                ?: 0
+                            w.println(csv(date, rating, imageCount, note))
                         }
                     }
                     out
@@ -236,5 +282,10 @@ class ProfileFragment : Fragment() {
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    private companion object {
+        /** 日记（每日复盘）在 review_prefs 中的键前缀。 */
+        val DIARY_KEY_PREFIXES = listOf("note_", "rating_", "images_")
     }
 }

@@ -93,7 +93,6 @@ class TimerFragment : Fragment() {
                 launch {
                     timerViewModel.timerState.collect { state ->
                         val timerActive = state.status != TimerStatus.IDLE
-                        LockController.update(timerViewModel.lockMode.value, timerActive)
                         renderTimerState(state)
                         applyLockMode(timerViewModel.lockMode.value, timerActive)
                     }
@@ -110,7 +109,6 @@ class TimerFragment : Fragment() {
                 launch {
                     timerViewModel.lockMode.collect { enabled ->
                         val timerActive = timerViewModel.timerState.value.status != TimerStatus.IDLE
-                        LockController.update(enabled, timerActive)
                         binding.lockButton.setText(
                             if (enabled) R.string.lock_disable else R.string.lock_enable
                         )
