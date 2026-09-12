@@ -131,8 +131,23 @@ class ReviewFragment : Fragment() {
                     weeklyLoaded = true
                     maybeHideLoading()
                 }
+                // 锁机统计不走 StateFlow：每次回到页面都要拿最新值
+                // （锁机结束回 app 时 StateFlow 不会重发同值）
+                updateLockStats()
             }
         }
+    }
+
+    private fun updateLockStats() {
+        val snapshot = LockStats.snapshot(requireContext())
+        binding.lockStatSessionsText.text = snapshot.sessions.toString()
+        binding.lockStatDurationText.text = formatLockMinutes(snapshot.minutes)
+        binding.lockStatHeldText.text = snapshot.held.toString()
+    }
+
+    private fun formatLockMinutes(minutes: Int): String = when {
+        minutes >= 60 -> getString(R.string.lock_duration_format_hm, minutes / 60, minutes % 60)
+        else -> getString(R.string.lock_duration_format_m, minutes)
     }
 
     private fun maybeHideLoading() {

@@ -200,6 +200,12 @@
     <string name="stats_week">近7天</string>
     <string name="stats_total">累计</string>
     <string name="stats_minutes">专注分钟</string>
+    <string name="stats_lock_title">本月锁机</string>
+    <string name="stats_lock_sessions">次数</string>
+    <string name="stats_lock_duration">时长</string>
+    <string name="stats_lock_held">忍住没退</string>
+    <string name="lock_duration_format_hm">%1$d 小时 %2$d 分</string>
+    <string name="lock_duration_format_m">%1$d 分钟</string>
     <string name="focus_minutes_label">专注时长</string>
     <string name="short_break_label">短休息</string>
     <string name="long_break_label">长休息</string>

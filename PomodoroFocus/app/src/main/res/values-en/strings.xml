@@ -200,6 +200,12 @@
     <string name="stats_week">7 days</string>
     <string name="stats_total">All time</string>
     <string name="stats_minutes">Focus min</string>
+    <string name="stats_lock_title">Lock this month</string>
+    <string name="stats_lock_sessions">Sessions</string>
+    <string name="stats_lock_duration">Time locked</string>
+    <string name="stats_lock_held">Held out</string>
+    <string name="lock_duration_format_hm">%1$dh %2$dm</string>
+    <string name="lock_duration_format_m">%1$d min</string>
     <string name="focus_minutes_label">Focus length</string>
     <string name="short_break_label">Short break</string>
     <string name="long_break_label">Long break</string>

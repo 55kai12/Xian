@@ -4,6 +4,7 @@ import android.content.Context
 
 object LockMachineController {
     private const val PREFS_NAME = "lock_machine_prefs"
+    private const val KEY_START_AT = "lock_start_at"
     private const val KEY_END_AT = "lock_end_at"
     private const val KEY_WHITELIST = "lock_whitelist"
 
@@ -11,15 +12,17 @@ object LockMachineController {
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun start(context: Context, durationMinutes: Int, whitelist: Set<String>) {
-        val endAt = System.currentTimeMillis() + durationMinutes.toLong() * 60_000L
+        val now = System.currentTimeMillis()
         prefs(context).edit()
-            .putLong(KEY_END_AT, endAt)
+            .putLong(KEY_START_AT, now)
+            .putLong(KEY_END_AT, now + durationMinutes.toLong() * 60_000L)
             .putStringSet(KEY_WHITELIST, whitelist)
             .apply()
     }
 
     fun stop(context: Context) {
         prefs(context).edit()
+            .remove(KEY_START_AT)
             .remove(KEY_END_AT)
             .apply()
     }
@@ -30,6 +33,20 @@ object LockMachineController {
     fun remainingMillis(context: Context): Long {
         val endAt = prefs(context).getLong(KEY_END_AT, 0L)
         return (endAt - System.currentTimeMillis()).coerceAtLeast(0L)
+    }
+
+    /**
+     * 本次锁机实际已锁时长：开始时刻到现在/到结束时刻中较早的一个。
+     * 供 LockStats 在锁机结束（stop/到期）时、清掉 prefs 之前调用。
+     */
+    fun elapsedMillis(context: Context): Long {
+        val prefs = prefs(context)
+        val startAt = prefs.getLong(KEY_START_AT, 0L)
+        if (startAt <= 0L || !isActive(context)) return 0L
+        val endAt = prefs(context).getLong(KEY_END_AT, 0L)
+        val now = System.currentTimeMillis()
+        val effectiveEnd = if (endAt > 0L) minOf(endAt, now) else now
+        return (effectiveEnd - startAt).coerceAtLeast(0L)
     }
 
     fun remainingText(context: Context): String {

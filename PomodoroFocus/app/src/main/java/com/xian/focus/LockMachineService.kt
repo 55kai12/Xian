@@ -58,12 +58,16 @@ class LockMachineService : LifecycleService() {
             ).show()
             return
         }
+        // 必须在 stop() 清掉开始时刻之前记数
+        LockStats.record(this, heldOut = false)
         LockMachineController.stop(this)
         LockMachineOverlayController.hide(this)
         stopSelf()
     }
 
     private fun finishLock() {
+        // 自然到期 = 忍住没退；同样要在 stop() 之前记
+        LockStats.record(this, heldOut = true)
         LockMachineController.stop(this)
         LockMachineOverlayController.hide(this)
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
