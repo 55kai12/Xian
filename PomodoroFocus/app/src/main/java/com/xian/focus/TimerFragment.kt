@@ -336,7 +336,7 @@ class TimerFragment : Fragment() {
     }
 
     private fun showAppPicker(selected: Set<String>, onResult: (Set<String>) -> Unit) {
-        WhitelistAppPicker.show(requireContext(), viewLifecycleOwner.lifecycleScope, selected, onResult)
+        WhitelistAppPicker.show(requireContext(), viewLifecycleOwner.lifecycleScope, selected, onResult = onResult)
     }
 
     private fun showAppLockDialog() {

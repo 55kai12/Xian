@@ -108,6 +108,22 @@
     <string name="lock_duration">Lock duration</string>
     <string name="custom_minutes_hint">Custom minutes</string>
     <string name="whitelist_apps">Allowed apps</string>
+
+    <!-- App limits -->
+    <string name="app_limit_title">App limits</string>
+    <string name="app_limit_add">Add app</string>
+    <string name="app_limit_empty">No limited apps yet\nGive distracting apps a daily allowance. Once it runs out they stay locked until the next day.</string>
+    <string name="app_limit_row_detail">Used %1$d of %2$d min today</string>
+    <string name="app_limit_row_locked">Daily limit used up, back tomorrow</string>
+    <string name="app_limit_minutes_format">%1$d min</string>
+    <string name="app_limit_unlimited">No limit</string>
+    <string name="app_limit_dialog_title">Daily limit for %1$s</string>
+    <string name="app_limit_picker_title">Choose apps to limit</string>
+    <string name="app_limit_added_toast">Added %1$d apps, %2$d min per day by default</string>
+    <string name="app_limit_overlay_title">%1$s is done for today</string>
+    <string name="app_limit_overlay_detail">%1$d min per day. Resets tomorrow.</string>
+    <string name="app_limit_overlay_home">Back to home screen</string>
+    <string name="app_limit_accessibility_hint">App limits are counted by the accessibility service, which is currently off, so limits will not work. Tap to enable it.</string>
     <string name="whitelist_format">%1$d allowed apps selected</string>
     <string name="start_lock_machine">Start lock</string>
     <string name="stop_lock_machine">Stop lock</string>

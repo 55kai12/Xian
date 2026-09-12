@@ -30,8 +30,8 @@ object LockHealth {
         Item(R.string.health_battery, isIgnoringBatteryOptimizations(context), batteryIntent())
     )
 
-    /** 无障碍服务是否已启用：在系统的已启用服务列表里找自己 */
-    private fun isAccessibilityOn(context: Context): Boolean {
+    /** 无障碍服务是否已启用：在系统的已启用服务列表里找自己。应用限额也靠它计时，故对外可见。 */
+    fun isAccessibilityOn(context: Context): Boolean {
         val expected = ComponentName(context, FocusLockAccessibilityService::class.java)
         val enabled = Settings.Secure.getString(
             context.contentResolver,

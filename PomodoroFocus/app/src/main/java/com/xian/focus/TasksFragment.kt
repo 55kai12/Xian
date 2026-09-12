@@ -359,6 +359,13 @@ class TasksFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
+        binding.drawerAppLimitItem.setOnClickListener {
+            binding.tasksDrawerLayout.closeDrawer(androidx.core.view.GravityCompat.START)
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragmentContainer, AppLimitFragment())
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     private fun showFortuneDialog() {

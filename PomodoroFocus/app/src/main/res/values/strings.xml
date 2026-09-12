@@ -108,6 +108,22 @@
     <string name="lock_duration">锁机时长</string>
     <string name="custom_minutes_hint">自定义分钟数</string>
     <string name="whitelist_apps">白名单应用</string>
+
+    <!-- 应用限额 -->
+    <string name="app_limit_title">应用限额</string>
+    <string name="app_limit_add">添加应用</string>
+    <string name="app_limit_empty">还没设置限额的应用\n给容易上头的应用定个每日额度，用完当天自动上锁，第二天恢复</string>
+    <string name="app_limit_row_detail">今日已用 %1$d / %2$d 分钟</string>
+    <string name="app_limit_row_locked">今日额度已用完，明天恢复</string>
+    <string name="app_limit_minutes_format">%1$d 分钟</string>
+    <string name="app_limit_unlimited">不限制</string>
+    <string name="app_limit_dialog_title">「%1$s」每日限额</string>
+    <string name="app_limit_picker_title">选择要限制的应用</string>
+    <string name="app_limit_added_toast">已添加 %1$d 个应用，默认每天 %2$d 分钟</string>
+    <string name="app_limit_overlay_title">%1$s 今日额度已用完</string>
+    <string name="app_limit_overlay_detail">每天可用 %1$d 分钟，明天自动恢复</string>
+    <string name="app_limit_overlay_home">返回桌面</string>
+    <string name="app_limit_accessibility_hint">应用限额靠「无障碍」服务计时。现在没开，限额不会生效，点这里去开启。</string>
     <string name="whitelist_format">已选择 %1$d 个白名单应用</string>
     <string name="start_lock_machine">开始锁机</string>
     <string name="stop_lock_machine">停止锁机</string>

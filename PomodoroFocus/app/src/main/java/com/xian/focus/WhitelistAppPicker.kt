@@ -24,6 +24,7 @@ object WhitelistAppPicker {
         context: Context,
         lifecycleScope: CoroutineScope,
         selected: Set<String>,
+        titleRes: Int = R.string.whitelist_apps,
         onResult: (Set<String>) -> Unit
     ) {
         lifecycleScope.launch {
@@ -34,7 +35,7 @@ object WhitelistAppPicker {
                 dividerHeight = 0
             }
             com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.whitelist_apps)
+                .setTitle(titleRes)
                 .setView(listView)
                 .setPositiveButton(R.string.save) { _, _ ->
                     val result = apps.filterIndexed { index, _ -> checked[index] }
