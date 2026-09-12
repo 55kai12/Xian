@@ -88,6 +88,8 @@
     <string name="open_settings">去设置</string>
     <string name="lock_overlay_title">专注锁机中</string>
     <string name="lock_overlay_subtitle">请回到“贤”继续学习，长按下方按钮可退出锁机</string>
+    <string name="lock_overlay_whitelist_title">锁机期间可用</string>
+    <string name="overlay_open">打开</string>
     <string name="long_press_exit">长按退出锁机</string>
     <string name="long_press_required">需要长按才能退出锁机</string>
 

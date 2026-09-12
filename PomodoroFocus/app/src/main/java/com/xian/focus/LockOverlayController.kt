@@ -24,7 +24,9 @@ object LockOverlayController {
         if (overlayView != null) return
         val applicationContext = context.applicationContext
         val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val view = LayoutInflater.from(applicationContext).inflate(R.layout.overlay_lock, null, false)
+        // 同 LockMachineOverlayController：悬浮窗拿不到 Activity 主题，套上用户当前色相
+        val view = LayoutInflater.from(ThemeStore.wrap(applicationContext))
+            .inflate(R.layout.overlay_lock, null, false)
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -42,9 +44,12 @@ object LockOverlayController {
             exitLock(applicationContext)
             true
         }
+        // alpha 先归零再 addView，否则会闪一帧全不透明
+        view.alpha = 0f
         try {
             windowManager.addView(view, params)
             overlayView = view
+            view.animate().alpha(1f).setDuration(220L).start()
         } catch (_: Exception) {
         }
     }

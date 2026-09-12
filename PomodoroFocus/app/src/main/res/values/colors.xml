@@ -90,6 +90,17 @@
     <color name="category_tag_bg">#333B5B4E</color>
     <color name="calendar_scrim">#40FFFFFF</color>
 
+    <!-- ========== 锁机覆盖层 ==========
+         全部是半透明白，叠在「当前主题的品牌色」底上：
+         半透明白会和底下任何色相自动调和，所以不用为 4 套主题 × 昼夜各配一份 -->
+    <color name="overlay_card_bg">#1FFFFFFF</color>
+    <color name="overlay_outline">#4DFFFFFF</color>
+    <color name="overlay_divider">#26FFFFFF</color>
+    <color name="flip_card_top">#2EFFFFFF</color>
+    <color name="flip_card_bottom">#1FFFFFFF</color>
+    <color name="flip_card_divider">#38000000</color>
+    <color name="flip_card_text">#FFFFFF</color>
+
     <!-- ========== 旧名兼容 ========== -->
     <color name="primary">@color/theme_qinglv_primary</color>
     <color name="primary_dark">@color/theme_qinglv_primary_variant</color>

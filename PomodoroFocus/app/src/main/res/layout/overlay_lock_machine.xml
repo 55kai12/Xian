@@ -1,42 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  锁机时盖在屏幕上的那层。
+  底色取用户当前选的主题品牌色（OverlayController 用 ContextThemeWrapper 套上主题后才能解析），
+  上面所有元素都是半透明白 —— 半透明白会和底下任何色相自动调和，
+  所以 4 套主题 × 昼夜共 8 种组合都不用各配一份配色。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/pale_grey"
-    android:gravity="center"
+    android:background="?attr/colorBrandSurface"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="32dp">
+    android:paddingHorizontal="26dp"
+    android:paddingTop="52dp"
+    android:paddingBottom="32dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:letterSpacing="0.08"
         android:text="@string/lock_overlay_title"
-        android:textColor="@color/text_primary"
-        android:textSize="22sp"
+        android:textColor="@color/on_primary"
+        android:textSize="25sp"
         android:textStyle="bold" />
 
-    <TextView
+    <View
+        android:layout_width="40dp"
+        android:layout_height="2dp"
+        android:layout_marginTop="14dp"
+        android:background="?attr/colorBrandAccent" />
+
+    <com.xian.focus.FlipClockView
         android:id="@+id/remainingText"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:textColor="@color/warning_orange"
-        android:textSize="36sp"
-        android:textStyle="bold" />
+        android:layout_height="84dp"
+        android:layout_marginTop="30dp" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="22dp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
         android:text="@string/lock_overlay_subtitle"
-        android:textColor="@color/text_secondary"
+        android:textColor="@color/on_primary_dim"
         android:textSize="13sp" />
 
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="34dp"
+        android:letterSpacing="0.05"
+        android:text="@string/lock_overlay_whitelist_title"
+        android:textColor="@color/on_primary_dim"
+        android:textSize="12sp" />
+
     <ScrollView
+        android:id="@+id/whitelistScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="16dp"
-        android:layout_weight="1">
+        android:layout_marginTop="10dp"
+        android:layout_weight="1"
+        android:scrollbars="none">
 
         <LinearLayout
             android:id="@+id/whitelistContainer"
@@ -48,24 +74,37 @@
     <TextView
         android:id="@+id/emptyWhitelistText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:gravity="center"
         android:text="@string/no_whitelist_apps"
-        android:textColor="@color/text_tertiary"
-        android:textSize="13sp" />
+        android:textColor="@color/on_primary_dim"
+        android:textSize="13sp"
+        android:visibility="gone" />
 
-    <Button
+    <!--
+      这里必须写全限定标签：WindowManager 悬浮窗的 inflate 不带 AppCompat 的 Factory2，
+      普通 <Button> 不会被自动换成 MaterialButton，app:strokeColor / cornerRadius 会被静默丢掉。
+    -->
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/backToAppButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="@string/back_to_app" />
+        android:layout_marginTop="18dp"
+        android:text="@string/back_to_app"
+        android:textColor="?attr/colorBrandSurface"
+        app:backgroundTint="@color/on_primary" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/exitLockButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="@string/long_press_exit" />
+        android:layout_marginTop="10dp"
+        android:text="@string/long_press_exit"
+        android:textColor="@color/on_primary"
+        app:backgroundTint="@android:color/transparent"
+        app:cornerRadius="14dp"
+        app:strokeColor="@color/overlay_outline"
+        app:strokeWidth="1dp" />
 </LinearLayout>

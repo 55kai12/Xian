@@ -88,6 +88,8 @@
     <string name="open_settings">Open settings</string>
     <string name="lock_overlay_title">Focus lock active</string>
     <string name="lock_overlay_subtitle">Please return to Xian and keep going. Long-press the button below to exit the lock.</string>
+    <string name="lock_overlay_whitelist_title">Available during lock</string>
+    <string name="overlay_open">Open</string>
     <string name="long_press_exit">Long-press to exit lock</string>
     <string name="long_press_required">Long press is required to exit the lock</string>
 

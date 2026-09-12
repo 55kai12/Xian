@@ -1,6 +1,7 @@
 package com.xian.focus
 
 import android.content.Context
+import android.view.ContextThemeWrapper
 
 object ThemeStore {
     private const val PREFS_NAME = "theme_prefs"
@@ -26,4 +27,13 @@ object ThemeStore {
         THEME_XUANMO -> R.style.Theme_Xian_Xuanmo
         else -> R.style.Theme_Xian_Qinglv
     }
+
+    /**
+     * 给非 Activity 的 context 套上用户当前选的主题。
+     * 悬浮窗（WindowManager overlay）只能拿 application context 渲染，而色相是 MainActivity
+     * 里 setTheme 出来的 —— 不套这一层，锁机覆盖层会永远停在默认的青绿，
+     * 跟用户在设置里选的色相对不上。
+     */
+    fun wrap(context: Context): Context =
+        ContextThemeWrapper(context, themeResId(selectedTheme(context)))
 }

@@ -1,36 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  专注计时中切出「贤」时盖上的那层。
+  视觉语言跟 overlay_lock_machine 一致：品牌色打底 + 半透明白元素。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/scrim"
-    tools:ignore="Overdraw"
+    android:background="?attr/colorBrandSurface"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="32dp">
+    android:paddingHorizontal="36dp"
+    tools:ignore="Overdraw">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:letterSpacing="0.08"
         android:text="@string/lock_overlay_title"
         android:textColor="@color/on_primary"
-        android:textSize="28sp"
+        android:textSize="26sp"
         android:textStyle="bold" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:gravity="center"
-        android:text="@string/lock_overlay_subtitle"
-        android:textColor="@color/on_primary_dim"
-        android:textSize="15sp" />
+    <View
+        android:layout_width="40dp"
+        android:layout_height="2dp"
+        android:layout_marginTop="14dp"
+        android:background="?attr/colorBrandAccent" />
 
-    <Button
-        android:id="@+id/exitLockButton"
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="22dp"
+        android:gravity="center"
+        android:lineSpacingExtra="4dp"
+        android:text="@string/lock_overlay_subtitle"
+        android:textColor="@color/on_primary_dim"
+        android:textSize="14sp" />
+
+    <!-- 同上：悬浮窗里普通 <Button> 不会被换成 MaterialButton，必须写全限定标签 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/exitLockButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
         android:text="@string/long_press_exit"
-        android:textColor="@color/on_primary" />
+        android:textColor="@color/on_primary"
+        app:backgroundTint="@android:color/transparent"
+        app:cornerRadius="14dp"
+        app:strokeColor="@color/overlay_outline"
+        app:strokeWidth="1dp" />
 </LinearLayout>
