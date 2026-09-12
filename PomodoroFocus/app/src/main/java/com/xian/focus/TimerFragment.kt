@@ -55,6 +55,7 @@ class TimerFragment : Fragment() {
             v.setPadding(v.paddingLeft, bars.top, v.paddingRight, v.paddingBottom)
             insets
         }
+        binding.root.post { binding.root.staggerScrollContent() }
         setupControls()
         observeState()
     }
@@ -104,6 +105,12 @@ class TimerFragment : Fragment() {
                             it.completed,
                             it.goal
                         )
+                        val goal = it.goal.coerceAtLeast(1)
+                        binding.goalProgress.max = goal
+                        binding.goalProgress.setProgressCompat(
+                            it.completed.coerceIn(0, goal),
+                            true
+                        )
                     }
                 }
                 launch {
@@ -125,8 +132,11 @@ class TimerFragment : Fragment() {
         }
     }
 
+    private var lastRenderedStatus: TimerStatus? = null
+
     private fun renderTimerState(state: TimerState) {
         binding.timerText.text = formatSeconds(state.remainingSeconds)
+        updateRing(state)
         binding.statusText.setText(
             when (state.status) {
                 TimerStatus.IDLE -> R.string.status_idle
@@ -148,6 +158,47 @@ class TimerFragment : Fragment() {
             TimerStatus.LONG_BREAK -> true
             TimerStatus.IDLE,
             TimerStatus.PAUSED -> false
+        }
+    }
+
+    /**
+     * 圆环进度 + 状态切换的脉冲反馈。
+     *
+     * 每秒 tick 直接跳位 —— 用动画会被下一秒的 tick 反复打断，反而更难看；
+     * 只有状态切换这种大跳变才值得播一段过渡。
+     */
+    private fun updateRing(state: TimerState) {
+        val durations = timerViewModel.currentDurations()
+        val activeStatus = if (state.status == TimerStatus.PAUSED) {
+            state.pausedFromStatus ?: TimerStatus.FOCUSING
+        } else {
+            state.status
+        }
+        val totalSeconds = when (activeStatus) {
+            TimerStatus.SHORT_BREAK -> durations.shortBreakMinutes * 60
+            TimerStatus.LONG_BREAK -> durations.longBreakMinutes * 60
+            else -> durations.focusMinutes * 60
+        }
+        val progress = if (state.status == TimerStatus.IDLE || totalSeconds <= 0) {
+            0f
+        } else {
+            1f - state.remainingSeconds.toFloat() / totalSeconds
+        }
+
+        if (state.status != lastRenderedStatus) {
+            lastRenderedStatus = state.status
+            binding.timerRing.animateProgress(progress)
+            binding.statusText.animate().cancel()
+            binding.statusText.scaleX = 0.92f
+            binding.statusText.scaleY = 0.92f
+            binding.statusText.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(240L)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        } else {
+            binding.timerRing.setProgress(progress)
         }
     }
 

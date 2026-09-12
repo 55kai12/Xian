@@ -66,6 +66,39 @@ class TaskAdapter(
         /** 语义色一律走 colors.xml，好让深色模式跟着翻面。 */
         private fun color(colorRes: Int) = ContextCompat.getColor(context, colorRes)
 
+        /** 上一次绑定的完成态：用来判断该不该播"刚完成"的动画 */
+        private var lastBoundCompleted: Boolean? = null
+        private var strikeAnimator: android.animation.ValueAnimator? = null
+
+        /** 打勾那一下给个回弹，让"完成了"有存在感 */
+        private fun pulse(view: View) {
+            view.animate().cancel()
+            view.scaleX = 0.6f
+            view.scaleY = 0.6f
+            view.animate()
+                .scaleX(1f)
+                .scaleY(1f)
+                .setDuration(300L)
+                .setInterpolator(android.view.animation.OvershootInterpolator(2.6f))
+                .start()
+        }
+
+        /** 划线由左向右展开，而不是啪地整条出现 */
+        private fun animateStrikeWidth(targetWidth: Int) {
+            strikeAnimator?.cancel()
+            strikeAnimator = android.animation.ValueAnimator.ofInt(0, targetWidth).apply {
+                duration = 280L
+                interpolator = android.view.animation.DecelerateInterpolator()
+                addUpdateListener { anim ->
+                    binding.taskTitleStrikeLine.layoutParams =
+                        binding.taskTitleStrikeLine.layoutParams.apply {
+                            width = anim.animatedValue as Int
+                        }
+                }
+                start()
+            }
+        }
+
         fun bind(task: Task, number: Int) {
             val isSelected = task.id == (selectedTaskIdProvider?.invoke() ?: selectedTaskId)
             binding.root.isSelected = isSelected
@@ -93,11 +126,27 @@ class TaskAdapter(
             binding.root.setOnClickListener { onEditTask(task) }
             binding.taskTitleText.text = task.title
             binding.taskTitleText.paint.isStrikeThruText = false
-            binding.taskTitleStrikeLine.visibility = if (task.isCompleted && showStrikethrough) View.VISIBLE else View.GONE
-            binding.taskTitleStrikeLine.layoutParams = binding.taskTitleStrikeLine.layoutParams.apply {
-                width = if (task.isCompleted) task.title.let { title ->
-                    binding.taskTitleText.paint.measureText(title).toInt()
-                } else 0
+
+            // "刚完成"的动效只在真的从未完成变成完成时播 ——
+            // ViewHolder 会被复用重绑，不判断就会在滚动时一路乱闪
+            val justCompleted = lastBoundCompleted == false && task.isCompleted
+            lastBoundCompleted = task.isCompleted
+
+            val strikeVisible = task.isCompleted && showStrikethrough
+            val strikeWidth = if (strikeVisible) {
+                binding.taskTitleText.paint.measureText(task.title).toInt()
+            } else {
+                0
+            }
+            binding.taskTitleStrikeLine.visibility =
+                if (strikeVisible) View.VISIBLE else View.GONE
+            if (justCompleted && strikeVisible) {
+                animateStrikeWidth(strikeWidth)
+                pulse(binding.taskNumberText)
+            } else {
+                strikeAnimator?.cancel()
+                binding.taskTitleStrikeLine.layoutParams =
+                    binding.taskTitleStrikeLine.layoutParams.apply { width = strikeWidth }
             }
             binding.taskTitleText.setTextColor(
                 if (task.isCompleted) color(R.color.completed_grey) else color(R.color.text_primary)

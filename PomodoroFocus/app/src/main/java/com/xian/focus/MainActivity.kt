@@ -57,12 +57,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.bottomNavigation.setOnItemSelectedListener { item ->
+            // tab 顺序即导航方向：往右切从右侧进，往左切从左侧进
             when (item.itemId) {
-                R.id.nav_timer -> showFragment(TimerFragment())
-                R.id.nav_tasks -> showFragment(TasksFragment())
-                R.id.nav_lock -> showFragment(LockFragment())
-                R.id.nav_review -> showFragment(ReviewFragment())
-                R.id.nav_profile -> showFragment(ProfileFragment())
+                R.id.nav_timer -> showFragment(TimerFragment(), 0)
+                R.id.nav_tasks -> showFragment(TasksFragment(), 1)
+                R.id.nav_lock -> showFragment(LockFragment(), 2)
+                R.id.nav_review -> showFragment(ReviewFragment(), 3)
+                R.id.nav_profile -> showFragment(ProfileFragment(), 4)
                 else -> false
             }
         }
@@ -127,13 +128,28 @@ class MainActivity : AppCompatActivity() {
             timerViewModel.timerState.value.status != TimerStatus.IDLE
     }
 
-    private fun showFragment(fragment: androidx.fragment.app.Fragment): Boolean {
+    /** 记住上一个 tab 序号，用来决定页面切换的方向 */
+    private var lastTabIndex = 1
+
+    private fun showFragment(
+        fragment: androidx.fragment.app.Fragment,
+        tabIndex: Int
+    ): Boolean {
         val current = supportFragmentManager.findFragmentById(R.id.fragmentContainer)
-        if (current?.javaClass == fragment.javaClass) return true
+        if (current?.javaClass == fragment.javaClass) {
+            lastTabIndex = tabIndex
+            return true
+        }
+        val enter = if (tabIndex >= lastTabIndex) {
+            R.anim.frag_enter_from_right
+        } else {
+            R.anim.frag_enter_from_left
+        }
         supportFragmentManager.beginTransaction()
-            .setCustomAnimations(R.anim.slide_in_right, R.anim.fade_out, R.anim.fade_in, R.anim.fade_out)
+            .setCustomAnimations(enter, R.anim.frag_exit)
             .replace(R.id.fragmentContainer, fragment)
             .commit()
+        lastTabIndex = tabIndex
         return true
     }
 

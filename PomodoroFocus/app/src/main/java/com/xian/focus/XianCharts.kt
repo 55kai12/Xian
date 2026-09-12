@@ -42,7 +42,7 @@ object XianCharts {
         chart.data = BarData(set).apply {
             barWidth = 0.45f
         }
-        chart.animateY(700)
+        chart.animateY(720, com.github.mikephil.charting.animation.Easing.EaseOutCubic)
         chart.invalidate()
     }
 
@@ -68,7 +68,7 @@ object XianCharts {
         chart.xAxis.axisMinimum = -0.5f
         chart.xAxis.axisMaximum = (data.size - 1).toFloat() + 0.5f
         chart.setExtraOffsets(0f, 0f, 0f, 0f)
-        chart.animateX(500)
+        chart.animateX(620, com.github.mikephil.charting.animation.Easing.EaseOutCubic)
         chart.invalidate()
     }
 

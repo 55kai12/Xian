@@ -169,6 +169,7 @@
             android:paddingTop="4dp"
             android:paddingBottom="80dp"
             android:clipToPadding="false"
+            android:layoutAnimation="@anim/layout_fall_down"
             android:background="@color/card_background" />
 
         <!-- 新增按钮（悬浮） -->

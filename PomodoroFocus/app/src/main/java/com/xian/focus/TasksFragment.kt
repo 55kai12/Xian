@@ -366,6 +366,12 @@ class TasksFragment : Fragment() {
         binding.drawerCountdownItem.setOnClickListener {
             binding.tasksDrawerLayout.closeDrawer(androidx.core.view.GravityCompat.START)
             parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
                 .replace(R.id.fragmentContainer, CountdownFragment())
                 .addToBackStack(null)
                 .commit()
@@ -373,6 +379,12 @@ class TasksFragment : Fragment() {
         binding.drawerAppLimitItem.setOnClickListener {
             binding.tasksDrawerLayout.closeDrawer(androidx.core.view.GravityCompat.START)
             parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
                 .replace(R.id.fragmentContainer, AppLimitFragment())
                 .addToBackStack(null)
                 .commit()

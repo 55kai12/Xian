@@ -68,12 +68,19 @@ class ProfileFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.root.post { binding.root.staggerScrollContent() }
         updateCurrentThemeText()
         binding.appearanceCard.setOnClickListener { showAppearanceDialog() }
         binding.exportDataButton.setOnClickListener { exportData() }
         binding.fortuneDataCard.setOnClickListener { showFortuneData() }
         binding.settingsCard.setOnClickListener {
             parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
                 .replace(R.id.fragmentContainer, SettingsFragment())
                 .addToBackStack(null)
                 .commit()

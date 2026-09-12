@@ -52,6 +52,7 @@ class LockFragment : Fragment() {
         selectedWhitelist.clear()
         selectedWhitelist.addAll(LockMachineController.whitelist(requireContext()))
         binding.duration30.isChecked = true
+        binding.root.post { binding.root.staggerScrollContent() }
         binding.whitelistButton.text = getString(R.string.whitelist_format, selectedWhitelist.size)
 
         binding.whitelistButton.setOnClickListener { showAppPicker() }

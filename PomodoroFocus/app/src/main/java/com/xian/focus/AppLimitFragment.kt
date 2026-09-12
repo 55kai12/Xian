@@ -51,6 +51,7 @@ class AppLimitFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         adapter = RowAdapter(LayoutInflater.from(requireContext()))
         binding.limitAppList.adapter = adapter
+        binding.root.post { binding.root.staggerScrollContent() }
         binding.backButton.setOnClickListener { parentFragmentManager.popBackStack() }
         binding.addLimitAppButton.setOnClickListener { pickApps() }
         binding.limitAppList.setOnItemClickListener { _, _, position, _ ->

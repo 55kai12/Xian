@@ -58,6 +58,12 @@ class SettingsFragment : Fragment() {
         binding.dailyGoalCard.setOnClickListener { showDailyGoalDialog() }
         binding.eventSettingsCard.setOnClickListener {
             parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
                 .replace(R.id.fragmentContainer, EventSettingsFragment())
                 .addToBackStack(null)
                 .commit()

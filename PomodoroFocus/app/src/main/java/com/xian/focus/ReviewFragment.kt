@@ -72,6 +72,7 @@ class ReviewFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        binding.root.post { binding.root.staggerScrollContent() }
         loadDiary()
         binding.saveButton.setOnClickListener { saveDiary() }
         binding.addImageButton.setOnClickListener {

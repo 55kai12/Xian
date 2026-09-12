@@ -37,15 +37,29 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/timerText"
+                <!-- 倒计时套在进度圆环里：环走完 = 这一段专注走完 -->
+                <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:gravity="center"
-                    android:text="@string/default_timer"
-                    android:textSize="56sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="12dp">
+
+                    <com.xian.focus.RingProgressView
+                        android:id="@+id/timerRing"
+                        android:layout_width="196dp"
+                        android:layout_height="196dp"
+                        android:layout_gravity="center" />
+
+                    <TextView
+                        android:id="@+id/timerText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:text="@string/default_timer"
+                        android:textColor="?attr/colorBrandContent"
+                        android:textSize="46sp"
+                        android:textStyle="bold" />
+                </FrameLayout>
 
                 <TextView
                     android:id="@+id/goalLabel"
@@ -56,27 +70,37 @@
                     android:text="@string/goal_initial"
                     android:textColor="@color/ink_text"
                     android:textSize="15sp" />
+
+                <!-- 今日贤时的完成度，比只看数字更直观 -->
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/goalProgress"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:max="8"
+                    android:progress="0"
+                    app:indicatorColor="?attr/colorBrandAccent"
+                    app:trackColor="@color/divider"
+                    app:trackThickness="6dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
-            style="?android:attr/buttonBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="18dp"
             android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/startButton"
-                style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/start_focus" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/pauseButton"
-                style="?android:attr/buttonBarButtonStyle"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -84,9 +108,9 @@
                 android:enabled="false"
                 android:text="@string/pause" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/resetButton"
-                style="?android:attr/buttonBarButtonStyle"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -95,32 +119,31 @@
         </LinearLayout>
 
         <LinearLayout
-            style="?android:attr/buttonBarStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:orientation="horizontal">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/goalButton"
-                style="?android:attr/buttonBarButtonStyle"
+                style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/set_daily_goal" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/timerSettingsButton"
-                style="?android:attr/buttonBarButtonStyle"
+                style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:text="@string/timer_settings" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/statsButton"
-                style="?android:attr/buttonBarButtonStyle"
+                style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -128,17 +151,19 @@
                 android:text="@string/focus_stats" />
         </LinearLayout>
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/lockButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="6dp"
             android:minWidth="0dp"
             android:text="@string/lock_enable" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/appLockButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"

@@ -124,5 +124,6 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:divider="@null"
+        android:layoutAnimation="@anim/layout_fall_down"
         android:paddingBottom="12dp" />
 </LinearLayout>
