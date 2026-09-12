@@ -25,6 +25,13 @@ object LockMachineOverlayController {
     private var lastShowAt = 0L
     private var lastHideAt = 0L
     private const val DEBOUNCE_MILLIS = 350L
+
+    /** 退出冷静期截止时刻；0 表示弹窗没开着。 */
+    private var cooldownEndsAt = 0L
+
+    /** 白名单文件夹展开状态；悬浮窗每次重建都回到收起。 */
+    private var whitelistExpanded = false
+
     private val tickRunnable = object : Runnable {
         override fun run() {
             val view = overlayView ?: return
@@ -36,6 +43,7 @@ object LockMachineOverlayController {
             view.findViewById<FlipClockView>(R.id.remainingText)
                 .setDisplay(LockMachineController.remainingText(context))
             updateClockText(context, view)
+            updateCooldownText(view)
             handler.postDelayed(this, 1_000L)
         }
     }
@@ -55,6 +63,21 @@ object LockMachineOverlayController {
                 LockExitQuota.remaining(context),
                 LockExitQuota.MONTHLY_LIMIT
             )
+    }
+
+    /** 冷静期倒计时：走完前「确认退出」保持禁用。 */
+    private fun updateCooldownText(view: View) {
+        if (cooldownEndsAt <= 0L) return
+        val remainSeconds = ((cooldownEndsAt - System.currentTimeMillis()) / 1000L).toInt()
+        val cooldownText = view.findViewById<TextView>(R.id.cooldownText)
+        val confirmButton = view.findViewById<Button>(R.id.confirmExitButton)
+        if (remainSeconds > 0) {
+            cooldownText.text = view.context.getString(R.string.exit_confirm_cooldown, remainSeconds)
+            confirmButton.isEnabled = false
+        } else {
+            cooldownText.setText(R.string.exit_confirm_ready)
+            confirmButton.isEnabled = true
+        }
     }
 
     fun isShowing(): Boolean = overlayView != null
@@ -95,8 +118,16 @@ object LockMachineOverlayController {
             } catch (_: Exception) {
             }
         }
+        // 长按退出 → 先过 30 秒冷静期弹窗；冷静期满且本月额度没用完才真的退
         view.findViewById<Button>(R.id.exitLockButton).setOnLongClickListener {
-            // 只做只读预检，真正扣额度在 LockMachineService.stopLock()，这里再 consume 会双扣
+            showExitConfirm(view)
+            true
+        }
+        view.findViewById<Button>(R.id.cancelExitButton).setOnClickListener {
+            hideExitConfirm(view)
+        }
+        view.findViewById<Button>(R.id.confirmExitButton).setOnClickListener {
+            if (System.currentTimeMillis() < cooldownEndsAt) return@setOnClickListener
             if (LockExitQuota.canExit(applicationContext)) {
                 LockMachineService.stop(applicationContext)
                 hide(applicationContext)
@@ -110,14 +141,20 @@ object LockMachineOverlayController {
                     Toast.LENGTH_LONG
                 ).show()
             }
-            true
         }
+        view.findViewById<View>(R.id.whitelistFolderRow).setOnClickListener {
+            whitelistExpanded = !whitelistExpanded
+            applyWhitelistVisibility(view)
+        }
+
         // alpha 先归零再 addView，否则会闪一帧全不透明
         view.alpha = 0f
         try {
             windowManager.addView(view, params)
             overlayView = view
             lastShowAt = System.currentTimeMillis()
+            cooldownEndsAt = 0L
+            whitelistExpanded = false
             view.animate().alpha(1f).setDuration(220L).start()
             updateContent(applicationContext)
             handler.post(tickRunnable)
@@ -130,6 +167,7 @@ object LockMachineOverlayController {
         if (System.currentTimeMillis() - lastShowAt < DEBOUNCE_MILLIS) return
         overlayView = null
         lastHideAt = System.currentTimeMillis()
+        cooldownEndsAt = 0L
         handler.removeCallbacks(tickRunnable)
         val applicationContext = context.applicationContext
         val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -139,6 +177,17 @@ object LockMachineOverlayController {
         }
     }
 
+    private fun showExitConfirm(view: View) {
+        cooldownEndsAt = System.currentTimeMillis() + LockExitQuota.COOLDOWN_SECONDS * 1000L
+        updateCooldownText(view)
+        view.findViewById<View>(R.id.exitConfirmOverlay).visibility = View.VISIBLE
+    }
+
+    private fun hideExitConfirm(view: View) {
+        cooldownEndsAt = 0L
+        view.findViewById<View>(R.id.exitConfirmOverlay).visibility = View.GONE
+    }
+
     private fun updateContent(context: Context) {
         val view = overlayView ?: return
         view.findViewById<FlipClockView>(R.id.remainingText)
@@ -146,18 +195,23 @@ object LockMachineOverlayController {
         updateClockText(context, view)
 
         val container = view.findViewById<LinearLayout>(R.id.whitelistContainer)
+        val folderRow = view.findViewById<View>(R.id.whitelistFolderRow)
+        val folderCount = view.findViewById<TextView>(R.id.whitelistFolderCount)
         val emptyView = view.findViewById<TextView>(R.id.emptyWhitelistText)
         val scrollView = view.findViewById<ScrollView>(R.id.whitelistScroll)
         container.removeAllViews()
 
         val whitelist = LockMachineController.whitelist(context).toList()
         if (whitelist.isEmpty()) {
+            folderRow.visibility = View.GONE
             emptyView.visibility = View.VISIBLE
             scrollView.visibility = View.GONE
             return
         }
+        folderRow.visibility = View.VISIBLE
         emptyView.visibility = View.GONE
-        scrollView.visibility = View.VISIBLE
+        folderCount.text = context.getString(R.string.whitelist_count_format, whitelist.size)
+        applyWhitelistVisibility(view)
 
         val packageManager = context.packageManager
         val inflater = LayoutInflater.from(view.context)
@@ -180,5 +234,12 @@ object LockMachineOverlayController {
             }
             container.addView(row.root)
         }
+    }
+
+    private fun applyWhitelistVisibility(view: View) {
+        view.findViewById<ScrollView>(R.id.whitelistScroll).visibility =
+            if (whitelistExpanded) View.VISIBLE else View.GONE
+        view.findViewById<TextView>(R.id.whitelistFolderArrow).text =
+            if (whitelistExpanded) "▴" else "▾"
     }
 }

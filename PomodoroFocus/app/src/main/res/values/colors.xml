@@ -96,6 +96,8 @@
     <color name="overlay_card_bg">#1FFFFFFF</color>
     <color name="overlay_outline">#4DFFFFFF</color>
     <color name="overlay_divider">#26FFFFFF</color>
+    <color name="overlay_scrim">#99000000</color>
+    <color name="overlay_confirm_card">#33FFFFFF</color>
     <color name="flip_card_top">#2EFFFFFF</color>
     <color name="flip_card_bottom">#1FFFFFFF</color>
     <color name="flip_card_divider">#38000000</color>

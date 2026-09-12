@@ -8,6 +8,7 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import java.util.Calendar
 import androidx.appcompat.app.AlertDialog
@@ -148,8 +149,9 @@ class LockFragment : Fragment() {
                 ).show()
                 return
             }
-            LockMachineService.stop(requireContext())
-            updateUi()
+            // 应用内退出也走 30 秒冷静期 —— 贤本身永远在白名单里，
+            // 这里要是能秒退，覆盖层上的冷静期就形同虚设
+            confirmStopWithCooldown()
             return
         }
         if (!Settings.canDrawOverlays(requireContext())) {
@@ -174,6 +176,31 @@ class LockFragment : Fragment() {
         LockMachineService.start(requireContext(), duration.coerceIn(1, 600), selectedWhitelist)
         Toast.makeText(requireContext(), getString(R.string.lock_machine_running, getString(R.string.duration_minutes, duration)), Toast.LENGTH_SHORT).show()
         updateUi()
+    }
+
+    private fun confirmStopWithCooldown() {
+        val contentView = layoutInflater.inflate(R.layout.dialog_exit_cooldown, null)
+        val cooldownText = contentView.findViewById<TextView>(R.id.cooldownText)
+        val dialog = AlertDialog.Builder(requireContext())
+            .setTitle(R.string.exit_confirm_title)
+            .setMessage(getString(R.string.exit_confirm_body))
+            .setPositiveButton(R.string.exit_confirm_exit) { _, _ ->
+                LockMachineService.stop(requireContext())
+            }
+            .setNegativeButton(R.string.exit_confirm_cancel, null)
+            .show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = false
+        val job = viewLifecycleOwner.lifecycleScope.launch {
+            var remain = LockExitQuota.COOLDOWN_SECONDS
+            while (remain > 0) {
+                cooldownText.text = getString(R.string.exit_confirm_cooldown, remain)
+                delay(1_000L)
+                remain--
+            }
+            cooldownText.setText(R.string.exit_confirm_ready)
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true
+        }
+        dialog.setOnDismissListener { job.cancel() }
     }
 
     private fun updateScheduledButtons() {

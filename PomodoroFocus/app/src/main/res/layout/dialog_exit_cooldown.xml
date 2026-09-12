@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  锁机设置页「停止锁机」的冷静期对话框正文。
+  标题和按钮用 AlertDialog 自带的，这里只放倒计时文字。
+  与覆盖层里的退出弹窗共用同一套文案（exit_confirm_cooldown / exit_confirm_ready）。
+-->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/cooldownText"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingTop="6dp"
+    android:textSize="14sp" />

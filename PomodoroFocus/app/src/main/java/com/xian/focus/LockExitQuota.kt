@@ -13,6 +13,9 @@ import java.util.Calendar
 object LockExitQuota {
     const val MONTHLY_LIMIT = 2
 
+    /** 主动退出前的冷静期秒数。覆盖层弹窗和锁机设置页共用。 */
+    const val COOLDOWN_SECONDS = 30
+
     private const val PREFS_NAME = "lock_machine_prefs"
     private const val KEY_MONTH = "exit_quota_month"
     private const val KEY_USED = "exit_quota_used"
