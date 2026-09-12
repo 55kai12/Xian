@@ -38,6 +38,15 @@
         android:layout_marginTop="30dp" />
 
     <TextView
+        android:id="@+id/currentTimeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:letterSpacing="0.06"
+        android:textColor="@color/on_primary_dim"
+        android:textSize="15sp" />
+
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="22dp"
@@ -94,6 +103,15 @@
         android:text="@string/back_to_app"
         android:textColor="?attr/colorBrandSurface"
         app:backgroundTint="@color/on_primary" />
+
+    <TextView
+        android:id="@+id/exitQuotaText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:gravity="center"
+        android:textColor="@color/on_primary_dim"
+        android:textSize="11sp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/exitLockButton"

@@ -129,12 +129,25 @@ class LockFragment : Fragment() {
             binding.lockRemainingText.visibility = View.GONE
             binding.startStopButton.setText(R.string.start_lock_machine)
         }
+        binding.exitQuotaHintText.text = getString(
+            R.string.exit_quota_format,
+            LockExitQuota.remaining(requireContext()),
+            LockExitQuota.MONTHLY_LIMIT
+        )
         binding.overlayPermissionButton.alpha = if (Settings.canDrawOverlays(requireContext())) 1f else 0.55f
         binding.accessibilityPermissionButton.alpha = if (isAccessibilityEnabled()) 1f else 0.55f
     }
 
     private fun toggleLock() {
         if (LockMachineController.isActive(requireContext())) {
+            if (!LockExitQuota.canExit(requireContext())) {
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT),
+                    Toast.LENGTH_LONG
+                ).show()
+                return
+            }
             LockMachineService.stop(requireContext())
             updateUi()
             return

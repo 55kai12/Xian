@@ -92,6 +92,9 @@
     <string name="overlay_open">打开</string>
     <string name="long_press_exit">长按退出锁机</string>
     <string name="long_press_required">需要长按才能退出锁机</string>
+    <string name="current_time_format">现在 %1$s</string>
+    <string name="exit_quota_format">本月剩余退出次数：%1$d / %2$d</string>
+    <string name="exit_quota_exhausted">本月退出锁机次数已用完（每月 %1$d 次）</string>
 
     <string name="custom_lock">自定义锁机</string>
     <string name="custom_lock_dialog_title">自定义锁机</string>

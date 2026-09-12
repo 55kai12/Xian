@@ -92,6 +92,9 @@
     <string name="overlay_open">Open</string>
     <string name="long_press_exit">Long-press to exit lock</string>
     <string name="long_press_required">Long press is required to exit the lock</string>
+    <string name="current_time_format">Now %1$s</string>
+    <string name="exit_quota_format">Exits left this month: %1$d / %2$d</string>
+    <string name="exit_quota_exhausted">You have used up all lock exits for this month (%1$d per month)</string>
 
     <string name="custom_lock">Custom lock</string>
     <string name="custom_lock_dialog_title">Custom lock</string>

@@ -16,6 +16,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import com.xian.focus.databinding.ItemWhitelistAppBinding
+import java.util.Calendar
 
 @SuppressLint("StaticFieldLeak", "InflateParams")
 object LockMachineOverlayController {
@@ -34,8 +35,26 @@ object LockMachineOverlayController {
             }
             view.findViewById<FlipClockView>(R.id.remainingText)
                 .setDisplay(LockMachineController.remainingText(context))
+            updateClockText(context, view)
             handler.postDelayed(this, 1_000L)
         }
+    }
+
+    /** 当前时间 + 本月剩余退出额度，跟倒计时一起每秒刷新。 */
+    private fun updateClockText(context: Context, view: View) {
+        val calendar = Calendar.getInstance()
+        val now = "%02d:%02d".format(
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE)
+        )
+        view.findViewById<TextView>(R.id.currentTimeText).text =
+            context.getString(R.string.current_time_format, now)
+        view.findViewById<TextView>(R.id.exitQuotaText).text =
+            context.getString(
+                R.string.exit_quota_format,
+                LockExitQuota.remaining(context),
+                LockExitQuota.MONTHLY_LIMIT
+            )
     }
 
     fun isShowing(): Boolean = overlayView != null
@@ -77,8 +96,20 @@ object LockMachineOverlayController {
             }
         }
         view.findViewById<Button>(R.id.exitLockButton).setOnLongClickListener {
-            LockMachineService.stop(applicationContext)
-            hide(applicationContext)
+            // 只做只读预检，真正扣额度在 LockMachineService.stopLock()，这里再 consume 会双扣
+            if (LockExitQuota.canExit(applicationContext)) {
+                LockMachineService.stop(applicationContext)
+                hide(applicationContext)
+            } else {
+                Toast.makeText(
+                    applicationContext,
+                    applicationContext.getString(
+                        R.string.exit_quota_exhausted,
+                        LockExitQuota.MONTHLY_LIMIT
+                    ),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
             true
         }
         // alpha 先归零再 addView，否则会闪一帧全不透明
@@ -112,6 +143,7 @@ object LockMachineOverlayController {
         val view = overlayView ?: return
         view.findViewById<FlipClockView>(R.id.remainingText)
             .setDisplay(LockMachineController.remainingText(context))
+        updateClockText(context, view)
 
         val container = view.findViewById<LinearLayout>(R.id.whitelistContainer)
         val emptyView = view.findViewById<TextView>(R.id.emptyWhitelistText)

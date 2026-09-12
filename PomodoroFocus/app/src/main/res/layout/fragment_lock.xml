@@ -33,6 +33,16 @@
             android:textStyle="bold"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/exitQuotaHintText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:alpha="0.6"
+            android:gravity="center"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="12sp" />
+
         <RadioGroup
             android:id="@+id/lockModeRadioGroup"
             android:layout_width="match_parent"

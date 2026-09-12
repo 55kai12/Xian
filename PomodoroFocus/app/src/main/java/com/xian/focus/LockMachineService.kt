@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
@@ -44,6 +45,19 @@ class LockMachineService : LifecycleService() {
     }
 
     private fun stopLock() {
+        if (!LockMachineController.isActive(this)) {
+            stopSelf()
+            return
+        }
+        // 主动退出的唯一扣额度点：浮层长按、通知栏、应用内按钮都汇到这里
+        if (!LockExitQuota.consume(this)) {
+            Toast.makeText(
+                this,
+                getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT),
+                Toast.LENGTH_LONG
+            ).show()
+            return
+        }
         LockMachineController.stop(this)
         LockMachineOverlayController.hide(this)
         stopSelf()
