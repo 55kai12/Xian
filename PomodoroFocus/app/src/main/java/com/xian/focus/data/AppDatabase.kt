@@ -3,7 +3,7 @@ import android.content.Context
 import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class],version=9,exportSchema=false)
+@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class],version=10,exportSchema=false)
 abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstract fun pomodoroRecordDao():PomodoroRecordDao; abstract fun subtaskDao():SubtaskDao; abstract fun countdownDao():CountdownDao
  companion object {
   @Volatile private var instance:AppDatabase?=null
@@ -55,4 +55,14 @@ abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstr
     database.execSQL("UPDATE tasks SET isCompleted = 0 WHERE repeatRule != 'none'")
    }
   }
-  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9).build().also{instance=it} } } }
+  private val MIGRATION_9_10 = object : Migration(9, 10) {
+   override fun migrate(database: SupportSQLiteDatabase) {
+    // 8→9 那次清理只在版本升级时跑过一次，管不了之后写进来的值：
+    // 把一个「已完成的普通任务」在编辑对话框里改成每日/每周/每月时，
+    // task.copy(repeatRule = ...) 会把 isCompleted = true 一起带进模板，
+    // 于是后面每一天都显示成已完成、周条 7 天全满，而且取消也取消不掉。
+    // 这里把存量脏值抹平；新写入的值由 FocusRepository 的归一化兜住。
+    database.execSQL("UPDATE tasks SET isCompleted = 0 WHERE templateId = 0 AND repeatRule != 'none'")
+   }
+  }
+  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9,MIGRATION_9_10).build().also{instance=it} } } }

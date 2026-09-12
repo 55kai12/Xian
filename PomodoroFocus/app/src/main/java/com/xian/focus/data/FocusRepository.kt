@@ -57,11 +57,11 @@ class FocusRepository(
     }
 
     suspend fun updateTask(task: Task) = withContext(Dispatchers.IO) {
-        taskDao.updateTask(task)
+        taskDao.updateTask(task.normalizeRepeatTemplate())
     }
 
     suspend fun updateTasks(tasks: List<Task>) = withContext(Dispatchers.IO) {
-        taskDao.updateTasks(tasks)
+        taskDao.updateTasks(tasks.map { it.normalizeRepeatTemplate() })
     }
 
     suspend fun deleteTask(task: Task) = withContext(Dispatchers.IO) {
@@ -116,8 +116,10 @@ class FocusRepository(
         val dayStart = startOfToday()
         val dayEnd = dayStart + DAY_MILLIS
         val weekStart = dayStart - 6L * DAY_MILLIS
-        // 直接勾选完成的任务也计入统计，与柱状图口径一致
-        val allCompletedTasks = taskDao.getAllTasks().filter { it.isCompleted && it.dueDate != null }
+        // 直接勾选完成的任务也计入统计，与柱状图口径一致。
+        // 排除重复任务模板：它残留的 isCompleted=true 是历史脏值，不是真的完成过一次。
+        val allCompletedTasks = taskDao.getAllTasks()
+            .filter { it.isCompleted && it.dueDate != null && !it.isRepeatTemplate() }
         val todayTaskCount = allCompletedTasks.count { it.dueDate!! >= dayStart && it.dueDate!! < dayEnd }
         val weekTaskCount = allCompletedTasks.count { it.dueDate!! >= weekStart && it.dueDate!! < dayEnd }
         val totalTaskCount = allCompletedTasks.size
@@ -148,9 +150,13 @@ class FocusRepository(
             counts[label] = (counts[label] ?: 0) + 1
         }
         // 任务清单中直接勾选完成的任务，也应当反映在当周趋势线上。
+        // 同样排除重复任务模板（完成态由当天的快照行代表，避免同一天被算两次）。
         taskDao.getAllTasks()
             .asSequence()
-            .filter { it.isCompleted && it.dueDate != null && it.dueDate >= start && it.dueDate < end }
+            .filter {
+                it.isCompleted && it.dueDate != null && !it.isRepeatTemplate() &&
+                    it.dueDate >= start && it.dueDate < end
+            }
             .forEach { task ->
                 val label = labelFormat.format(Date(task.dueDate!!))
                 counts[label] = (counts[label] ?: 0) + 1
@@ -176,6 +182,23 @@ class FocusRepository(
     suspend fun deleteCountdown(countdown: Countdown) = withContext(Dispatchers.IO) {
         countdownDao.delete(countdown)
     }
+
+    /**
+     * 重复任务的「模板」行（repeatRule != none 且 templateId == 0）永远不该带完成标记。
+     *
+     * 它的完成态由当天的快照行（templateId != 0）表达，模板本身只描述「这个任务每天出现」。
+     * 一旦模板残留 isCompleted=true，任务清单里后面每一天都会显示成已完成、周条 7 天全满，
+     * 而且取消也取消不掉 —— 删掉当天快照后拿出来的虚拟实例还是继承着那个 true。
+     *
+     * 写入侧兜这么一道：把已完成的普通任务在编辑对话框里改成「每日」时，
+     * `task.copy(repeatRule = "daily")` 会把旧的 isCompleted 一起带过去，
+     * 数据库里那条一次性清理 SQL 只在版本升级时跑过，管不了之后新写进来的值。
+     */
+    private fun Task.normalizeRepeatTemplate(): Task =
+        if (isRepeatTemplate()) copy(isCompleted = false) else this
+
+    /** 重复任务模板：既是重复规则、又不是某天的快照。它不参与完成统计。 */
+    private fun Task.isRepeatTemplate(): Boolean = templateId == 0 && repeatRule != "none"
 
     private fun startOfToday(): Long = Calendar.getInstance().apply {
         set(Calendar.HOUR_OF_DAY, 0)

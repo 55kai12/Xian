@@ -547,7 +547,12 @@ class TasksFragment : Fragment() {
                 if (day < start || !matchesRepeat(task.repeatRule, start, day)) continue
                 val snapshot = daySnapshots[task.id]
                 if (snapshot != null) result.add(snapshot)
-                else result.add(task.copy(dueDate = day))
+                // 没有当天快照 = 当天没完成，一律显示未完成。
+                // 这里必须显式写 isCompleted = false：直接 task.copy(dueDate = day) 会继承
+                // 模板自身的 isCompleted，而模板可能残留 true（把已完成的普通任务改成「每日」
+                // 就会这样），结果是后面每一天都显示已完成划线，而且取消不掉 —— 删掉当天快照后
+                // 拿出来的虚拟实例还是继承着那个 true。
+                else result.add(task.copy(dueDate = day, isCompleted = false))
             }
         }
         return result
