@@ -124,6 +124,20 @@
     <string name="app_limit_overlay_detail">每天可用 %1$d 分钟，明天自动恢复</string>
     <string name="app_limit_overlay_home">返回桌面</string>
     <string name="app_limit_accessibility_hint">应用限额靠「无障碍」服务计时。现在没开，限额不会生效，点这里去开启。</string>
+    <string name="app_limit_overview_used">今日已用 %1$s · %2$d 个应用受限</string>
+    <string name="app_limit_status_off">无障碍服务未开启，限额不会生效。点这里去开启。</string>
+    <string name="app_limit_status_ready">计时已就绪：被限制的应用出现在前台时才开始累计</string>
+    <string name="app_limit_status_ok">计时正常 · 最近一次计时：%1$s</string>
+    <string name="app_limit_ago_just_now">刚刚</string>
+    <string name="app_limit_ago_minutes">%1$d 分钟前</string>
+    <string name="app_limit_ago_hours">%1$d 小时前</string>
+    <string name="app_limit_duration_minutes">%1$d 分钟</string>
+    <string name="app_limit_duration_hours">%1$d 小时 %2$d 分</string>
+    <string name="app_limit_bonus_button">加 %1$d 分钟（本月还剩 %2$d 次）</string>
+    <string name="app_limit_bonus_empty">本月加时次数已用完</string>
+    <string name="app_limit_shrink_title">会立刻锁定</string>
+    <string name="app_limit_shrink_message">「%1$s」今天已经用了 %2$d 分钟，改成 %3$d 分钟后会马上锁上。确定吗？</string>
+    <string name="app_limit_drawer_summary">已用 %1$d 分钟</string>
     <string name="whitelist_format">已选择 %1$d 个白名单应用</string>
     <string name="start_lock_machine">开始锁机</string>
     <string name="stop_lock_machine">停止锁机</string>
@@ -220,6 +234,9 @@
     <string name="stats_lock_sessions">次数</string>
     <string name="stats_lock_duration">时长</string>
     <string name="stats_lock_held">忍住没退</string>
+    <string name="stats_limit_locks_only">应用限额：本月被锁 %1$d 次</string>
+    <string name="stats_limit_summary">应用限额：本月被锁 %1$d 次 · 最常被锁「%2$s」</string>
+    <string name="stats_limit_summary_bonus">应用限额：本月被锁 %1$d 次 · 最常被锁「%2$s」 · 加时 %3$d 次</string>
     <string name="lock_duration_format_hm">%1$d 小时 %2$d 分</string>
     <string name="lock_duration_format_m">%1$d 分钟</string>
     <string name="focus_minutes_label">专注时长</string>
@@ -305,7 +322,7 @@
     <string name="import_failed">导入失败，请确认选的是本应用导出的 CSV</string>
     <string name="import_nothing">该文件里没有可恢复的数据</string>
     <string name="import_done">已恢复 %1$d 条记录</string>
-    <string name="import_confirm_message">将从所选 CSV 恢复任务、子任务、专注记录、倒数日与复盘日记。\n已存在的相同 ID 记录不会覆盖，日记里的图片无法还原。</string>
+    <string name="import_confirm_message">将从所选 CSV 恢复任务、子任务、专注记录、倒数日、复盘日记与应用限额。\n已存在的相同 ID 记录不会覆盖，日记里的图片无法还原，应用限额按包名覆盖。</string>
 
     <!-- ===== 每日祈福 ===== -->
     <string name="fortune_level_supreme">上上签</string>

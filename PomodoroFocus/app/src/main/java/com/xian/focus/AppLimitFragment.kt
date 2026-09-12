@@ -29,7 +29,8 @@ class AppLimitFragment : Fragment() {
         val packageName: String,
         val label: String,
         val icon: Drawable?,
-        val limitMinutes: Int,
+        /** 今天实际可用的额度 = 设定限额 + 今日加时。 */
+        val effectiveMinutes: Int,
         val usedMinutes: Long,
         val locked: Boolean
     )
@@ -55,9 +56,8 @@ class AppLimitFragment : Fragment() {
         binding.limitAppList.setOnItemClickListener { _, _, position, _ ->
             showLimitDialog(rows[position])
         }
-        binding.accessibilityHintCard.setOnClickListener {
-            runCatching { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
-        }
+        binding.accessibilityHintCard.setOnClickListener { openAccessibilitySettings() }
+        binding.overviewStatusText.setOnClickListener { openAccessibilitySettings() }
     }
 
     override fun onResume() {
@@ -70,6 +70,10 @@ class AppLimitFragment : Fragment() {
         _binding = null
     }
 
+    private fun openAccessibilitySettings() {
+        runCatching { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+    }
+
     private fun refresh() {
         val context = requireContext()
         val pm = context.packageManager
@@ -79,15 +83,50 @@ class AppLimitFragment : Fragment() {
                 packageName = packageName,
                 label = info?.let { pm.getApplicationLabel(it).toString() } ?: packageName,
                 icon = info?.let { runCatching { pm.getApplicationIcon(it) }.getOrNull() },
-                limitMinutes = AppLimitStore.limitMinutes(context, packageName),
+                effectiveMinutes = AppLimitStore.effectiveLimitMinutes(context, packageName),
                 usedMinutes = AppLimitStore.usedSeconds(context, packageName) / 60L,
                 locked = AppLimitStore.isLocked(context, packageName)
             )
         }.sortedBy { it.label }
         adapter.notifyDataSetChanged()
         binding.emptyLimitText.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
-        binding.accessibilityHintCard.visibility =
-            if (LockHealth.isAccessibilityOn(context)) View.GONE else View.VISIBLE
+        updateOverview()
+    }
+
+    /** 今日概览与计时自检一起刷新 —— 这两行说的都是「此刻的状态」。 */
+    private fun updateOverview() {
+        val context = requireContext()
+        val summary = AppLimitStore.summary(context)
+        binding.overviewUsedText.text = getString(
+            R.string.app_limit_overview_used,
+            formatMinutes(summary.usedMinutes),
+            summary.appCount
+        )
+        val accessibilityOn = LockHealth.isAccessibilityOn(context)
+        binding.accessibilityHintCard.visibility = if (accessibilityOn) View.GONE else View.VISIBLE
+        binding.overviewStatusText.text = when {
+            !accessibilityOn -> getString(R.string.app_limit_status_off)
+            // 计时只在被限制的应用处于前台时才走，所以「从未计时」不代表坏了
+            AppLimitStore.lastCountedAt(context) == 0L -> getString(R.string.app_limit_status_ready)
+            else -> getString(
+                R.string.app_limit_status_ok,
+                formatAgo(System.currentTimeMillis() - AppLimitStore.lastCountedAt(context))
+            )
+        }
+    }
+
+    /** 够一小时就说「X 小时 Y 分」—— 97 分钟这种读起来没概念。 */
+    private fun formatMinutes(minutes: Long): String = if (minutes >= 60L) {
+        getString(R.string.app_limit_duration_hours, minutes / 60L, minutes % 60L)
+    } else {
+        getString(R.string.app_limit_duration_minutes, minutes)
+    }
+
+    private fun formatAgo(elapsedMillis: Long): String = when {
+        elapsedMillis < 60_000L -> getString(R.string.app_limit_ago_just_now)
+        elapsedMillis < 3_600_000L ->
+            getString(R.string.app_limit_ago_minutes, elapsedMillis / 60_000L)
+        else -> getString(R.string.app_limit_ago_hours, elapsedMillis / 3_600_000L)
     }
 
     /** 复用锁机的应用选择器；新勾上的先给默认额度，再点进列表逐个调。 */
@@ -123,10 +162,30 @@ class AppLimitFragment : Fragment() {
             .setTitle(getString(R.string.app_limit_dialog_title, row.label))
             .setItems(labels.toTypedArray()) { _, which ->
                 val minutes = if (which < presets.size) presets[which] else 0
-                AppLimitStore.setLimit(requireContext(), row.packageName, minutes)
-                refresh()
+                // 调到不高于今天已用的量 = 保存即锁死，先说清楚再改
+                if (minutes > 0 && minutes <= row.usedMinutes) {
+                    confirmShrink(row, minutes)
+                } else {
+                    applyLimit(row, minutes)
+                }
             }
             .show()
+    }
+
+    private fun confirmShrink(row: Row, minutes: Int) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.app_limit_shrink_title)
+            .setMessage(
+                getString(R.string.app_limit_shrink_message, row.label, row.usedMinutes, minutes)
+            )
+            .setPositiveButton(android.R.string.ok) { _, _ -> applyLimit(row, minutes) }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun applyLimit(row: Row, minutes: Int) {
+        AppLimitStore.setLimit(requireContext(), row.packageName, minutes)
+        refresh()
     }
 
     private inner class RowAdapter(private val inflater: LayoutInflater) : BaseAdapter() {
@@ -142,10 +201,10 @@ class AppLimitFragment : Fragment() {
             view.findViewById<TextView>(R.id.limitAppDetail).text = if (row.locked) {
                 getString(R.string.app_limit_row_locked)
             } else {
-                getString(R.string.app_limit_row_detail, row.usedMinutes, row.limitMinutes)
+                getString(R.string.app_limit_row_detail, row.usedMinutes, row.effectiveMinutes)
             }
             view.findViewById<TextView>(R.id.limitAppLimit).text =
-                getString(R.string.app_limit_minutes_format, row.limitMinutes)
+                getString(R.string.app_limit_minutes_format, row.effectiveMinutes)
             return view
         }
     }

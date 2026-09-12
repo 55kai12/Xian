@@ -276,12 +276,20 @@
                 app:tint="?attr/colorBrandContent" />
 
             <TextView
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
+                android:layout_weight="1"
                 android:text="@string/app_limit_title"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/drawerAppLimitSummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

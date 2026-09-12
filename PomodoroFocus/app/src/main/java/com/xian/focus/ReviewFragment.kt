@@ -143,6 +143,36 @@ class ReviewFragment : Fragment() {
         binding.lockStatSessionsText.text = snapshot.sessions.toString()
         binding.lockStatDurationText.text = formatLockMinutes(snapshot.minutes)
         binding.lockStatHeldText.text = snapshot.held.toString()
+        updateAppLimitStats()
+    }
+
+    /** 应用限额那小字：本月被锁几次、最常被锁哪个应用、加时用了几次。一条数据都没有就整行隐藏。 */
+    private fun updateAppLimitStats() {
+        val context = requireContext()
+        val snapshot = AppLimitStats.snapshot(context)
+        val text = if (snapshot.locks == 0) {
+            null
+        } else {
+            val topLabel = snapshot.topApp?.let { packageName ->
+                runCatching {
+                    val pm = context.packageManager
+                    pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
+                }.getOrNull()
+            }
+            when {
+                // 应用被卸载了就只说次数，别把包名甩给用户
+                topLabel == null -> getString(R.string.stats_limit_locks_only, snapshot.locks)
+                snapshot.bonusUsed > 0 -> getString(
+                    R.string.stats_limit_summary_bonus,
+                    snapshot.locks,
+                    topLabel,
+                    snapshot.bonusUsed
+                )
+                else -> getString(R.string.stats_limit_summary, snapshot.locks, topLabel)
+            }
+        }
+        binding.limitStatText.visibility = if (text == null) View.GONE else View.VISIBLE
+        binding.limitStatText.text = text
     }
 
     private fun formatLockMinutes(minutes: Int): String = when {

@@ -38,12 +38,22 @@
         android:textColor="@color/on_primary_dim"
         android:textSize="15sp" />
 
+    <!-- 每月有限的加时口子：额度用完剩最后一次机会时，别把人逼到只能卸载 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/limitBonusButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:textColor="@color/on_primary"
+        app:strokeColor="@color/overlay_outline" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/limitHomeButton"
         style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="10dp"
         android:text="@string/app_limit_overlay_home"
         android:textColor="@color/on_primary"
         app:strokeColor="@color/overlay_outline" />

@@ -124,6 +124,20 @@
     <string name="app_limit_overlay_detail">%1$d min per day. Resets tomorrow.</string>
     <string name="app_limit_overlay_home">Back to home screen</string>
     <string name="app_limit_accessibility_hint">App limits are counted by the accessibility service, which is currently off, so limits will not work. Tap to enable it.</string>
+    <string name="app_limit_overview_used">Used %1$s today · %2$d apps limited</string>
+    <string name="app_limit_status_off">Accessibility service is off, so limits will not work. Tap to enable it.</string>
+    <string name="app_limit_status_ready">Ready to count — it starts once a limited app comes to the foreground</string>
+    <string name="app_limit_status_ok">Counting normally · last counted %1$s</string>
+    <string name="app_limit_ago_just_now">just now</string>
+    <string name="app_limit_ago_minutes">%1$d min ago</string>
+    <string name="app_limit_ago_hours">%1$d h ago</string>
+    <string name="app_limit_duration_minutes">%1$d min</string>
+    <string name="app_limit_duration_hours">%1$d h %2$d min</string>
+    <string name="app_limit_bonus_button">Add %1$d min (%2$d left this month)</string>
+    <string name="app_limit_bonus_empty">No bonus time left this month</string>
+    <string name="app_limit_shrink_title">This will lock it immediately</string>
+    <string name="app_limit_shrink_message">%1$s has already been used %2$d min today. Setting it to %3$d min will lock it right away. Continue?</string>
+    <string name="app_limit_drawer_summary">Used %1$d min</string>
     <string name="whitelist_format">%1$d allowed apps selected</string>
     <string name="start_lock_machine">Start lock</string>
     <string name="stop_lock_machine">Stop lock</string>
@@ -220,6 +234,9 @@
     <string name="stats_lock_sessions">Sessions</string>
     <string name="stats_lock_duration">Time locked</string>
     <string name="stats_lock_held">Held out</string>
+    <string name="stats_limit_locks_only">App limits: locked %1$d times this month</string>
+    <string name="stats_limit_summary">App limits: locked %1$d times this month · most locked: %2$s</string>
+    <string name="stats_limit_summary_bonus">App limits: locked %1$d times this month · most locked: %2$s · bonus used %3$d</string>
     <string name="lock_duration_format_hm">%1$dh %2$dm</string>
     <string name="lock_duration_format_m">%1$d min</string>
     <string name="focus_minutes_label">Focus length</string>
@@ -302,7 +319,7 @@
     <string name="import_failed">Import failed - make sure you picked a CSV exported by this app</string>
     <string name="import_nothing">No restorable data found in that file</string>
     <string name="import_done">Restored %1$d records</string>
-    <string name="import_confirm_message">Tasks, subtasks, focus records, countdowns and review diaries will be restored from the selected CSV.\nRows whose ID already exists are not overwritten, and diary images cannot be restored.</string>
+    <string name="import_confirm_message">Tasks, subtasks, focus records, countdowns, review diaries and app limits will be restored from the selected CSV.\nRows whose ID already exists are not overwritten, diary images cannot be restored, and app limits are overwritten by package name.</string>
 
     <!-- ===== Daily fortune ===== -->
     <string name="fortune_level_supreme">Great fortune</string>

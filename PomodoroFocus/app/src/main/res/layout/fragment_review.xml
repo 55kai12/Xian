@@ -288,6 +288,15 @@
                             android:textStyle="bold" />
                     </LinearLayout>
                 </LinearLayout>
+
+                <!-- 应用限额小字：本月被锁几次 / 最常被锁哪个应用 / 加时用了几次 -->
+                <TextView
+                    android:id="@+id/limitStatText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

@@ -10,6 +10,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 
 /**
  * 应用限额用完后盖在被限制应用上的那层。
@@ -42,10 +43,9 @@ object AppLimitOverlayController {
         )
         view.findViewById<TextView>(R.id.limitAppName).text =
             appContext.getString(R.string.app_limit_overlay_title, label)
-        view.findViewById<TextView>(R.id.limitAppDetail).text = appContext.getString(
-            R.string.app_limit_overlay_detail,
-            AppLimitStore.limitMinutes(appContext, packageName)
-        )
+        view.findViewById<View>(R.id.limitBonusButton).setOnClickListener {
+            applyBonus(appContext, view, packageName)
+        }
         view.findViewById<View>(R.id.limitHomeButton).setOnClickListener {
             runCatching {
                 appContext.startActivity(
@@ -55,6 +55,7 @@ object AppLimitOverlayController {
                 )
             }
         }
+        updateDetail(appContext, view, packageName)
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -71,6 +72,8 @@ object AppLimitOverlayController {
             windowManager.addView(view, params)
             overlayView = view
             showingPackage = packageName
+            // 只有真的盖上去了才算「被锁一次」；AppLimitStats 内部按「应用 × 天」去重
+            AppLimitStats.recordLock(appContext, packageName)
         } catch (_: Exception) {
         }
     }
@@ -78,6 +81,37 @@ object AppLimitOverlayController {
     fun hide(context: Context) {
         if (overlayView == null) return
         hideNow(context.applicationContext)
+    }
+
+    /** 会随时间变的部分：今日可用额度（含加时）与加时按钮。 */
+    private fun updateDetail(appContext: Context, view: View, packageName: String) {
+        view.findViewById<TextView>(R.id.limitAppDetail).text = appContext.getString(
+            R.string.app_limit_overlay_detail,
+            AppLimitStore.effectiveLimitMinutes(appContext, packageName)
+        )
+        val remaining = AppLimitStore.bonusRemaining(appContext)
+        val bonusButton = view.findViewById<TextView>(R.id.limitBonusButton)
+        bonusButton.visibility = if (remaining > 0) View.VISIBLE else View.GONE
+        if (remaining > 0) {
+            bonusButton.text = appContext.getString(
+                R.string.app_limit_bonus_button,
+                AppLimitStore.BONUS_MINUTES,
+                remaining
+            )
+        }
+    }
+
+    private fun applyBonus(appContext: Context, view: View, packageName: String) {
+        if (!AppLimitStore.consumeBonus(appContext, packageName)) {
+            Toast.makeText(appContext, R.string.app_limit_bonus_empty, Toast.LENGTH_SHORT).show()
+            return
+        }
+        if (AppLimitStore.isLocked(appContext, packageName)) {
+            // 超得太多，加这一次也不够 —— 留在这一页继续刷新，别假装放行
+            updateDetail(appContext, view, packageName)
+        } else {
+            hideNow(appContext)
+        }
     }
 
     private fun hideNow(appContext: Context) {

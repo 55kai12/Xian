@@ -232,6 +232,17 @@ class TasksFragment : Fragment() {
             taskViewModel.refresh()
             loadWeekTrend()
             renderCurrentList()
+            updateAppLimitSummary()
+        }
+    }
+
+    /** 抽屉里「应用限额」右边那行小字：今天累计用了多久。没设限额就空着。 */
+    private fun updateAppLimitSummary() {
+        val summary = AppLimitStore.summary(requireContext())
+        binding.drawerAppLimitSummary.text = if (summary.appCount == 0) {
+            ""
+        } else {
+            getString(R.string.app_limit_drawer_summary, summary.usedMinutes)
         }
     }
 

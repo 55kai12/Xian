@@ -1,6 +1,7 @@
 package com.xian.focus.data
 
 import android.content.Context
+import com.xian.focus.AppLimitStore
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -21,9 +22,10 @@ object DataRestore {
         val subtasks: Int,
         val records: Int,
         val countdowns: Int,
-        val diaries: Int
+        val diaries: Int,
+        val limits: Int
     ) {
-        val total: Int get() = tasks + subtasks + records + countdowns + diaries
+        val total: Int get() = tasks + subtasks + records + countdowns + diaries + limits
     }
 
     private const val SECTION_TASKS = "任务数据"
@@ -31,6 +33,7 @@ object DataRestore {
     private const val SECTION_RECORDS = "专注记录"
     private const val SECTION_COUNTDOWNS = "倒数日"
     private const val SECTION_DIARY = "每日复盘（日记）"
+    private const val SECTION_LIMITS = "应用限额"
 
     /** 导出时用的是 Locale.getDefault()；这里固定 US —— 模式串全是数字，两者等价，且不受导入端语言影响。 */
     private val TIME_FORMAT = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -60,7 +63,24 @@ object DataRestore {
 
         val diaries = restoreDiary(context, sections[SECTION_DIARY].orEmpty())
 
-        return Report(tasks.size, subtasks.size, records.size, countdowns.size, diaries)
+        // 应用限额存在 prefs 里、没有 id 概念：按包名逐条写回，旧的直接覆盖
+        val limits = restoreLimits(context, sections[SECTION_LIMITS].orEmpty())
+
+        return Report(tasks.size, subtasks.size, records.size, countdowns.size, diaries, limits)
+    }
+
+    /** 恢复「应用限额」段：包名 + 每日分钟数。返回写回条数。 */
+    private fun restoreLimits(context: Context, rows: List<List<String>>): Int {
+        var count = 0
+        rows.forEach { row ->
+            if (row.size < 2) return@forEach
+            val packageName = row[0].trim()
+            val minutes = row[1].trim().toIntOrNull() ?: return@forEach
+            if (packageName.isBlank() || minutes <= 0) return@forEach
+            AppLimitStore.setLimit(context, packageName, minutes)
+            count++
+        }
+        return count
     }
 
     // ------------------------------------------------------------------ 分段

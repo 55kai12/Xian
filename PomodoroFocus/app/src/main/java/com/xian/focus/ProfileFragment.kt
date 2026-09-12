@@ -287,6 +287,19 @@ class ProfileFragment : Fragment() {
                                 ?: 0
                             w.println(csv(date, rating, imageCount, note))
                         }
+                        w.println()
+                        // 应用限额也只在 SharedPreferences 里，不导出等于换台手机重设一遍
+                        w.println("=== 应用限额 ===")
+                        w.println("包名,每日限额(分钟)")
+                        val limitContext = requireContext()
+                        AppLimitStore.limitedPackages(limitContext).forEach { packageName ->
+                            w.println(
+                                csv(
+                                    packageName,
+                                    AppLimitStore.limitMinutes(limitContext, packageName)
+                                )
+                            )
+                        }
                     }
                     out
                 } catch (e: Exception) {
