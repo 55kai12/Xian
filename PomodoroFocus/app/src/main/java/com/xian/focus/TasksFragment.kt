@@ -841,7 +841,14 @@ class TasksFragment : Fragment() {
         categoryRow.addView(addCategoryChip, android.widget.LinearLayout.LayoutParams(-2, -2))
         form?.addView(categoryRow, 0)
         val dateRow = android.widget.LinearLayout(requireContext()).apply { orientation = android.widget.LinearLayout.HORIZONTAL; setPadding(0, dp(6), 0, dp(6)) }
-        var selectedQuickDate: Long? = startOfToday()
+        // 默认跟着当前浏览的日期预选：今天→「今天」，明天→「明天」，其他日期→「选择日期」并显示该日期
+        val browseDay = selectedDate ?: startOfToday()
+        val defaultDateIndex = when (browseDay) {
+            startOfToday() -> 0
+            startOfToday() + DAY_MILLIS -> 1
+            else -> 2
+        }
+        var selectedQuickDate: Long? = if (defaultDateIndex == 0) startOfToday() else browseDay
         val dateChips = mutableListOf<android.widget.TextView>()
         fun selectDateChip(clicked: android.widget.TextView) {
             dateChips.forEach { paintChip(it, it === clicked) }
@@ -851,9 +858,12 @@ class TasksFragment : Fragment() {
         listOf(
             R.string.due_today, R.string.due_tomorrow, R.string.due_pick_date, R.string.due_none
         ).forEachIndexed { index, labelRes ->
-            val chip = android.widget.TextView(requireContext()).apply { text = getString(labelRes); textSize = 14f; gravity = android.view.Gravity.CENTER; setPadding(dp(12), dp(7), dp(12), dp(7)) }
-            paintChip(chip, index == 0)
-            chip.setOnClickListener { selectedQuickDate = when (index) { 0 -> startOfToday(); 1 -> startOfToday() + DAY_MILLIS; 2 -> { DatePickerDialog(requireContext(), { _, y, m, d -> selectedQuickDate = Calendar.getInstance().apply { set(y,m,d,0,0,0); set(Calendar.MILLISECOND,0) }.timeInMillis; selectDateChip(chip) }, Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH), Calendar.getInstance().get(Calendar.DAY_OF_MONTH)).show(); selectedQuickDate }; else -> null }; if (index != 2) selectDateChip(chip) }
+            val chip = android.widget.TextView(requireContext()).apply {
+                text = if (index == 2 && defaultDateIndex == 2) dateFormat.format(Date(browseDay)) else getString(labelRes)
+                textSize = 14f; gravity = android.view.Gravity.CENTER; setPadding(dp(12), dp(7), dp(12), dp(7))
+            }
+            paintChip(chip, index == defaultDateIndex)
+            chip.setOnClickListener { selectedQuickDate = when (index) { 0 -> startOfToday(); 1 -> startOfToday() + DAY_MILLIS; 2 -> { val init = Calendar.getInstance().apply { timeInMillis = selectedQuickDate ?: browseDay }; DatePickerDialog(requireContext(), { _, y, m, d -> selectedQuickDate = Calendar.getInstance().apply { set(y,m,d,0,0,0); set(Calendar.MILLISECOND,0) }.timeInMillis; chip.text = dateFormat.format(Date(selectedQuickDate!!)); selectDateChip(chip) }, init.get(Calendar.YEAR), init.get(Calendar.MONTH), init.get(Calendar.DAY_OF_MONTH)).show(); selectedQuickDate }; else -> null }; if (index != 2) selectDateChip(chip) }
             dateChips += chip
             dateRow.addView(chip, android.widget.LinearLayout.LayoutParams(-2, -2).apply { marginEnd = dp(6) })
         }
