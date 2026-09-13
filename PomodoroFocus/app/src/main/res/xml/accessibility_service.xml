@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    canRetrieveWindowContent + flagRetrieveInteractiveWindows 只是为了「问一句现在是哪个应用在前台」。
+    应用限额的计时原本完全靠窗口事件喂，而部分 ROM 在服务被重启后不再补发事件，
+    于是出现「用了一晚上、一秒都没记上」。这里打开读窗口的开关，让计时有个不依赖事件的兜底。
+-->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged"
     android:accessibilityFeedbackType="feedbackGeneric"
-    android:accessibilityFlags="flagDefault"
-    android:canRetrieveWindowContent="false"
+    android:accessibilityFlags="flagDefault|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
     android:description="@string/accessibility_description"
     android:notificationTimeout="100" />

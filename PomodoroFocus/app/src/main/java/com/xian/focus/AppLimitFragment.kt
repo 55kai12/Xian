@@ -12,9 +12,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.xian.focus.databinding.FragmentAppLimitBinding
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * 应用限额：给应用设每天能玩多久，用完当天锁死，次日自动恢复。
@@ -38,6 +42,9 @@ class AppLimitFragment : Fragment() {
     private var rows: List<Row> = emptyList()
     private lateinit var adapter: RowAdapter
 
+    /** 上次界面上的「最近计时时刻」。它变没变，就是「有没有在记账」的信号。 */
+    private var lastShownCountedAt = 0L
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -59,6 +66,15 @@ class AppLimitFragment : Fragment() {
         }
         binding.accessibilityHintCard.setOnClickListener { openAccessibilitySettings() }
         binding.overviewStatusText.setOnClickListener { openAccessibilitySettings() }
+        // 停在页面上时数字要自己涨 —— 否则用户根本分不清「没在计时」和「界面没刷新」。
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(LIVE_REFRESH_MILLIS)
+                    refreshIfChanged()
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -105,15 +121,23 @@ class AppLimitFragment : Fragment() {
         )
         val accessibilityOn = LockHealth.isAccessibilityOn(context)
         binding.accessibilityHintCard.visibility = if (accessibilityOn) View.GONE else View.VISIBLE
+        val countedAt = AppLimitStore.lastCountedAt(context)
+        lastShownCountedAt = countedAt
         binding.overviewStatusText.text = when {
             !accessibilityOn -> getString(R.string.app_limit_status_off)
             // 计时只在被限制的应用处于前台时才走，所以「从未计时」不代表坏了
-            AppLimitStore.lastCountedAt(context) == 0L -> getString(R.string.app_limit_status_ready)
+            countedAt == 0L -> getString(R.string.app_limit_status_ready)
             else -> getString(
                 R.string.app_limit_status_ok,
-                formatAgo(System.currentTimeMillis() - AppLimitStore.lastCountedAt(context))
+                formatAgo(System.currentTimeMillis() - countedAt)
             )
         }
+    }
+
+    /** 只有「最近计时时刻」真的变了才重绑列表 —— 每 3 秒刷一次已经够勤了，别再让它闪。 */
+    private fun refreshIfChanged() {
+        if (AppLimitStore.lastCountedAt(requireContext()) == lastShownCountedAt) return
+        refresh()
     }
 
     /** 够一小时就说「X 小时 Y 分」—— 97 分钟这种读起来没概念。 */
@@ -212,5 +236,8 @@ class AppLimitFragment : Fragment() {
 
     companion object {
         private const val DEFAULT_LIMIT_MINUTES = 30
+
+        /** 页面停留时的刷新节奏：够快能看出「在涨」，又不至于频繁重绑列表。 */
+        private const val LIVE_REFRESH_MILLIS = 3_000L
     }
 }
