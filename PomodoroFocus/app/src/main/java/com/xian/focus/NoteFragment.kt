@@ -1,20 +1,29 @@
 package com.xian.focus
 
+import android.content.Context
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
+import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.xian.focus.databinding.FragmentNoteBinding
+import kotlin.math.abs
 
 /**
- * 灵感便贴：一叠可以翻的便签，随手写、随手存。
- * 入口在任务清单左上角抽屉里。
+ * 灵感便贴：一叠可以翻的便签，随手写、随手存。入口在任务清单左上角抽屉里。
  *
- * 便签没有单独的删除入口 —— 内容清空再往下翻，这一张就自动丢掉（只剩一张时保留）。
+ * 手势（判定都在 [NoteSwipeLayout] 里）：
+ * - 上下滑动翻页：往下拖看更早的，往上拖看更新的；最后一页再往上拖就新开一张
+ * - 长按便签拖到垃圾桶，松手即删
+ * 点标题可以看全部便贴，直接跳过去。
  */
 class NoteFragment : Fragment() {
 
@@ -28,6 +37,13 @@ class NoteFragment : Fragment() {
 
     /** setText 回填时不要当成用户输入再存一遍。 */
     private var rendering = false
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var longPressAction: Runnable? = null
+
+    /** 长按回调里拿不到坐标，只能在按下时先记着。 */
+    private var downRawX = 0f
+    private var downRawY = 0f
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,9 +60,8 @@ class NoteFragment : Fragment() {
         binding.root.post { squareCard() }
         binding.noteBackButton.setOnClickListener { parentFragmentManager.popBackStack() }
         binding.noteTitle.setOnClickListener { showNoteList() }
-        binding.notePrevButton.setOnClickListener { switchNote(-1) }
-        binding.noteNextButton.setOnClickListener { switchNote(1) }
         binding.noteStarButton.setOnClickListener { toggleStar() }
+        setupGestures()
         binding.noteInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) = Unit
@@ -73,6 +88,7 @@ class NoteFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        handler.removeCallbacksAndMessages(null)
         _binding = null
     }
 
@@ -80,9 +96,119 @@ class NoteFragment : Fragment() {
     private fun squareCard() {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
-        val size = minOf(binding.noteCard.width, binding.noteStackArea.height - dp(18 + 50))
+        // 减去上下留白 + 两层纸边
+        val size = minOf(binding.noteSheet.width, binding.noteSwipeLayout.height - dp(20 + 18 + 30))
         if (size <= 0) return
         binding.noteCard.layoutParams = binding.noteCard.layoutParams.apply { height = size }
+    }
+
+    /**
+     * 便签纸里的输入框要同时干三件事：点进去写字、上下滑动翻页、长按拖走删除。
+     *
+     * 分两条路走：
+     * - 还没聚焦：整串事件由我们接管 —— 这样「滑动翻页」不会顺手把键盘弹出来；
+     *   抬手时若没滑动过才算点击，这时才手动聚焦并把光标落到按下的位置。
+     * - 已经在编辑：不插手，输入框自己处理光标/选择/滚动，只在它滚到头时放行给翻页；
+     *   长按仍走输入框自己的长按回调（会被我们消费掉，不会弹出复制粘贴菜单）。
+     */
+    private fun setupGestures() {
+        val swipe = binding.noteSwipeLayout
+        swipe.onFlip = { step -> switchNote(step) }
+        swipe.onDelete = { deleteCurrent() }
+        swipe.onDragStateChange = { dragging ->
+            binding.noteHint.setText(
+                if (dragging) R.string.note_hint_drag else R.string.note_visibility_hint
+            )
+        }
+
+        val input = binding.noteInput
+        input.setOnLongClickListener {
+            if (!swipe.isDragging) swipe.startDrag(downRawX, downRawY)
+            true
+        }
+        input.setOnTouchListener { v, event ->
+            val dragging = swipe.isDragging
+            if (dragging) {
+                // 拖拽已经起来了：剩下的移动全转给手势层
+                when (event.actionMasked) {
+                    MotionEvent.ACTION_MOVE -> swipe.updateDrag(event.rawX, event.rawY)
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> swipe.endDrag()
+                }
+                return@setOnTouchListener true
+            }
+            if (input.hasFocus()) {
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    downRawX = event.rawX
+                    downRawY = event.rawY
+                }
+                if (event.actionMasked == MotionEvent.ACTION_MOVE) {
+                    val dy = event.rawY - downRawY
+                    // 输入框还能往这个方向滚就先让它滚，滚到头才允许翻页
+                    v.parent?.requestDisallowInterceptTouchEvent(
+                        v.canScrollVertically(if (dy > 0) -1 else 1)
+                    )
+                }
+                return@setOnTouchListener false
+            }
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downRawX = event.rawX
+                    downRawY = event.rawY
+                    scheduleLongPress()
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (abs(event.rawY - downRawY) > touchSlop()) {
+                        cancelLongPress()
+                        v.parent?.requestDisallowInterceptTouchEvent(false)
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    cancelLongPress()
+                    if (abs(event.rawY - downRawY) <= touchSlop()) focusInputAt(event)
+                    true
+                }
+                MotionEvent.ACTION_CANCEL -> {
+                    cancelLongPress()
+                    true
+                }
+                else -> true
+            }
+        }
+    }
+
+    private fun touchSlop() = ViewConfiguration.get(requireContext()).scaledTouchSlop
+
+    private fun scheduleLongPress() {
+        cancelLongPress()
+        val action = Runnable {
+            if (!binding.noteSwipeLayout.isDragging) {
+                binding.noteSwipeLayout.startDrag(downRawX, downRawY)
+            }
+        }
+        longPressAction = action
+        handler.postDelayed(action, ViewConfiguration.getLongPressTimeout().toLong())
+    }
+
+    private fun cancelLongPress() {
+        longPressAction?.let { handler.removeCallbacks(it) }
+        longPressAction = null
+    }
+
+    /** 点击便签纸：聚焦输入框、把光标落回按下的位置、拉起键盘。 */
+    private fun focusInputAt(event: MotionEvent) {
+        val input = binding.noteInput
+        input.requestFocus()
+        input.layout?.let { textLayout ->
+            val line = textLayout.getLineForVertical(
+                (event.y - input.totalPaddingTop).toInt().coerceAtLeast(0)
+            )
+            val offset = textLayout.getOffsetForHorizontal(line, event.x - input.totalPaddingLeft)
+            input.setSelection(offset.coerceIn(0, input.text?.length ?: 0))
+        }
+        (requireContext().getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
     }
 
     private fun newNote() = NoteStore.Note(System.currentTimeMillis(), "", false)
@@ -106,26 +232,38 @@ class NoteFragment : Fragment() {
         binding.noteStarButton.setImageDrawable(starred)
     }
 
-    /** 翻页：-1 上一张（更早），+1 下一张；已经在最后一页还往下翻就换一张新的空白便签。 */
-    private fun switchNote(step: Int) {
+    /** -1 看更早的一张，+1 看更新的一张。返回 false 表示已经到头、该把纸弹回来。 */
+    private fun switchNote(step: Int): Boolean {
         commitCurrent()
         val list = NoteStore.ordered(notes)
         val index = list.indexOfFirst { it.createdAt == currentId }
-        if (index < 0) {
-            // 当前这张刚被清空丢掉了，直接换一张新的
+        if (index < 0) return false
+        val target = index + step
+        if (target < 0) return false
+        if (target >= list.size) {
+            // 最后一页再往上滑 = 新开一张（当前已是空白就别再开了）
+            if (notes.find { it.createdAt == currentId }?.text.isNullOrBlank()) return false
             currentId = newNote().also { notes += it }.createdAt
         } else {
-            val target = index + step
-            if (target < 0) return
-            if (target >= list.size) {
-                if (notes.find { it.createdAt == currentId }?.text.isNullOrBlank()) return
-                currentId = newNote().also { notes += it }.createdAt
-            } else {
-                currentId = list[target].createdAt
-            }
+            currentId = list[target].createdAt
         }
         renderNote()
         NoteStore.save(requireContext(), notes)
+        return true
+    }
+
+    /** 拖进垃圾桶：删掉当前这张，接着显示它后面（更新）的那张；删空了补一张新的。 */
+    private fun deleteCurrent() {
+        val note = notes.find { it.createdAt == currentId } ?: return
+        val list = NoteStore.ordered(notes)
+        val index = list.indexOfFirst { it.createdAt == note.createdAt }
+        notes.remove(note)
+        if (notes.isEmpty()) notes += newNote()
+        val neighbour = list.getOrNull(index + 1)?.takeIf { it.createdAt != note.createdAt }
+            ?: list.getOrNull(index - 1)?.takeIf { it.createdAt != note.createdAt }
+        currentId = neighbour?.createdAt ?: notes.maxByOrNull { it.createdAt }!!.createdAt
+        NoteStore.save(requireContext(), notes)
+        renderNote()
     }
 
     /** 点标题看全部便贴。一叠翻页适合随手写，但张数一多就得有个总览能直接跳过去。 */
@@ -155,13 +293,7 @@ class NoteFragment : Fragment() {
     }
 
     private fun commitCurrent() {
-        val note = notes.find { it.createdAt == currentId } ?: return
-        val text = binding.noteInput.text?.toString().orEmpty()
-        if (text.isBlank() && notes.size > 1) {
-            notes.remove(note)
-        } else {
-            note.text = text
-        }
+        notes.find { it.createdAt == currentId }?.text = binding.noteInput.text?.toString().orEmpty()
         NoteStore.save(requireContext(), notes)
     }
 }

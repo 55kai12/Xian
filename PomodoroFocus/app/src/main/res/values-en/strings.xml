@@ -449,4 +449,6 @@
     <string name="note_next">Next note</string>
     <string name="note_list_title">All notes (%1$d)</string>
     <string name="note_blank">(empty)</string>
+    <string name="note_hint_drag">Release to delete, drag back to cancel</string>
+    <string name="note_trash">Trash</string>
 </resources>

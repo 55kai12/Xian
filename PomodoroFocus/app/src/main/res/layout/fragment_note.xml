@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   灵感便贴：一叠可以翻的便签。
-  便签纸下面那两层浅色「纸边」是做出一叠纸的观感，宽度依次收窄。
+  - 上下滑动翻页、长按拖到垃圾桶删除，手势都交给 NoteSwipeLayout
+  - 便签纸下面那两层浅色「纸边」是做出一叠纸的观感，宽度依次收窄
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -11,7 +12,7 @@
     android:fitsSystemWindows="true"
     android:orientation="vertical">
 
-    <!-- 顶部：返回 · 标题(带翻页) · 标星 -->
+    <!-- 顶部：返回 · 标题(可点，看全部便贴) · 标星 -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -29,47 +30,20 @@
             app:srcCompat="@drawable/ic_note_back"
             app:tint="?attr/colorBrandContent" />
 
-        <LinearLayout
+        <TextView
+            android:id="@+id/noteTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/noteTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:paddingHorizontal="6dp"
-                android:paddingVertical="4dp"
-                android:text="@string/note_title"
-                android:textColor="?attr/colorBrandContent"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <ImageButton
-                android:id="@+id/notePrevButton"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="2dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/note_prev"
-                app:srcCompat="@drawable/ic_note_chevron_up"
-                app:tint="?attr/colorBrandContent" />
-
-            <ImageButton
-                android:id="@+id/noteNextButton"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="-6dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/note_next"
-                app:srcCompat="@drawable/ic_note_chevron_down"
-                app:tint="?attr/colorBrandContent" />
-        </LinearLayout>
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:text="@string/note_title"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
         <ImageButton
             android:id="@+id/noteStarButton"
@@ -84,6 +58,7 @@
     </FrameLayout>
 
     <TextView
+        android:id="@+id/noteHint"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -91,57 +66,73 @@
         android:textColor="@color/text_tertiary"
         android:textSize="12sp" />
 
-    <!-- 便签堆 -->
-    <LinearLayout
-        android:id="@+id/noteStackArea"
+    <!-- 便签堆 + 垃圾桶 -->
+    <com.xian.focus.NoteSwipeLayout
+        android:id="@+id/noteSwipeLayout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:paddingStart="32dp"
-        android:paddingTop="20dp"
-        android:paddingEnd="32dp"
-        android:paddingBottom="30dp">
+        android:layout_weight="1">
 
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/noteCard"
+        <LinearLayout
+            android:id="@+id/noteSheet"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            app:cardBackgroundColor="@color/card_background"
-            app:cardCornerRadius="14dp"
-            app:cardElevation="2dp">
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_marginStart="32dp"
+            android:layout_marginTop="20dp"
+            android:layout_marginEnd="32dp"
+            android:orientation="vertical">
 
-            <EditText
-                android:id="@+id/noteInput"
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/noteCard"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@null"
-                android:gravity="center"
-                android:hint="@string/note_placeholder"
-                android:importantForAutofill="no"
-                android:inputType="textMultiLine|textCapSentences"
-                android:lineSpacingExtra="5dp"
-                android:padding="22dp"
-                android:textColor="@color/ink_text"
-                android:textColorHint="@color/text_tertiary"
-                android:textSize="17sp" />
-        </com.google.android.material.card.MaterialCardView>
+                android:layout_height="0dp"
+                app:cardBackgroundColor="@color/card_background"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="2dp">
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="9dp"
-            android:layout_marginStart="10dp"
-            android:layout_marginEnd="10dp"
-            android:background="@drawable/bg_note_stack" />
+                <EditText
+                    android:id="@+id/noteInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@null"
+                    android:gravity="center"
+                    android:hint="@string/note_placeholder"
+                    android:importantForAutofill="no"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:lineSpacingExtra="5dp"
+                    android:padding="22dp"
+                    android:textColor="@color/ink_text"
+                    android:textColorHint="@color/text_tertiary"
+                    android:textSize="17sp" />
+            </com.google.android.material.card.MaterialCardView>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="9dp"
-            android:layout_marginStart="22dp"
-            android:layout_marginEnd="22dp"
-            android:background="@drawable/bg_note_stack" />
-    </LinearLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="9dp"
+                android:layout_marginStart="10dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_note_stack" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="9dp"
+                android:layout_marginStart="22dp"
+                android:layout_marginEnd="22dp"
+                android:background="@drawable/bg_note_stack" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/noteTrashTarget"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_gravity="center_horizontal|bottom"
+            android:layout_marginBottom="22dp"
+            android:background="@drawable/bg_note_trash"
+            android:contentDescription="@string/note_trash"
+            android:padding="15dp"
+            android:visibility="invisible"
+            app:srcCompat="@drawable/ic_note_trash" />
+    </com.xian.focus.NoteSwipeLayout>
 
 </LinearLayout>

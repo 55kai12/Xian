@@ -452,4 +452,6 @@
     <string name="note_next">下一张便贴</string>
     <string name="note_list_title">全部便贴（%1$d 张）</string>
     <string name="note_blank">（空白）</string>
+    <string name="note_hint_drag">松手即删除，拖回原处取消</string>
+    <string name="note_trash">垃圾桶</string>
 </resources>
