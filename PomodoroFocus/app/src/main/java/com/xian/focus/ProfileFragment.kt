@@ -307,6 +307,14 @@ class ProfileFragment : Fragment() {
                                 )
                             )
                         }
+                        w.println()
+                        // 便贴也只在 SharedPreferences 里，不导出等于换台手机全丢。
+                        // 创建时间写毫秒原值 —— 它同时是便签 id，格式化成分钟会撞成一张。
+                        w.println("=== 灵感便贴 ===")
+                        w.println("创建时间(毫秒),内容,是否标星")
+                        NoteStore.load(requireContext()).forEach { note ->
+                            w.println(csv(note.createdAt, note.text, if (note.starred) "是" else "否"))
+                        }
                     }
                     out
                 } catch (e: Exception) {

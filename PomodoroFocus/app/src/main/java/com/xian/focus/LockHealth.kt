@@ -40,7 +40,8 @@ object LockHealth {
         return enabled.split(':').any { ComponentName.unflattenFromString(it) == expected }
     }
 
-    private fun accessibilityIntent() = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+    /** 无障碍设置页 —— 掉线提醒的跳转目标也用它。 */
+    fun accessibilityIntent() = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
 
     private fun overlayIntent(context: Context) = Intent(
         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,

@@ -14,6 +14,7 @@ class BootReceiver : BroadcastReceiver() {
         LockMachineService.resume(context)
         LockMachineScheduler.applyAlarms(context)
         LockMachineScheduler.resumeIfInScheduledWindow(context)
+        LockHealthMonitor.schedule(context)
         rescheduleReminders(context)
     }
 

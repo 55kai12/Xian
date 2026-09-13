@@ -2,6 +2,7 @@ package com.xian.focus.data
 
 import android.content.Context
 import com.xian.focus.AppLimitStore
+import com.xian.focus.NoteStore
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -23,9 +24,10 @@ object DataRestore {
         val records: Int,
         val countdowns: Int,
         val diaries: Int,
-        val limits: Int
+        val limits: Int,
+        val notes: Int
     ) {
-        val total: Int get() = tasks + subtasks + records + countdowns + diaries + limits
+        val total: Int get() = tasks + subtasks + records + countdowns + diaries + limits + notes
     }
 
     private const val SECTION_TASKS = "任务数据"
@@ -34,6 +36,7 @@ object DataRestore {
     private const val SECTION_COUNTDOWNS = "倒数日"
     private const val SECTION_DIARY = "每日复盘（日记）"
     private const val SECTION_LIMITS = "应用限额"
+    private const val SECTION_NOTES = "灵感便贴"
 
     /** 导出时用的是 Locale.getDefault()；这里固定 US —— 模式串全是数字，两者等价，且不受导入端语言影响。 */
     private val TIME_FORMAT = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -66,7 +69,10 @@ object DataRestore {
         // 应用限额存在 prefs 里、没有 id 概念：按包名逐条写回，旧的直接覆盖
         val limits = restoreLimits(context, sections[SECTION_LIMITS].orEmpty())
 
-        return Report(tasks.size, subtasks.size, records.size, countdowns.size, diaries, limits)
+        // 便贴同样只在 prefs 里，按创建时间去重合并
+        val notes = restoreNotes(context, sections[SECTION_NOTES].orEmpty())
+
+        return Report(tasks.size, subtasks.size, records.size, countdowns.size, diaries, limits, notes)
     }
 
     /** 恢复「应用限额」段：包名 + 每日分钟数。返回写回条数。 */
@@ -81,6 +87,30 @@ object DataRestore {
             count++
         }
         return count
+    }
+
+    /**
+     * 恢复「灵感便贴」段：创建时间(毫秒) + 内容 + 是否标星。返回新写入条数。
+     *
+     * 便签的 createdAt 同时当 id 用，所以这里**必须**用毫秒原值、不能格式化成分钟，
+     * 否则同一分钟内写的两张便签导回来会撞成一个。
+     * 与其它段一致：已存在的 id 跳过，不做覆盖。
+     */
+    private fun restoreNotes(context: Context, rows: List<List<String>>): Int {
+        val existing = NoteStore.load(context)
+        val knownIds = existing.mapTo(HashSet()) { it.createdAt }
+        val imported = rows.mapNotNull { row ->
+            val createdAt = row.getOrNull(0)?.trim()?.toLongOrNull() ?: return@mapNotNull null
+            if (createdAt in knownIds) return@mapNotNull null
+            NoteStore.Note(
+                createdAt = createdAt,
+                text = row.getOrNull(1).orEmpty(),
+                starred = row.getOrNull(2)?.trim() == TRUE_MARK
+            )
+        }
+        if (imported.isEmpty()) return 0
+        NoteStore.save(context, existing + imported)
+        return imported.size
     }
 
     // ------------------------------------------------------------------ 分段

@@ -311,6 +311,10 @@
     <!-- 到期提醒（任务 / 倒数日共用一条通知渠道） -->
     <string name="reminder_channel_name">到期提醒</string>
     <string name="reminder_channel_description">任务或倒数日到点时提醒</string>
+    <string name="health_lost_title">锁机保护已失效</string>
+    <string name="health_lost_message">无障碍服务被系统关闭了，锁机和应用限额都不会再生效。点这里重新打开。</string>
+    <string name="health_channel_name">锁机保护状态</string>
+    <string name="health_channel_description">锁机或应用限额因权限被关闭而失效时提醒你恢复</string>
     <string name="reminder_task_title">任务到期</string>
     <string name="reminder_countdown_title">倒数日提醒</string>
 

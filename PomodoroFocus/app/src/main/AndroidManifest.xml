@@ -82,6 +82,11 @@
             android:name=".ReminderReceiver"
             android:exported="false" />
 
+        <!-- 锁机掉线自检，同样由显式 Intent 触发。 -->
+        <receiver
+            android:name=".LockHealthCheckReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

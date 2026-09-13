@@ -308,6 +308,10 @@
     <!-- Due reminders (tasks and countdowns share one channel) -->
     <string name="reminder_channel_name">Due reminders</string>
     <string name="reminder_channel_description">Alerts when a task or countdown falls due</string>
+    <string name="health_lost_title">App lock is no longer active</string>
+    <string name="health_lost_message">The accessibility service was turned off, so App Lock and App Limits will not work. Tap to turn it back on.</string>
+    <string name="health_channel_name">App lock status</string>
+    <string name="health_channel_description">Alerts you when App Lock or App Limits stop working because a permission was turned off</string>
     <string name="reminder_task_title">Task due</string>
     <string name="reminder_countdown_title">Countdown</string>
 
