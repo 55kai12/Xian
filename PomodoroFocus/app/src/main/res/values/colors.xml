@@ -74,6 +74,12 @@
     <color name="danger_alt">#CC3333</color>
     <color name="warning_orange">#D84315</color>
     <color name="delete_red">#B3261E</color>
+
+    <!-- 左滑动作按钮：功能色，不随主题翻面（白图标压在饱和色块上，昼夜对比度都够） -->
+    <color name="swipe_action_done">#26B3A7</color>
+    <color name="swipe_action_move_up">#4A8FE0</color>
+    <color name="swipe_action_move_down">#E8A33D</color>
+    <color name="swipe_action_delete">#E0565A</color>
     <color name="due_text">#A67C00</color>
     <color name="overdue_text">#8B2E2E</color>
     <color name="stat_label">#D4C8A8</color>

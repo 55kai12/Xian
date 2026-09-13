@@ -1,15 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.xian.focus.SwipeActionLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/taskSwipeLayout"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginHorizontal="0dp"
-    android:layout_marginTop="0dp"
-    android:layout_marginBottom="0dp"
-    app:cardCornerRadius="0dp"
-    app:cardElevation="0dp"
-    app:strokeWidth="0dp"
-    app:cardBackgroundColor="@color/card_background">
+    android:layout_height="wrap_content">
+
+    <!-- 左滑露出的动作行：压在内容层底下，宽度由 SwipeActionLayout 按可用宽度算 -->
+    <LinearLayout
+        android:id="@+id/taskSwipeActions"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/actionDone"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/swipe_action_done"
+            android:contentDescription="@string/complete_task"
+            android:scaleType="center"
+            android:src="@drawable/ic_swipe_done" />
+
+        <ImageView
+            android:id="@+id/actionMoveUp"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/swipe_action_move_up"
+            android:contentDescription="@string/swipe_action_move_up"
+            android:scaleType="center"
+            android:src="@drawable/ic_swipe_up" />
+
+        <ImageView
+            android:id="@+id/actionMoveDown"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/swipe_action_move_down"
+            android:contentDescription="@string/swipe_action_move_down"
+            android:scaleType="center"
+            android:src="@drawable/ic_swipe_down" />
+
+        <ImageView
+            android:id="@+id/actionDelete"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@color/swipe_action_delete"
+            android:contentDescription="@string/delete_task"
+            android:scaleType="center"
+            android:src="@drawable/ic_delete_task"
+            app:tint="#FFFFFF" />
+    </LinearLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/taskContentCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="0dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp"
+        app:cardBackgroundColor="@color/card_background">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -250,4 +305,5 @@
                 android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+    </com.google.android.material.card.MaterialCardView>
+</com.xian.focus.SwipeActionLayout>

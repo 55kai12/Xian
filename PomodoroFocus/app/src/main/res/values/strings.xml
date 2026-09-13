@@ -47,6 +47,8 @@
     <string name="complete_task">完成</string>
     <string name="restore_task">恢复</string>
     <string name="delete_task">删除</string>
+    <string name="swipe_action_move_up">上移一行</string>
+    <string name="swipe_action_move_down">下移一行</string>
 
     <string name="timer_channel_name">贤时计时</string>
     <string name="timer_channel_description">显示专注和休息倒计时</string>

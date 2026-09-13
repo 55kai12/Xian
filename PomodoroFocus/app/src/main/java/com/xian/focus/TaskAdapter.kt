@@ -22,7 +22,9 @@ class TaskAdapter(
     private val onToggleSubtask: (Subtask) -> Unit,
     private val onEditTask: (Task) -> Unit,
     private val onDeleteTask: (Task) -> Unit,
-    private val onImageClick: (Task) -> Unit = {}
+    private val onImageClick: (Task) -> Unit = {},
+    /** 左滑动作用：delta = -1 上移一行，+1 下移一行 */
+    private val onMoveTask: (Task, Int) -> Unit = { _, _ -> }
 ) : ListAdapter<Task, TaskAdapter.TaskViewHolder>(TaskDiffCallback) {
 
     var subtaskCounts: Map<Int, Pair<Int, Int>> = emptyMap()
@@ -54,6 +56,27 @@ class TaskAdapter(
         if (selectedTaskId == taskId) return
         selectedTaskId = taskId
         notifyItemRangeChanged(0, itemCount)
+    }
+
+    /** 当前左滑展开的那一行。同一时刻只允许一行露出动作按钮。 */
+    private var expandedSwipeRow: SwipeActionLayout? = null
+
+    /** 列表滚动或开始拖拽排序时收起 —— 展开的行跟着滚走会让人找不到自己在滑哪一行。 */
+    fun closeOpenSwipeActions() {
+        expandedSwipeRow?.close()
+    }
+
+    /** 展开的是自己就记下来，收起的是自己就清掉；换成别的行时把上一行收回去。 */
+    private fun onSwipeRowExpanded(row: SwipeActionLayout, expanded: Boolean) {
+        if (!expanded) {
+            if (expandedSwipeRow === row) expandedSwipeRow = null
+            return
+        }
+        val previous = expandedSwipeRow
+        if (previous !== row) {
+            expandedSwipeRow = row
+            previous?.close()
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TaskViewHolder {
@@ -111,6 +134,7 @@ class TaskAdapter(
         fun bind(task: Task, number: Int) {
             val isSelected = task.id == (selectedTaskIdProvider?.invoke() ?: selectedTaskId)
             binding.root.isSelected = isSelected
+            bindSwipeActions(task)
 
             val prefs = context.getSharedPreferences("event_settings", 0)
             val showOrderNumber = prefs.getBoolean("show_order_number", false)
@@ -132,7 +156,14 @@ class TaskAdapter(
             )
             binding.taskNumberText.setOnClickListener { onToggleTask(task) }
             binding.taskNumberText.alpha = 1f
-            binding.root.setOnClickListener { onEditTask(task) }
+            binding.root.setOnClickListener {
+                // 展开状态下点内容 = 先收起这一行，别顺手把编辑弹窗也弹出来
+                if (binding.taskSwipeLayout.isExpanded) {
+                    binding.taskSwipeLayout.close()
+                } else {
+                    onEditTask(task)
+                }
+            }
             binding.taskTitleText.text = task.title
             binding.taskTitleText.paint.isStrikeThruText = false
 
@@ -210,6 +241,34 @@ class TaskAdapter(
             binding.startTaskButton.setOnClickListener(null)
             binding.toggleTaskButton.setOnClickListener(null)
             binding.deleteTaskButton.setOnClickListener(null)
+        }
+
+        /**
+         * 左滑露出的四个动作。
+         *
+         * 每次 bind 都要 reset：ViewHolder 是复用的，不归位就会带着上一行的展开状态出现。
+         * 点完动作立刻 close：列表马上刷新重绑，收起动画跑不跑都会被打断，不如直接收掉。
+         */
+        private fun bindSwipeActions(task: Task) {
+            val swipe = binding.taskSwipeLayout
+            swipe.reset()
+            swipe.onExpandedChange = { row, expanded -> onSwipeRowExpanded(row, expanded) }
+            binding.actionDone.setOnClickListener {
+                swipe.close()
+                onToggleTask(task)
+            }
+            binding.actionMoveUp.setOnClickListener {
+                swipe.close()
+                onMoveTask(task, -1)
+            }
+            binding.actionMoveDown.setOnClickListener {
+                swipe.close()
+                onMoveTask(task, 1)
+            }
+            binding.actionDelete.setOnClickListener {
+                swipe.close()
+                onDeleteTask(task)
+            }
         }
 
         private fun bindSubtasks(task: Task) {

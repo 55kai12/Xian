@@ -303,63 +303,23 @@ class TasksFragment : Fragment() {
             },
             onToggleSubtask = { subtask -> taskViewModel.toggleSubtask(subtask) },
             onEditTask = { task -> showEditTaskDialog(task) },
-            onDeleteTask = { task -> taskViewModel.deleteTask(task) },
-            onImageClick = { task -> task.imageUri?.takeIf { it.isNotBlank() }?.let { showImagePreview(it) } }
+            onDeleteTask = { task -> deleteTaskWithConfirm(task) },
+            onImageClick = { task -> task.imageUri?.takeIf { it.isNotBlank() }?.let { showImagePreview(it) } },
+            onMoveTask = { task, delta -> moveTaskRow(task, delta) }
         )
         binding.tasksRecyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = taskAdapter
         }
         var dragOrder: MutableList<Task>? = null
-        // 左划时从右侧露出的红色「删除」底。ItemTouchHelper 的 onDraw 跑在子 View 绘制之前，
-        // 所以先画底、再交给父类设 translation，露出来的正好是这一块。
-        val swipeBgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-        val swipeLabelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = 15f * resources.displayMetrics.density
-            isFakeBoldText = true
-            color = android.graphics.Color.WHITE
-        }
+        // 左划手势已交给 item 自己的 SwipeActionLayout —— 它要的是「露出按钮、等点击」，
+        // 而 ItemTouchHelper 的 swipe 语义是「滑过阈值就划走」，松手会回弹，等不到点击。
+        // 所以这里只保留拖拽排序，swipe 方向传 0 关掉。
         val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-            ItemTouchHelper.LEFT
+            0
         ) {
             override fun isLongPressDragEnabled() = true
-
-            override fun onChildDraw(
-                c: android.graphics.Canvas,
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                dX: Float,
-                dY: Float,
-                actionState: Int,
-                isCurrentlyActive: Boolean
-            ) {
-                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
-                    val item = viewHolder.itemView
-                    val revealed = (-dX).coerceIn(0f, item.width.toFloat())
-                    if (revealed > 0f) {
-                        val label = getString(R.string.delete_task)
-                        swipeBgPaint.color = requireContext().getColor(R.color.delete_red)
-                        c.drawRect(
-                            item.right - revealed, item.top.toFloat(),
-                            item.right.toFloat(), item.bottom.toFloat(),
-                            swipeBgPaint
-                        )
-                        if (revealed >= swipeLabelPaint.measureText(label) + 32f) {
-                            swipeLabelPaint.textAlign = android.graphics.Paint.Align.CENTER
-                            c.drawText(
-                                label,
-                                item.right - revealed / 2f,
-                                item.top + item.height / 2f -
-                                    (swipeLabelPaint.descent() + swipeLabelPaint.ascent()) / 2f,
-                                swipeLabelPaint
-                            )
-                        }
-                    }
-                }
-                // 必须交给父类：item 的 translationX 是它设的，不调就不会跟手滑动
-                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
-            }
 
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -381,6 +341,8 @@ class TasksFragment : Fragment() {
             override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
                 super.onSelectedChanged(viewHolder, actionState)
                 if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+                    // 拖拽期间所有行都在动，展开着的那一行会跟着跑，先收掉
+                    taskAdapter.closeOpenSwipeActions()
                     dragOrder = taskAdapter.currentList.toMutableList()
                     viewHolder?.itemView?.alpha = 0.85f
                 }
@@ -393,22 +355,21 @@ class TasksFragment : Fragment() {
                 dragOrder = null
             }
 
+            // SimpleCallback 要求实现，但 swipeDirs 传的是 0，永远不会被调到。
+            // 左划的四个动作在 item 自己的 SwipeActionLayout 里点按钮触发。
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.bindingAdapterPosition
-                if (position == RecyclerView.NO_POSITION) return
-                val task = taskAdapter.currentList.getOrNull(position) ?: return
-                if (task.repeatRule == TaskViewModel.REPEAT_NONE && task.templateId == 0) {
-                    // 普通任务没有歧义，滑掉即删
-                    taskViewModel.deleteTask(task)
-                } else {
-                    // 重复任务：这一行已经被 ItemTouchHelper 滑走了，先把它放回来再问删什么，
-                    // 否则用户点「取消」会看到任务凭空消失。
-                    restoreSwipedRow(viewHolder)
-                    showRepeatDeleteDialog(task)
-                }
             }
         })
         touchHelper.attachToRecyclerView(binding.tasksRecyclerView)
+
+        // 滚动时收起展开的行 —— 否则它会跟着滚走，用户找不到自己在滑哪一行
+        binding.tasksRecyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                if (newState != RecyclerView.SCROLL_STATE_IDLE) {
+                    taskAdapter.closeOpenSwipeActions()
+                }
+            }
+        })
 
         binding.addTaskButton.setOnClickListener { showAddTaskDialog() }
         binding.fortuneButton.setOnClickListener { showFortuneDialog() }
@@ -600,18 +561,47 @@ class TasksFragment : Fragment() {
     }
 
     /**
-     * 左划之后把这一行原位放回。
+     * 删除的统一入口：普通任务直接删，重复任务必须先问清范围。
      *
-     * ItemTouchHelper 的 clearView 会把 translationX 复位，但那发生在 onSwiped 返回之后；
-     * 弹窗是异步的，等用户选完这一行可能还停在滑出去的位置，所以这里显式复位一次。
+     * 左滑动作用和编辑弹窗的删除按钮都走这里 —— 判断只写一份，
+     * 免得哪个入口漏了，把「删今天这条」变成「删掉整个系列」。
      */
-    private fun restoreSwipedRow(viewHolder: RecyclerView.ViewHolder) {
-        viewHolder.itemView.translationX = 0f
-        viewHolder.itemView.alpha = 1f
-        val position = viewHolder.bindingAdapterPosition
-        if (position != RecyclerView.NO_POSITION && position < taskAdapter.itemCount) {
-            taskAdapter.notifyItemChanged(position)
+    private fun deleteTaskWithConfirm(task: Task) {
+        if (task.repeatRule == TaskViewModel.REPEAT_NONE && task.templateId == 0) {
+            taskViewModel.deleteTask(task)
+        } else {
+            showRepeatDeleteDialog(task)
         }
+    }
+
+    /**
+     * 左滑动作用的「上移一行 / 下移一行」（delta = -1 / +1）。
+     *
+     * 只在同一完成态区域内交换，和拖拽排序的规则一致，不跨「未完成 / 已完成」两段。
+     *
+     * 写回时只把 `templateId == 0` 的真实行交给 reorderTasks：列表里的重复任务行是
+     * 「模板行的当天副本」（id 就是模板 id、dueDate 被改成了当天），把这种对象整行写回
+     * 会顺手把模板的起始日期也改掉 —— 而 weekly / monthly 的判断锚点正是它。
+     * 所以这里按系列 id 映射回真实模板行再重排。
+     */
+    private fun moveTaskRow(task: Task, delta: Int) {
+        val shown = taskAdapter.currentList
+        val from = shown.indexOfFirst { it.id == task.id }
+        val to = from + delta
+        if (from < 0 || to !in shown.indices) return
+        if (shown[from].isCompleted != shown[to].isCompleted) return
+
+        val realRows = taskViewModel.pendingTasks.value ?: return
+        val templates = realRows.filter { it.templateId == 0 }.associateBy { it.id }
+        fun seriesIdOf(t: Task) = if (t.templateId != 0) t.templateId else t.id
+        val ordered = shown.mapNotNull { templates[seriesIdOf(it)] }
+            .distinctBy { it.id }
+            .toMutableList()
+        val i = ordered.indexOfFirst { it.id == seriesIdOf(shown[from]) }
+        val j = ordered.indexOfFirst { it.id == seriesIdOf(shown[to]) }
+        if (i < 0 || j < 0) return
+        ordered.add(j, ordered.removeAt(i))
+        taskViewModel.reorderTasks(ordered)
     }
 
     /**

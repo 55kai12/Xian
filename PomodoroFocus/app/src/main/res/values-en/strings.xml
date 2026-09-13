@@ -47,6 +47,8 @@
     <string name="complete_task">Complete</string>
     <string name="restore_task">Restore</string>
     <string name="delete_task">Delete</string>
+    <string name="swipe_action_move_up">Move up one</string>
+    <string name="swipe_action_move_down">Move down one</string>
 
     <string name="timer_channel_name">Focus timer</string>
     <string name="timer_channel_description">Shows the focus and break countdown</string>
