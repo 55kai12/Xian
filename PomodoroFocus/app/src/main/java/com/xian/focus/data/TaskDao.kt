@@ -58,4 +58,22 @@ interface TaskDao {
 
     @Delete
     suspend fun deleteTask(task: Task)
+
+    /** 「删除全部该事件」：模板行连同它名下所有快照行一起删掉。 */
+    @Query("DELETE FROM tasks WHERE id=:templateId OR templateId=:templateId")
+    suspend fun deleteTemplateWithSnapshots(templateId: Int)
+
+    /**
+     * 「删除全部该事件（保留已完成的）」第一步：把已完成的快照摘出来变成普通任务。
+     *
+     * 必须连 repeatRule 一起清掉 —— 只把 templateId 置 0 的话，
+     * `repeatRule != none && templateId == 0` 恰好就是「重复任务模板」的判定条件，
+     * 这些本该安静留在历史里的记录会被当成模板，从今天起每天重新冒出来。
+     */
+    @Query("UPDATE tasks SET templateId=0, repeatRule='none' WHERE templateId=:templateId AND isCompleted=1")
+    suspend fun detachCompletedSnapshots(templateId: Int)
+
+    /** 上一步之后的第二步：删掉模板本身，以及仍属该系列的未完成快照。 */
+    @Query("DELETE FROM tasks WHERE id=:templateId OR (templateId=:templateId AND isCompleted=0)")
+    suspend fun deleteTemplateAndUnfinishedSnapshots(templateId: Int)
 }

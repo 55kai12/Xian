@@ -318,11 +318,55 @@ class TasksFragment : Fragment() {
             adapter = taskAdapter
         }
         var dragOrder: MutableList<Task>? = null
+        // 左划时从右侧露出的红色「删除」底。ItemTouchHelper 的 onDraw 跑在子 View 绘制之前，
+        // 所以先画底、再交给父类设 translation，露出来的正好是这一块。
+        val swipeBgPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+        val swipeLabelPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = 15f * resources.displayMetrics.density
+            isFakeBoldText = true
+            color = android.graphics.Color.WHITE
+        }
         val touchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             ItemTouchHelper.UP or ItemTouchHelper.DOWN,
-            0
+            ItemTouchHelper.LEFT
         ) {
             override fun isLongPressDragEnabled() = true
+
+            override fun onChildDraw(
+                c: android.graphics.Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                    val item = viewHolder.itemView
+                    val revealed = (-dX).coerceIn(0f, item.width.toFloat())
+                    if (revealed > 0f) {
+                        val label = getString(R.string.delete_task)
+                        swipeBgPaint.color = requireContext().getColor(R.color.delete_red)
+                        c.drawRect(
+                            item.right - revealed, item.top.toFloat(),
+                            item.right.toFloat(), item.bottom.toFloat(),
+                            swipeBgPaint
+                        )
+                        if (revealed >= swipeLabelPaint.measureText(label) + 32f) {
+                            swipeLabelPaint.textAlign = android.graphics.Paint.Align.CENTER
+                            c.drawText(
+                                label,
+                                item.right - revealed / 2f,
+                                item.top + item.height / 2f -
+                                    (swipeLabelPaint.descent() + swipeLabelPaint.ascent()) / 2f,
+                                swipeLabelPaint
+                            )
+                        }
+                    }
+                }
+                // 必须交给父类：item 的 translationX 是它设的，不调就不会跟手滑动
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
 
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -356,7 +400,20 @@ class TasksFragment : Fragment() {
                 dragOrder = null
             }
 
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.bindingAdapterPosition
+                if (position == RecyclerView.NO_POSITION) return
+                val task = taskAdapter.currentList.getOrNull(position) ?: return
+                if (task.repeatRule == TaskViewModel.REPEAT_NONE && task.templateId == 0) {
+                    // 普通任务没有歧义，滑掉即删
+                    taskViewModel.deleteTask(task)
+                } else {
+                    // 重复任务：这一行已经被 ItemTouchHelper 滑走了，先把它放回来再问删什么，
+                    // 否则用户点「取消」会看到任务凭空消失。
+                    restoreSwipedRow(viewHolder)
+                    showRepeatDeleteDialog(task)
+                }
+            }
         })
         touchHelper.attachToRecyclerView(binding.tasksRecyclerView)
 
@@ -536,6 +593,58 @@ class TasksFragment : Fragment() {
         }
     }
 
+    /**
+     * 左划之后把这一行原位放回。
+     *
+     * ItemTouchHelper 的 clearView 会把 translationX 复位，但那发生在 onSwiped 返回之后；
+     * 弹窗是异步的，等用户选完这一行可能还停在滑出去的位置，所以这里显式复位一次。
+     */
+    private fun restoreSwipedRow(viewHolder: RecyclerView.ViewHolder) {
+        viewHolder.itemView.translationX = 0f
+        viewHolder.itemView.alpha = 1f
+        val position = viewHolder.bindingAdapterPosition
+        if (position != RecyclerView.NO_POSITION && position < taskAdapter.itemCount) {
+            taskAdapter.notifyItemChanged(position)
+        }
+    }
+
+    /**
+     * 重复任务的删除范围询问。
+     *
+     * 列表里的重复任务有两种形态，必须都归到同一个系列 id 上：
+     * - 未完成：模板行的当天副本（templateId == 0，id 就是模板 id）
+     * - 已完成：当天快照行（templateId == 模板 id）
+     * 所以系列 id 取 templateId，只有它为 0 时才用 task.id。
+     */
+    private fun showRepeatDeleteDialog(task: Task) {
+        val templateId = if (task.templateId != 0) task.templateId else task.id
+        val labels = arrayOf(
+            getString(R.string.repeat_delete_once),
+            getString(R.string.repeat_delete_all),
+            getString(R.string.repeat_delete_all_keep_done),
+            getString(R.string.cancel)
+        )
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.repeat_delete_title, task.title))
+            .setItems(labels) { _, which ->
+                when (which) {
+                    // 只让这一天不出现：别的日期和系列本身都不动。
+                    // 日期用 task.dueDate —— 两种形态下它都等于当天（虚拟实例和快照都写在当天）
+                    0 -> {
+                        val day = task.dueDate ?: selectedDate
+                        if (day != null) {
+                            TaskSkipStore.skip(requireContext(), templateId, day)
+                            renderCurrentList()
+                        }
+                    }
+                    1 -> taskViewModel.deleteTaskSeries(templateId)
+                    2 -> taskViewModel.deleteTaskSeriesKeepCompleted(templateId)
+                    else -> Unit
+                }
+            }
+            .show()
+    }
+
     private fun renderCurrentList() {
         val source = taskViewModel.pendingTasks.value
         val showCompleted = requireContext().getSharedPreferences("event_settings", 0).getBoolean("show_completed", true)
@@ -561,6 +670,7 @@ class TasksFragment : Fragment() {
             .filter { it.templateId != 0 && it.dueDate == day }
             .associateBy { it.templateId }
         val today = startOfDay(System.currentTimeMillis())
+        val skipped = TaskSkipStore.all(requireContext())
         val result = mutableListOf<Task>()
         for (task in allTasks) {
             if (task.templateId != 0) continue
@@ -575,6 +685,8 @@ class TasksFragment : Fragment() {
                 // 而 weekly/monthly 需要锚点来判断星期几 / 几号，所以不能简单按"每天"处理。
                 val start = task.dueDate ?: startOfDay(task.createdAt)
                 if (day < start || !matchesRepeat(task.repeatRule, start, day)) continue
+                // 「仅删除该事件」记过这天：模板带出的实例、以及当天的完成快照，一并都不出现
+                if (TaskSkipStore.key(task.id, day) in skipped) continue
                 val snapshot = daySnapshots[task.id]
                 if (snapshot != null) result.add(snapshot)
                 // 没有当天快照 = 当天没完成，一律显示未完成。

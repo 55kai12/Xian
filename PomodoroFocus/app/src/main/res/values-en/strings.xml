@@ -372,6 +372,10 @@
     <string name="dialog_edit_task">Edit task</string>
     <string name="task_delete">Delete task</string>
     <string name="task_delete_confirm">Delete this task?</string>
+    <string name="repeat_delete_title">"%1$s" is a repeating task. What should be deleted?</string>
+    <string name="repeat_delete_once">Only this occurrence (this day)</string>
+    <string name="repeat_delete_all">Delete all occurrences</string>
+    <string name="repeat_delete_all_keep_done">Delete all, keep the completed ones</string>
     <string name="action_delete">Delete</string>
     <string name="action_ok">OK</string>
     <string name="action_clear">Clear</string>

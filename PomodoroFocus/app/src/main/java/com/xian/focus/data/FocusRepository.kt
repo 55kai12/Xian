@@ -68,6 +68,22 @@ class FocusRepository(
         taskDao.deleteTask(task)
     }
 
+    /** 删除整个重复系列：模板 + 全部快照。 */
+    suspend fun deleteTaskSeries(templateId: Int) = withContext(Dispatchers.IO) {
+        taskDao.deleteTemplateWithSnapshots(templateId)
+    }
+
+    /**
+     * 删除整个重复系列，但把已完成的那几天留作历史。
+     *
+     * 两步顺序不能换：必须先把已完成的快照摘出来（templateId 置 0），
+     * 否则第二步按 templateId 删的时候会把它们一起带走。
+     */
+    suspend fun deleteTaskSeriesKeepCompleted(templateId: Int) = withContext(Dispatchers.IO) {
+        taskDao.detachCompletedSnapshots(templateId)
+        taskDao.deleteTemplateAndUnfinishedSnapshots(templateId)
+    }
+
     suspend fun getTaskById(id: Int) = withContext(Dispatchers.IO) {
         taskDao.getTaskById(id)
     }

@@ -111,6 +111,20 @@ class TaskViewModel @Inject constructor(
         doRefresh()
     }
 
+    /** 删除整个重复系列（模板 + 全部快照）。 */
+    fun deleteTaskSeries(templateId: Int) = execute {
+        TaskReminderScheduler.cancel(appContext, templateId)
+        repository.deleteTaskSeries(templateId)
+        doRefresh()
+    }
+
+    /** 删除整个重复系列，已完成的那几天留作普通历史任务。 */
+    fun deleteTaskSeriesKeepCompleted(templateId: Int) = execute {
+        TaskReminderScheduler.cancel(appContext, templateId)
+        repository.deleteTaskSeriesKeepCompleted(templateId)
+        doRefresh()
+    }
+
     fun toggleComplete(task: Task, onFinished: (() -> Unit)? = null) = execute(onFinished) {
         val occurrenceDate = task.dueDate
         when {

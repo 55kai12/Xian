@@ -375,6 +375,10 @@
     <string name="dialog_edit_task">编辑任务</string>
     <string name="task_delete">删除任务</string>
     <string name="task_delete_confirm">确认删除该任务吗？</string>
+    <string name="repeat_delete_title">「%1$s」是重复任务，删除范围？</string>
+    <string name="repeat_delete_once">仅删除该事件（只删这一天）</string>
+    <string name="repeat_delete_all">删除全部该事件</string>
+    <string name="repeat_delete_all_keep_done">删除全部该事件（保留已完成的）</string>
     <string name="action_delete">删除</string>
     <string name="action_ok">确定</string>
     <string name="action_clear">清除</string>
