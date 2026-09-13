@@ -35,10 +35,19 @@ class TaskAdapter(
 
     fun submitTasks(tasks: List<Task>) {
         var number = 0
-        unfinishedNumbers = tasks.associate { task ->
+        val numbers = tasks.associate { task ->
             task.id to if (task.isCompleted) 0 else ++number
         }
-        submitList(tasks)
+        val before = unfinishedNumbers
+        unfinishedNumbers = numbers
+        submitList(tasks) {
+            // 序号是这里现算的派生值、不在 Task 里，DiffUtil 看不见它的变化 ——
+            // 不补这一下，完成一项或拖动排序后其余行的序号要等切页面才会刷新。
+            for (i in 0 until itemCount) {
+                val id = getItem(i).id
+                if (before[id] != numbers[id]) notifyItemChanged(i)
+            }
+        }
     }
 
     fun setSelectedTaskId(taskId: Int?) {
