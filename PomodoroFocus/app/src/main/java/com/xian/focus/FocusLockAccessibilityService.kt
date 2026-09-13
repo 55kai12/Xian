@@ -47,7 +47,12 @@ class FocusLockAccessibilityService : AccessibilityService() {
         val packageName = event.packageName?.toString() ?: return
         val context = applicationContext
 
-        // 系统组件（输入法、状态栏、来电界面）不算「在用某个应用」，
+        // 状态栏 / 通知栏：下拉时它会拿到焦点窗口，但这不是「用户切到了别的应用」。
+        // 必须直接返回、保持覆盖层原样 —— 否则一下拉通知栏，锁机界面就被当成「切走了」撤掉，
+        // 而状态栏收起时 systemui 不会补发窗口状态变化事件，界面也就一直回不来。
+        if (packageName in SYSTEM_UI_PACKAGES) return
+
+        // 其他系统组件（输入法、来电界面）不算「在用某个应用」，
         // 保留上一个真实前台应用 —— 否则一打字限额计时就断了。
         if (!SystemAppAllowlist.isEssential(context, packageName)) {
             foregroundPackage = packageName
@@ -124,5 +129,14 @@ class FocusLockAccessibilityService : AccessibilityService() {
     companion object {
         private const val TICK_MILLIS = 1_000L
         private const val MAX_TICK_SECONDS = 5L
+
+        /**
+         * 状态栏 / 通知栏的包名。它们拿到焦点窗口只说明「系统 UI 露出来了」，
+         * 不代表用户离开了当前应用，覆盖层必须保持原样。
+         */
+        private val SYSTEM_UI_PACKAGES = setOf(
+            "com.android.systemui",
+            "com.miui.systemui"
+        )
     }
 }

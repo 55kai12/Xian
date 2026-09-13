@@ -10,7 +10,6 @@ import android.view.MotionEvent
 import android.view.View
 import androidx.core.content.ContextCompat
 import java.util.Calendar
-import kotlin.math.min
 
 class WeekCalendarStripView @JvmOverloads constructor(
     context: Context,
@@ -62,10 +61,13 @@ class WeekCalendarStripView @JvmOverloads constructor(
         if (weekStartMillis == 0L) return
         val columnWidth = width / 7f
         val centerY = height / 2f
-        // 固定圆环半径，所有日期一致
-        val ringRadius = dp(22f)
-        val selectedRingRadius = dp(29f)
-        val selectedRadius = dp(21f)
+        // 圆的尺寸必须按列宽算，不能写死 dp：360dp 宽的手机把两侧留白扣掉后列宽只剩 ~47dp，
+        // 而选中环 dp(29) 的直径是 58dp —— 相邻两个圆直接叠在一起，最右边那个还会被裁掉。
+        // 这里把半径压到列宽以内（留约 12% 的间隙），大屏上仍然取原来的尺寸。
+        val maxOuterRadius = columnWidth * 0.44f
+        val ringRadius = minOf(dp(22f), maxOuterRadius * 0.78f)
+        val selectedRingRadius = minOf(dp(29f), maxOuterRadius)
+        val selectedRadius = minOf(dp(21f), selectedRingRadius * 0.72f)
         repeat(7) { index ->
             val dayMillis = weekStartMillis + index * DAY_MILLIS
             val centerX = columnWidth * (index + 0.5f)

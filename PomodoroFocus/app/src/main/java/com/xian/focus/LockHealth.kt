@@ -59,6 +59,39 @@ object LockHealth {
      */
     private fun batteryIntent() = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
 
+    /**
+     * 打开系统的「自启动管理」。
+     *
+     * 各家 ROM 的自启动白名单是自己加的，没有标准 API —— 应用既读不到状态，
+     * 也拿不到统一入口，只能一个个试常见机型的管理页；都试不上就退到应用详情页，
+     * 至少让用户能顺着「权限 / 后台运行」自己找到。
+     */
+    fun autostartIntent(context: Context): Intent {
+        val candidates = listOf(
+            "com.miui.securitycenter/com.miui.permcenter.autostart.AutoStartManagementActivity",
+            "com.huawei.systemmanager/com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity",
+            "com.coloros.safecenter/com.coloros.safecenter.permission.startup.StartupAppListActivity",
+            "com.oppo.safe/com.oppo.safe.permission.startup.StartupAppListActivity",
+            "com.vivo.permissionmanager/com.vivo.permissionmanager.activity.BgStartUpManagerActivity",
+            "com.iqoo.secure/com.iqoo.secure.ui.phoneoptimize.AddWhiteListActivity",
+            "com.samsung.android.lool/com.samsung.android.sm.ui.battery.BatteryActivity",
+            "com.asus.mobilemanager/com.asus.mobilemanager.autostart.AutoStartActivity"
+        )
+        candidates.forEach { flat ->
+            val component = ComponentName.unflattenFromString(flat) ?: return@forEach
+            val exists = runCatching {
+                context.packageManager.getActivityInfo(component, 0)
+            }.isSuccess
+            if (exists) {
+                return Intent().setComponent(component).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        }
+        return Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.parse("package:${context.packageName}")
+        )
+    }
+
     private fun isIgnoringBatteryOptimizations(context: Context): Boolean {
         val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return false
         return pm.isIgnoringBatteryOptimizations(context.packageName)

@@ -103,6 +103,10 @@ class SettingsFragment : Fragment() {
             )
             row.setOnClickListener { openHealthSettings(item.settingsIntent) }
         }
+        // 自启动没法在应用内读到真实状态（各 ROM 的白名单没有标准 API），所以只做引导
+        binding.healthRowAutostart.setOnClickListener {
+            openHealthSettings(LockHealth.autostartIntent(requireContext()))
+        }
     }
 
     private fun openHealthSettings(intent: Intent) {

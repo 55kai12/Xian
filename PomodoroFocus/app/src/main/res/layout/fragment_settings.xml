@@ -282,6 +282,51 @@
                             android:layout_height="wrap_content"
                             android:textSize="13sp" />
                     </LinearLayout>
+
+                    <!--
+                      自启动：这一项在应用内无法可靠读到真实状态（各 ROM 的自启动白名单没有标准 API），
+                      所以不做「已开启 / 未开启」的判定，只做引导 —— 点一下去系统里允许。
+                    -->
+                    <LinearLayout
+                        android:id="@+id/healthRowAutostart"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/health_autostart"
+                                android:textColor="?attr/colorOnSurface"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/health_autostart_desc"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/healthStatusAutostart"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/health_autostart_action"
+                            android:textColor="?attr/colorBrandAccent"
+                            android:textSize="13sp" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

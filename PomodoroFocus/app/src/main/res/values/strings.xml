@@ -17,7 +17,7 @@
     <string name="resume">继续</string>
     <string name="pause">暂停</string>
     <string name="reset">重置</string>
-    <string name="set_daily_goal">设置每日目标</string>
+    <string name="set_daily_goal">每日目标</string>
     <string name="timer_settings">计时设置</string>
     <string name="timer_settings_title">计时时长设置（分钟）</string>
     <string name="focus_minutes_hint">分钟</string>
@@ -305,6 +305,9 @@
     <string name="health_overlay">悬浮窗权限</string>
     <string name="health_notification">通知权限</string>
     <string name="health_battery">电池优化白名单</string>
+    <string name="health_autostart">开机自启动</string>
+    <string name="health_autostart_desc">重启后自动恢复锁机与到期提醒</string>
+    <string name="health_autostart_action">去开启</string>
     <string name="health_ok">已就绪</string>
     <string name="health_missing">未开启</string>
 

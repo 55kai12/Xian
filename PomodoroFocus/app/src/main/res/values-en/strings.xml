@@ -17,7 +17,7 @@
     <string name="resume">Resume</string>
     <string name="pause">Pause</string>
     <string name="reset">Reset</string>
-    <string name="set_daily_goal">Set daily goal</string>
+    <string name="set_daily_goal">Daily goal</string>
     <string name="timer_settings">Timer settings</string>
     <string name="timer_settings_title">Durations (minutes)</string>
     <string name="focus_minutes_hint">minutes</string>
@@ -302,6 +302,9 @@
     <string name="health_overlay">Display over other apps</string>
     <string name="health_notification">Notification permission</string>
     <string name="health_battery">Battery optimization</string>
+    <string name="health_autostart">Auto-start on boot</string>
+    <string name="health_autostart_desc">Restore App Lock and due reminders after a restart</string>
+    <string name="health_autostart_action">Open</string>
     <string name="health_ok">Ready</string>
     <string name="health_missing">Off</string>
 

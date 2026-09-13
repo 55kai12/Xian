@@ -50,6 +50,13 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, lockBackCallback)
 
+        // 二级页（便签 / 应用限额 / 倒数日 / 日记…）不该带底部导航栏：
+        // 它属于「上一级」，而且 windowSoftInputMode 是 adjustResize —— 一打字键盘就把导航栏顶上来了。
+        supportFragmentManager.addOnBackStackChangedListener {
+            binding.bottomNavigation.visibility =
+                if (supportFragmentManager.backStackEntryCount > 0) View.GONE else View.VISIBLE
+        }
+
         if (savedInstanceState == null) {
             supportFragmentManager.beginTransaction()
                 .replace(R.id.fragmentContainer, TasksFragment())
@@ -140,6 +147,12 @@ class MainActivity : AppCompatActivity() {
             lastTabIndex = tabIndex
             return true
         }
+        // 切 tab 要清掉二级页返回栈：否则从二级页直接点底部导航切走，
+        // 返回键会把二级页翻回来，底部导航的显隐状态也跟着错。
+        supportFragmentManager.popBackStack(
+            null,
+            androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE
+        )
         val enter = if (tabIndex >= lastTabIndex) {
             R.anim.frag_enter_from_right
         } else {

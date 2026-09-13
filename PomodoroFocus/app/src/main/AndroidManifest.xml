@@ -60,11 +60,16 @@
                 android:resource="@xml/accessibility_service" />
         </service>
 
+        <!-- 开机 / 快速开机 / 覆盖安装后恢复锁机计划、到期提醒与健康体检。
+             少了 QUICKBOOT_POWERON 这条，部分国产 ROM 重启后收不到任何广播。 -->
         <receiver
             android:name=".BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 

@@ -57,6 +57,11 @@ class NoteFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.root.post { binding.root.staggerScrollContent() }
+        // 便签纸尺寸必须跟着可用空间走：键盘弹起、底部导航栏隐藏、转屏、
+        // 换一台屏幕比例不同的手机，这块区域的高宽都会变 —— 只在 onViewCreated 里算一次迟早对不上。
+        binding.noteSwipeLayout.addOnLayoutChangeListener { _, l, t, r, b, oldL, oldT, oldR, oldB ->
+            if (r - l != oldR - oldL || b - t != oldB - oldT) squareCard()
+        }
         binding.root.post { squareCard() }
         binding.noteBackButton.setOnClickListener { parentFragmentManager.popBackStack() }
         binding.noteTitle.setOnClickListener { showNoteList() }
@@ -92,13 +97,26 @@ class NoteFragment : Fragment() {
         _binding = null
     }
 
-    /** 便签纸做成正方形（截图那样的方卡片）；空间不够就顶到能用的高度为止。 */
+    /**
+     * 便签纸做成正方形（截图那样的方卡片），边长取「可用宽度」和「可用高度」里小的那个：
+     * 宽屏受高度限制、窄屏受宽度限制，键盘弹起时自动缩小。
+     * 这样任何屏宽/屏高比例下都不会被挤变形或溢出，不用按机型调。
+     *
+     * 左右和顶部留白直接读 noteSheet 的 layoutParams —— 以后改布局不用回来同步这里的数字。
+     */
     private fun squareCard() {
         val density = resources.displayMetrics.density
         fun dp(v: Int) = (v * density).toInt()
-        // 减去上下留白 + 两层纸边
-        val size = minOf(binding.noteSheet.width, binding.noteSwipeLayout.height - dp(20 + 18 + 30))
-        if (size <= 0) return
+        val parent = binding.noteSheet.parent as? View ?: return
+        if (parent.width <= 0 || parent.height <= 0) return
+        val sheetParams = binding.noteSheet.layoutParams as? ViewGroup.MarginLayoutParams
+        val sideMargins = (sheetParams?.marginStart ?: 0) + (sheetParams?.marginEnd ?: 0)
+        val topMargin = sheetParams?.topMargin ?: 0
+        // 高度这边还要扣掉两层纸边（fragment_note.xml 里各 9dp）和底部留白
+        val byWidth = parent.width - sideMargins
+        val byHeight = parent.height - topMargin - dp(9 + 9 + 16)
+        val size = minOf(byWidth, byHeight)
+        if (size <= 0 || binding.noteCard.layoutParams.height == size) return
         binding.noteCard.layoutParams = binding.noteCard.layoutParams.apply { height = size }
     }
 

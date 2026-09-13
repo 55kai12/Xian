@@ -96,7 +96,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/start_focus" />
+                android:maxLines="1"
+                android:paddingHorizontal="4dp"
+                android:text="@string/start_focus"
+                android:insetLeft="0dp"
+                android:insetRight="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/pauseButton"
@@ -106,7 +110,11 @@
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
                 android:enabled="false"
-                android:text="@string/pause" />
+                android:maxLines="1"
+                android:paddingHorizontal="4dp"
+                android:text="@string/pause"
+                android:insetLeft="0dp"
+                android:insetRight="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/resetButton"
@@ -115,7 +123,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="@string/reset" />
+                android:maxLines="1"
+                android:paddingHorizontal="4dp"
+                android:text="@string/reset"
+                android:insetLeft="0dp"
+                android:insetRight="0dp" />
         </LinearLayout>
 
         <LinearLayout
@@ -130,7 +142,11 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/set_daily_goal" />
+                android:maxLines="1"
+                android:paddingHorizontal="2dp"
+                android:text="@string/set_daily_goal"
+                android:insetLeft="0dp"
+                android:insetRight="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/timerSettingsButton"
@@ -139,7 +155,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="@string/timer_settings" />
+                android:maxLines="1"
+                android:paddingHorizontal="2dp"
+                android:text="@string/timer_settings"
+                android:insetLeft="0dp"
+                android:insetRight="0dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/statsButton"
@@ -148,7 +168,11 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:layout_weight="1"
-                android:text="@string/focus_stats" />
+                android:maxLines="1"
+                android:paddingHorizontal="2dp"
+                android:text="@string/focus_stats"
+                android:insetLeft="0dp"
+                android:insetRight="0dp" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
