@@ -442,4 +442,12 @@
         <item>六</item>
         <item>日</item>
     </string-array>
+
+    <!-- 灵感便贴 -->
+    <string name="note_title">灵感便贴</string>
+    <string name="note_visibility_hint">新增便贴仅自己可见</string>
+    <string name="note_placeholder">灵感，吐槽，愿望 …</string>
+    <string name="note_star">标星</string>
+    <string name="note_prev">上一张便贴</string>
+    <string name="note_next">下一张便贴</string>
 </resources>
