@@ -559,15 +559,23 @@ internal fun TasksFragment.showEditTaskDialogCompat(task: Task) {
             setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_delete_task, 0, 0, 0)
             compoundDrawablePadding = dp(6)
             setOnClickListener {
-                com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(R.string.task_delete)
-                    .setMessage(R.string.task_delete_confirm)
-                    .setNegativeButton(R.string.cancel, null)
-                    .setPositiveButton(R.string.action_delete) { _, _ ->
-                        taskViewModel.deleteTask(task)
-                        editDialog.dismiss()
-                    }
-                .show()
+                // 重复任务必须走和列表左划删除同一套询问，不能在这里直接删：
+                // 这一行的 id 可能是模板 id（未完成的当天实例），直接删 = 整个系列消失；
+                // 也可能是当天的完成快照，删掉它模板明天照样出现 —— 两种都不是用户要的结果。
+                if (task.repeatRule != TaskViewModel.REPEAT_NONE || task.templateId != 0) {
+                    editDialog.dismiss()
+                    showRepeatDeleteDialog(task)
+                } else {
+                    com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                        .setTitle(R.string.task_delete)
+                        .setMessage(R.string.task_delete_confirm)
+                        .setNegativeButton(R.string.cancel, null)
+                        .setPositiveButton(R.string.action_delete) { _, _ ->
+                            taskViewModel.deleteTask(task)
+                            editDialog.dismiss()
+                        }
+                    .show()
+                }
             }
         }
         val moreRow = android.widget.LinearLayout(requireContext()).apply {

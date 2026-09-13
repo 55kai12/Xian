@@ -622,7 +622,7 @@ class TasksFragment : Fragment() {
      * - 已完成：当天快照行（templateId == 模板 id）
      * 所以系列 id 取 templateId，只有它为 0 时才用 task.id。
      */
-    private fun showRepeatDeleteDialog(task: Task) {
+    internal fun showRepeatDeleteDialog(task: Task) {
         val templateId = if (task.templateId != 0) task.templateId else task.id
         val labels = arrayOf(
             getString(R.string.repeat_delete_once),
