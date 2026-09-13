@@ -450,4 +450,6 @@
     <string name="note_star">标星</string>
     <string name="note_prev">上一张便贴</string>
     <string name="note_next">下一张便贴</string>
+    <string name="note_list_title">全部便贴（%1$d 张）</string>
+    <string name="note_blank">（空白）</string>
 </resources>

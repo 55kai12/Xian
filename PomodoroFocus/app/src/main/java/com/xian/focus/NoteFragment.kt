@@ -43,6 +43,7 @@ class NoteFragment : Fragment() {
         binding.root.post { binding.root.staggerScrollContent() }
         binding.root.post { squareCard() }
         binding.noteBackButton.setOnClickListener { parentFragmentManager.popBackStack() }
+        binding.noteTitle.setOnClickListener { showNoteList() }
         binding.notePrevButton.setOnClickListener { switchNote(-1) }
         binding.noteNextButton.setOnClickListener { switchNote(1) }
         binding.noteStarButton.setOnClickListener { toggleStar() }
@@ -56,6 +57,8 @@ class NoteFragment : Fragment() {
             }
         })
 
+        // 视图重建（配置变更 / 从返回栈回来）会再走一遍 onViewCreated，先清空免得攒成重复项
+        notes.clear()
         notes += NoteStore.load(requireContext())
         if (notes.isEmpty()) notes += newNote()
         // 打开先看最近写下的那一张
@@ -123,6 +126,25 @@ class NoteFragment : Fragment() {
         }
         renderNote()
         NoteStore.save(requireContext(), notes)
+    }
+
+    /** 点标题看全部便贴。一叠翻页适合随手写，但张数一多就得有个总览能直接跳过去。 */
+    private fun showNoteList() {
+        commitCurrent()
+        val list = NoteStore.ordered(notes)
+        if (list.isEmpty()) return
+        val labels = list.map { note ->
+            val head = note.text.replace('\n', ' ').trim().take(16)
+            (if (note.starred) "★ " else "") + head.ifEmpty { getString(R.string.note_blank) }
+        }.toTypedArray()
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(getString(R.string.note_list_title, list.size))
+            .setItems(labels) { _, which ->
+                currentId = list[which].createdAt
+                renderNote()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     private fun toggleStar() {

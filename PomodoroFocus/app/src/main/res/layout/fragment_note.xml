@@ -37,8 +37,14 @@
             android:orientation="horizontal">
 
             <TextView
+                android:id="@+id/noteTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="4dp"
                 android:text="@string/note_title"
                 android:textColor="?attr/colorBrandContent"
                 android:textSize="20sp"

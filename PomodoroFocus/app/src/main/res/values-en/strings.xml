@@ -447,4 +447,6 @@
     <string name="note_star">Star</string>
     <string name="note_prev">Previous note</string>
     <string name="note_next">Next note</string>
+    <string name="note_list_title">All notes (%1$d)</string>
+    <string name="note_blank">(empty)</string>
 </resources>
