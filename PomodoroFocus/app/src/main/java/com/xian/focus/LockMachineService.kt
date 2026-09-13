@@ -123,13 +123,15 @@ class LockMachineService : LifecycleService() {
         private const val NOTIFICATION_REFRESH_MILLIS = 30_000L
         private const val ACTION_STOP = "com.xian.focus.action.STOP_LOCK_MACHINE"
         private const val EXTRA_DURATION_MINUTES = "duration_minutes"
-        private const val EXTRA_WHITELIST = "whitelist"
 
-        fun start(context: Context, durationMinutes: Int, whitelist: Set<String>) {
-            LockMachineController.start(context, durationMinutes, whitelist)
+        /**
+         * 开始锁机。白名单不从这里传 —— 它是独立设置，覆盖层和放行判断都直接读
+         * [LockMachineController.whitelist]，这样任何一条启动路径都不会把用户选好的白名单冲掉。
+         */
+        fun start(context: Context, durationMinutes: Int) {
+            LockMachineController.start(context, durationMinutes)
             val intent = Intent(context, LockMachineService::class.java).apply {
                 putExtra(EXTRA_DURATION_MINUTES, durationMinutes)
-                putStringArrayListExtra(EXTRA_WHITELIST, ArrayList(whitelist))
             }
             context.startForegroundService(intent)
         }

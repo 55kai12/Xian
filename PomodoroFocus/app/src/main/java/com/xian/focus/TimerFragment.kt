@@ -352,6 +352,8 @@ class TimerFragment : Fragment() {
             showAppPicker(selectedWhitelist) { updated ->
                 selectedWhitelist.clear()
                 selectedWhitelist.addAll(updated)
+                // 白名单是独立设置：选完立刻落盘，别等「开始锁机」那一步
+                LockMachineController.saveWhitelist(requireContext(), selectedWhitelist)
                 updateWhitelistButton()
             }
         }
@@ -375,7 +377,7 @@ class TimerFragment : Fragment() {
                     Toast.makeText(requireContext(), R.string.custom_minutes_hint, Toast.LENGTH_SHORT).show()
                     return@setPositiveButton
                 }
-                LockMachineService.start(requireContext(), duration.coerceIn(1, 600), selectedWhitelist)
+                LockMachineService.start(requireContext(), duration.coerceIn(1, 600))
                 Toast.makeText(
                     requireContext(),
                     getString(R.string.lock_machine_running, getString(R.string.duration_minutes, duration)),

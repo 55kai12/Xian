@@ -8,16 +8,13 @@ class LockAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             LockMachineScheduler.ACTION_START -> {
-                val start = LockMachineScheduler.startMinute(context)
-                val end = LockMachineScheduler.endMinute(context)
-                val durationMinutes = ((end - start) + 1440) % 1440
+                val durationMinutes = slotDurationMinutes(context, intent)
                 if (durationMinutes > 0) {
-                    LockMachineService.start(context, durationMinutes, LockMachineController.whitelist(context))
+                    LockMachineService.start(context, durationMinutes)
                 }
                 // 重新排下一次闹钟。
-                // 旧实现漏了这一步：setAlarmClock 是一次性闹钟，触发后不会自动重复，
-                // 于是「自定义锁机时间段」只在设置后的第一天生效，第二天起再也不锁
-                // （除非用户重启手机或重新进设置页保存一次）。
+                // setAlarmClock 是一次性闹钟，触发后不会自动重复；不重排的话
+                // 定时锁机只在设置后生效一次，之后（除非重启或重新保存）再也不锁。
                 rescheduleNext(context)
             }
             LockMachineScheduler.ACTION_END -> {
@@ -26,6 +23,21 @@ class LockAlarmReceiver : BroadcastReceiver() {
                 rescheduleNext(context)
             }
         }
+    }
+
+    /**
+     * 本次该锁多久。多时段下每个「开始」闹钟都自带自己那个时段的起止分钟
+     * （Intent 的 extras 按 requestCode 区分），所以这里优先用闹钟自己带的参数；
+     * 早期版本排的闹钟没带参数，才退回「此刻正在生效的时段」。
+     */
+    private fun slotDurationMinutes(context: Context, intent: Intent): Int {
+        val start = intent.getIntExtra(LockMachineScheduler.EXTRA_SLOT_START, -1)
+        val end = intent.getIntExtra(LockMachineScheduler.EXTRA_SLOT_END, -1)
+        if (start >= 0 && end >= 0) {
+            val slot = LockMachineScheduler.Slot(start, end)
+            if (slot.valid) return slot.durationMinutes
+        }
+        return LockMachineScheduler.currentSlot(context)?.durationMinutes ?: 0
     }
 
     /**

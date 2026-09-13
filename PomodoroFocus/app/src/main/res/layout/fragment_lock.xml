@@ -34,6 +34,17 @@
             android:visibility="gone" />
 
         <TextView
+            android:id="@+id/lockEndText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:alpha="0.7"
+            android:gravity="center"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="13sp"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/exitQuotaHintText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -161,33 +172,66 @@
                 android:textColor="?attr/colorBrandContent"
                 android:textSize="14sp" />
 
+            <TextView
+                android:id="@+id/scheduledNextText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:alpha="0.7"
+                android:textColor="?attr/colorBrandContent"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/slotContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/emptySlotsText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/slot_empty_hint"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/slotHintText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/slot_hint"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/unsavedHintText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/slot_unsaved_hint"
+                android:textColor="@color/warning_orange"
+                android:textSize="12sp"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/addSlotButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="8dp"
+                android:minWidth="0dp"
+                android:text="@string/add_slot" />
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="12dp">
-
-                <Button
-                    android:id="@+id/scheduledStartButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/scheduled_start_time" />
-
-                <Button
-                    android:id="@+id/scheduledEndButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/scheduled_end_time" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="8dp">
 
                 <Button
                     android:id="@+id/saveScheduleButton"

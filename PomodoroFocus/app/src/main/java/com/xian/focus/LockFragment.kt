@@ -10,7 +10,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
-import java.util.Calendar
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -19,19 +18,22 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.xian.focus.databinding.FragmentLockBinding
+import com.xian.focus.databinding.ItemLockSlotBinding
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @AndroidEntryPoint
 class LockFragment : Fragment() {
     private var _binding: FragmentLockBinding? = null
     private val binding get() = _binding!!
     private val selectedWhitelist = mutableSetOf<String>()
-    private var scheduledStartMin = 9 * 60
-    private var scheduledEndMin = 12 * 60
+
+    /**
+     * 正在编辑的时段草稿。只有点「保存」才落盘 —— 编到一半的半成品不该被定时任务拿去用。
+     * 与已保存列表不一致时，页面上会给一条「有未保存的修改」。
+     */
+    private val slotDraft = mutableListOf<LockMachineScheduler.Slot>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -51,9 +53,11 @@ class LockFragment : Fragment() {
         }
         selectedWhitelist.clear()
         selectedWhitelist.addAll(LockMachineController.whitelist(requireContext()))
+        slotDraft.clear()
+        slotDraft.addAll(LockMachineScheduler.slots(requireContext()))
         binding.duration30.isChecked = true
         binding.root.post { binding.root.staggerScrollContent() }
-        binding.whitelistButton.text = getString(R.string.whitelist_format, selectedWhitelist.size)
+        updateWhitelistButton()
 
         binding.whitelistButton.setOnClickListener { showAppPicker() }
         binding.startStopButton.setOnClickListener { toggleLock() }
@@ -62,37 +66,9 @@ class LockFragment : Fragment() {
             binding.immediateSection.visibility = if (immediate) View.VISIBLE else View.GONE
             binding.scheduledSection.visibility = if (immediate) View.GONE else View.VISIBLE
         }
-        if (LockMachineScheduler.isEnabled(requireContext())) {
-            scheduledStartMin = LockMachineScheduler.startMinute(requireContext())
-            scheduledEndMin = LockMachineScheduler.endMinute(requireContext())
-        }
-        updateScheduledButtons()
-        updateScheduledInfo()
-        binding.scheduledStartButton.setOnClickListener {
-            TimePickerDialog(requireContext(), { _, hour, minute ->
-                scheduledStartMin = hour * 60 + minute
-                updateScheduledButtons()
-            }, scheduledStartMin / 60, scheduledStartMin % 60, true).show()
-        }
-        binding.scheduledEndButton.setOnClickListener {
-            TimePickerDialog(requireContext(), { _, hour, minute ->
-                scheduledEndMin = hour * 60 + minute
-                updateScheduledButtons()
-            }, scheduledEndMin / 60, scheduledEndMin % 60, true).show()
-        }
-        binding.saveScheduleButton.setOnClickListener {
-            if (scheduledStartMin == scheduledEndMin) {
-                Toast.makeText(requireContext(), R.string.custom_minutes_hint, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            LockMachineScheduler.schedule(requireContext(), scheduledStartMin, scheduledEndMin)
-            updateScheduledInfo()
-            Toast.makeText(requireContext(), R.string.save_schedule, Toast.LENGTH_SHORT).show()
-        }
-        binding.cancelScheduleButton.setOnClickListener {
-            LockMachineScheduler.cancel(requireContext())
-            updateScheduledInfo()
-        }
+        binding.addSlotButton.setOnClickListener { addSlot() }
+        binding.saveScheduleButton.setOnClickListener { saveSchedule() }
+        binding.cancelScheduleButton.setOnClickListener { cancelSchedule() }
         binding.overlayPermissionButton.setOnClickListener {
             startActivity(
                 Intent(
@@ -104,6 +80,9 @@ class LockFragment : Fragment() {
         binding.accessibilityPermissionButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
+
+        renderSlots()
+        updateScheduledInfo()
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -121,33 +100,36 @@ class LockFragment : Fragment() {
     }
 
     private fun updateUi() {
-        val active = LockMachineController.isActive(requireContext())
+        val context = requireContext()
+        val active = LockMachineController.isActive(context)
         binding.lockStatusText.setText(if (active) R.string.lock_running else R.string.lock_not_running)
         if (active) {
-            binding.lockRemainingText.text = LockMachineController.remainingText(requireContext())
+            binding.lockRemainingText.text = LockMachineController.remainingText(context)
             binding.lockRemainingText.visibility = View.VISIBLE
+            // 跨日锁机光看倒计时不知道该几点结束，这里补上绝对时刻（「预计结束：明天 07:00」）
+            binding.lockEndText.text =
+                getString(R.string.lock_end_at_format, LockMachineController.endText(context))
+            binding.lockEndText.visibility = View.VISIBLE
             binding.startStopButton.setText(R.string.stop_lock_machine)
         } else {
             binding.lockRemainingText.visibility = View.GONE
+            binding.lockEndText.visibility = View.GONE
             binding.startStopButton.setText(R.string.start_lock_machine)
         }
         binding.exitQuotaHintText.text = getString(
             R.string.exit_quota_format,
-            LockExitQuota.remaining(requireContext()),
+            LockExitQuota.remaining(context),
             LockExitQuota.MONTHLY_LIMIT
         )
-        binding.overlayPermissionButton.alpha = if (Settings.canDrawOverlays(requireContext())) 1f else 0.55f
+        binding.overlayPermissionButton.alpha = if (Settings.canDrawOverlays(context)) 1f else 0.55f
         binding.accessibilityPermissionButton.alpha = if (isAccessibilityEnabled()) 1f else 0.55f
     }
 
     private fun toggleLock() {
-        if (LockMachineController.isActive(requireContext())) {
-            if (!LockExitQuota.canExit(requireContext())) {
-                Toast.makeText(
-                    requireContext(),
-                    getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT),
-                    Toast.LENGTH_LONG
-                ).show()
+        val context = requireContext()
+        if (LockMachineController.isActive(context)) {
+            if (!LockExitQuota.canExit(context)) {
+                toast(getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT))
                 return
             }
             // 应用内退出也走 30 秒冷静期 —— 贤本身永远在白名单里，
@@ -155,12 +137,12 @@ class LockFragment : Fragment() {
             confirmStopWithCooldown()
             return
         }
-        if (!Settings.canDrawOverlays(requireContext())) {
-            Toast.makeText(requireContext(), R.string.overlay_permission_title, Toast.LENGTH_SHORT).show()
+        if (!Settings.canDrawOverlays(context)) {
+            toast(getString(R.string.overlay_permission_title))
             return
         }
         if (!isAccessibilityEnabled()) {
-            Toast.makeText(requireContext(), R.string.accessibility_permission_title, Toast.LENGTH_SHORT).show()
+            toast(getString(R.string.accessibility_permission_title))
             return
         }
         val custom = binding.customDurationInput.text?.toString()?.toIntOrNull()
@@ -171,11 +153,11 @@ class LockFragment : Fragment() {
             else -> 30
         }
         if (duration <= 0) {
-            Toast.makeText(requireContext(), R.string.custom_minutes_hint, Toast.LENGTH_SHORT).show()
+            toast(getString(R.string.custom_minutes_hint))
             return
         }
-        LockMachineService.start(requireContext(), duration.coerceIn(1, 600), selectedWhitelist)
-        Toast.makeText(requireContext(), getString(R.string.lock_machine_running, getString(R.string.duration_minutes, duration)), Toast.LENGTH_SHORT).show()
+        LockMachineService.start(context, duration.coerceIn(1, 600))
+        toast(getString(R.string.lock_machine_running, getString(R.string.duration_minutes, duration)))
         updateUi()
     }
 
@@ -204,23 +186,186 @@ class LockFragment : Fragment() {
         dialog.setOnDismissListener { job.cancel() }
     }
 
-    private fun updateScheduledButtons() {
-        binding.scheduledStartButton.text = getString(R.string.scheduled_start_time) + "：" + formatMinute(scheduledStartMin)
-        binding.scheduledEndButton.text = getString(R.string.scheduled_end_time) + "：" + formatMinute(scheduledEndMin)
+    // ---------- 定时锁机：时段列表 ----------
+
+    private fun renderSlots() {
+        val container = binding.slotContainer
+        container.removeAllViews()
+        slotDraft.forEachIndexed { index, slot ->
+            val row = ItemLockSlotBinding.inflate(layoutInflater, container, false)
+            row.slotTimeText.text = slotLabel(slot)
+            row.root.setOnClickListener { editSlot(index) }
+            row.slotDeleteButton.setOnClickListener { removeSlot(index) }
+            container.addView(row.root)
+        }
+        val empty = slotDraft.isEmpty()
+        binding.emptySlotsText.visibility = if (empty) View.VISIBLE else View.GONE
+        binding.slotHintText.visibility = if (empty) View.GONE else View.VISIBLE
+        binding.addSlotButton.isEnabled = slotDraft.size < LockMachineScheduler.MAX_SLOTS
     }
 
-    private fun updateScheduledInfo() {
-        if (LockMachineScheduler.isEnabled(requireContext())) {
-            val s = formatMinute(LockMachineScheduler.startMinute(requireContext()))
-            val e = formatMinute(LockMachineScheduler.endMinute(requireContext()))
-            binding.scheduledInfoText.text = getString(R.string.scheduled_info_format, s, e)
+    /**
+     * 时段文案。结束时间早于开始时间就是跨日，必须写明「次日」——
+     * 只写「23:00 → 07:00」很容易被当成当天早上七点，看起来就像锁机没生效。
+     */
+    private fun slotLabel(slot: LockMachineScheduler.Slot): String =
+        if (slot.crossesMidnight) {
+            getString(
+                R.string.slot_cross_day_format,
+                TimeLabels.clock(slot.startMinute),
+                TimeLabels.clock(slot.endMinute)
+            )
         } else {
-            binding.scheduledInfoText.setText(R.string.no_schedule)
+            getString(
+                R.string.slot_same_day_format,
+                TimeLabels.clock(slot.startMinute),
+                TimeLabels.clock(slot.endMinute)
+            )
+        }
+
+    private fun addSlot() {
+        if (slotDraft.size >= LockMachineScheduler.MAX_SLOTS) {
+            toast(getString(R.string.slot_limit_hint, LockMachineScheduler.MAX_SLOTS))
+            return
+        }
+        pickSlot(null) { slot ->
+            slotDraft += slot
+            sortAndRender()
         }
     }
 
-    private fun formatMinute(minute: Int): String =
-        String.format("%02d:%02d", minute / 60, minute % 60)
+    private fun editSlot(index: Int) {
+        val current = slotDraft.getOrNull(index) ?: return
+        pickSlot(current) { slot ->
+            slotDraft[index] = slot
+            sortAndRender()
+        }
+    }
+
+    private fun removeSlot(index: Int) {
+        if (index !in slotDraft.indices) return
+        slotDraft.removeAt(index)
+        sortAndRender()
+    }
+
+    private fun sortAndRender() {
+        slotDraft.sortBy { it.startMinute }
+        renderSlots()
+        updateScheduledInfo()
+    }
+
+    /**
+     * 依次问开始、结束两个时间。
+     *
+     * 结束早于开始不报错 —— 那正是「跨日」这种合法设置（23:00 → 次日 07:00），
+     * 只有两个时间完全一样（0 时长）才拒绝。
+     */
+    private fun pickSlot(
+        initial: LockMachineScheduler.Slot?,
+        onPicked: (LockMachineScheduler.Slot) -> Unit
+    ) {
+        val startDefault = initial?.startMinute ?: DEFAULT_SLOT_START_MINUTE
+        TimePickerDialog(requireContext(), { _, startHour, startMinuteOfHour ->
+            val startMinute = startHour * 60 + startMinuteOfHour
+            val endDefault = initial?.endMinute
+                ?: (startMinute + DEFAULT_SLOT_MINUTES) % LockMachineScheduler.MINUTES_PER_DAY
+            TimePickerDialog(requireContext(), { _, endHour, endMinuteOfHour ->
+                val endMinute = endHour * 60 + endMinuteOfHour
+                if (endMinute == startMinute) {
+                    toast(getString(R.string.slot_invalid_hint))
+                } else {
+                    onPicked(LockMachineScheduler.Slot(startMinute, endMinute))
+                }
+            }, endDefault / 60, endDefault % 60, true)
+                .apply { setTitle(R.string.scheduled_end_time) }
+                .show()
+        }, startDefault / 60, startDefault % 60, true)
+            .apply { setTitle(R.string.scheduled_start_time) }
+            .show()
+    }
+
+    /**
+     * 保存并立刻自检。
+     *
+     * 自检是这次修复的重点：`applyAlarms` 只会把已经过去的开始时刻顺延到明天，
+     * 所以 23:26 保存一个 23:23 开始的时段会一路等到明天 —— 用户看到的就是「设了不生效」。
+     * 保存完顺手问一句「现在是不是已经在时段里了」，是就当场开始锁机。
+     */
+    private fun saveSchedule() {
+        val context = requireContext()
+        if (slotDraft.isEmpty()) {
+            toast(getString(R.string.slot_empty_hint))
+            return
+        }
+        LockMachineScheduler.schedule(context, slotDraft.toList())
+        val started = LockMachineScheduler.resumeIfInScheduledWindow(context)
+        updateScheduledInfo()
+        updateUi()
+        when {
+            started != null -> toast(getString(R.string.schedule_locked_now))
+            else -> {
+                val next = LockMachineScheduler.nextStartAt(context)
+                    ?: (System.currentTimeMillis() + 60_000L)
+                toast(getString(R.string.schedule_saved_next, TimeLabels.relative(context, next)))
+            }
+        }
+    }
+
+    private fun cancelSchedule() {
+        LockMachineScheduler.cancel(requireContext())
+        slotDraft.clear()
+        sortAndRender()
+        toast(getString(R.string.cancel_schedule))
+    }
+
+    private fun updateScheduledInfo() {
+        val context = requireContext()
+        val saved = LockMachineScheduler.slots(context)
+        if (saved.isEmpty()) {
+            binding.scheduledInfoText.setText(R.string.no_schedule)
+        } else {
+            binding.scheduledInfoText.text = getString(
+                R.string.scheduled_info_format,
+                saved.size,
+                saved.joinToString(SLOT_SEPARATOR) { slotLabel(it) }
+            )
+        }
+        val next = LockMachineScheduler.nextStartAt(context)
+        binding.scheduledNextText.text =
+            if (next == null) "" else getString(R.string.schedule_next_format, TimeLabels.relative(context, next))
+        binding.scheduledNextText.visibility = if (next == null) View.GONE else View.VISIBLE
+        binding.unsavedHintText.visibility = if (saved == slotDraft) View.GONE else View.VISIBLE
+    }
+
+    // ---------- 白名单 ----------
+
+    private fun updateWhitelistButton() {
+        binding.whitelistButton.text =
+            getString(R.string.whitelist_format, selectedWhitelist.size)
+    }
+
+    private fun showAppPicker() {
+        WhitelistAppPicker.show(
+            requireContext(),
+            viewLifecycleOwner.lifecycleScope,
+            selectedWhitelist
+        ) { updated ->
+            selectedWhitelist.clear()
+            selectedWhitelist.addAll(updated)
+            // 选完立刻落盘。白名单是设置项，不能等到「开始锁机」才存 ——
+            // 否则只保存定时时段、或者切个页面重建视图，这次选择就白选了。
+            LockMachineController.saveWhitelist(requireContext(), selectedWhitelist)
+            updateWhitelistButton()
+            refreshOverlayIfShowing()
+        }
+    }
+
+    /** 锁机正在跑时改了白名单，覆盖层里的文件夹要立刻跟上。 */
+    private fun refreshOverlayIfShowing() {
+        if (LockMachineOverlayController.isShowing()) {
+            LockMachineOverlayController.show(requireContext())
+        }
+    }
 
     private fun isAccessibilityEnabled(): Boolean {
         val enabled = Settings.Secure.getString(
@@ -231,16 +376,22 @@ class LockFragment : Fragment() {
         return enabled.split(':').any { it.equals(expected, ignoreCase = true) }
     }
 
-    private fun showAppPicker() {
-        WhitelistAppPicker.show(requireContext(), viewLifecycleOwner.lifecycleScope, selectedWhitelist) { updated ->
-            selectedWhitelist.clear()
-            selectedWhitelist.addAll(updated)
-            binding.whitelistButton.text = getString(R.string.whitelist_format, selectedWhitelist.size)
-        }
+    private fun toast(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
     }
 
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    private companion object {
+        /** 新增时段时的默认开始时间：晚上 10 点，最贴近「睡前别玩手机」这个用法。 */
+        const val DEFAULT_SLOT_START_MINUTE = 22 * 60
+
+        /** 新增时段时的默认时长（分钟）。 */
+        const val DEFAULT_SLOT_MINUTES = 60
+
+        const val SLOT_SEPARATOR = "、"
     }
 }
