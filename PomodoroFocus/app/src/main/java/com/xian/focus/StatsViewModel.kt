@@ -28,7 +28,7 @@ class StatsViewModel @Inject constructor(
     val weeklyWeekStart: StateFlow<Long?> = _weeklyWeekStart.asStateFlow()
 
     suspend fun loadStats(): FocusStats {
-        val stats = repository.getFocusStats()
+        val stats = repository.getFocusStats(TaskSkipStore.all(context))
         _stats.value = stats
         return stats
     }
@@ -52,7 +52,7 @@ class StatsViewModel @Inject constructor(
     }
 
     fun refresh() = viewModelScope.launch {
-        _stats.value = repository.getFocusStats()
+        _stats.value = repository.getFocusStats(TaskSkipStore.all(context))
         // 别把 _weeklyWeekStart 清成 null：番茄钟页刷新时会调这里，一旦清掉，
         // 任务页趋势线收集器里「这周数据是不是当前显示这周」的判定就永远为假，
         // 曲线会一直挂着旧数据（表现是「翻到第二周后曲线不跟着任务动」）。

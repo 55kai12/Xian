@@ -56,17 +56,21 @@ class TrendLineChartView @JvmOverloads constructor(
         }
         path.reset()
         path.moveTo(points.first().first, points.first().second)
-        // Convert Catmull-Rom control points to cubic Beziers for a smooth curve through each day.
+        // Catmull-Rom 控制点转三次贝塞尔：曲线平滑地穿过每一天的点。
+        // 但两个控制点的 y 必须夹在本段两端之间 —— 否则只有某一天有值时，相邻那两段会被
+        // 拉出过冲，画面上看着「周四、周六好像也有值」，用户会以为统计多算了（实际是画多了）。
         for (index in 0 until points.lastIndex) {
             val previous = points.getOrElse(index - 1) { points[index] }
             val start = points[index]
             val end = points[index + 1]
             val next = points.getOrElse(index + 2) { end }
+            val low = minOf(start.second, end.second)
+            val high = maxOf(start.second, end.second)
             path.cubicTo(
                 start.first + (end.first - previous.first) / 6f,
-                start.second + (end.second - previous.second) / 6f,
+                (start.second + (end.second - previous.second) / 6f).coerceIn(low, high),
                 end.first - (next.first - start.first) / 6f,
-                end.second - (next.second - start.second) / 6f,
+                (end.second - (next.second - start.second) / 6f).coerceIn(low, high),
                 end.first,
                 end.second
             )

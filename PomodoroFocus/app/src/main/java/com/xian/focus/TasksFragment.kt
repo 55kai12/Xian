@@ -714,16 +714,12 @@ class TasksFragment : Fragment() {
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    private fun matchesRepeat(rule: String, start: Long, day: Long): Boolean {
-        val startCal = java.util.Calendar.getInstance().apply { timeInMillis = start }
-        val dayCal = java.util.Calendar.getInstance().apply { timeInMillis = day }
-        return when (rule) {
-            TaskViewModel.REPEAT_DAILY -> true
-            TaskViewModel.REPEAT_WEEKLY -> startCal.get(java.util.Calendar.DAY_OF_WEEK) == dayCal.get(java.util.Calendar.DAY_OF_WEEK)
-            TaskViewModel.REPEAT_MONTHLY -> startCal.get(java.util.Calendar.DAY_OF_MONTH) == dayCal.get(java.util.Calendar.DAY_OF_MONTH)
-            else -> false
-        }
-    }
+    /**
+     * 判定委托给 [RepeatRule] —— 统计侧（FocusRepository）必须问同一个问题。
+     * 两边各写一份的话，一旦漂移就会出现「清单里看不见、趋势线上却计了一笔」。
+     */
+    private fun matchesRepeat(rule: String, start: Long, day: Long): Boolean =
+        RepeatRule.covers(rule, start, day)
     private fun updateWeekProgressScheme() {
         val allTasks = taskViewModel.pendingTasks.value
         val stripProgressMap = HashMap<Long, Float>()

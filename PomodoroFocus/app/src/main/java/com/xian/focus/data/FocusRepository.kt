@@ -1,6 +1,8 @@
 package com.xian.focus.data
 
+import com.xian.focus.RepeatRule
 import com.xian.focus.TaskSkipStore
+import com.xian.focus.TaskViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -129,21 +131,19 @@ class FocusRepository(
         recordDao.insertRecord(record)
     }
 
-    suspend fun getFocusStats(): FocusStats = withContext(Dispatchers.IO) {
+    suspend fun getFocusStats(skipped: Set<String> = emptySet()): FocusStats = withContext(Dispatchers.IO) {
         val dayStart = startOfToday()
         val dayEnd = dayStart + DAY_MILLIS
         val weekStart = dayStart - 6L * DAY_MILLIS
-        // 直接勾选完成的任务也计入统计，与柱状图口径一致。
-        // 排除重复任务模板：它残留的 isCompleted=true 是历史脏值，不是真的完成过一次。
-        val allCompletedTasks = taskDao.getAllTasks()
-            .filter { it.isCompleted && it.dueDate != null && !it.isRepeatTemplate() }
-        val todayTaskCount = allCompletedTasks.count { it.dueDate!! >= dayStart && it.dueDate!! < dayEnd }
-        val weekTaskCount = allCompletedTasks.count { it.dueDate!! >= weekStart && it.dueDate!! < dayEnd }
-        val totalTaskCount = allCompletedTasks.size
+        // 直接勾选完成的任务也计入统计，与趋势线共用 visibleCompletions —— 口径必须一致，
+        // 否则「趋势线上没有、今日贤时里却有」又是一处对不上。
+        val visible = visibleCompletions(taskDao.getAllTasks(), skipped)
+        val todayTaskCount = visible.count { it.dueDate!! >= dayStart && it.dueDate!! < dayEnd }
+        val weekTaskCount = visible.count { it.dueDate!! >= weekStart && it.dueDate!! < dayEnd }
         FocusStats(
             todayCount = recordDao.getCompletedFocusCountBetween(dayStart, dayEnd) + todayTaskCount,
             lastSevenDaysCount = recordDao.getCompletedFocusCountBetween(weekStart, dayEnd) + weekTaskCount,
-            totalCount = recordDao.getTotalCompletedFocusCount() + totalTaskCount,
+            totalCount = recordDao.getTotalCompletedFocusCount() + visible.size,
             totalMinutes = recordDao.getTotalFocusMinutes()
         )
     }
@@ -178,18 +178,9 @@ class FocusRepository(
             counts[label] = (counts[label] ?: 0) + 1
         }
         // 任务清单中直接勾选完成的任务，也应当反映在当周趋势线上。
-        // 同样排除重复任务模板（完成态由当天的快照行代表，避免同一天被算两次）。
-        taskDao.getAllTasks()
-            .asSequence()
-            .filter {
-                it.isCompleted && it.dueDate != null && !it.isRepeatTemplate() &&
-                    it.dueDate >= start && it.dueDate < end
-            }
-            // 「只删除这一天」藏起来的完成快照不再计数
-            .filter {
-                val seriesId = if (it.templateId != 0) it.templateId else it.id
-                TaskSkipStore.key(seriesId, it.dueDate!!) !in skipped
-            }
+        // 只认「清单里真的能看见」的那部分 —— 判据见 visibleCompletions。
+        visibleCompletions(taskDao.getAllTasks(), skipped)
+            .filter { it.dueDate!! >= start && it.dueDate!! < end }
             .forEach { task ->
                 val label = labelFormat.format(Date(task.dueDate!!))
                 counts[label] = (counts[label] ?: 0) + 1
@@ -233,7 +224,48 @@ class FocusRepository(
     /** 重复任务模板：既是重复规则、又不是某天的快照。它不参与完成统计。 */
     private fun Task.isRepeatTemplate(): Boolean = templateId == 0 && repeatRule != "none"
 
-    private fun startOfToday(): Long = Calendar.getInstance().apply {
+    /**
+     * 库里所有「该计入统计」的完成记录。
+     *
+     * 判据是 completionIsVisible —— 它保证统计口径与任务清单里「这条记录能不能被看到」
+     * 完全一致：界面上看不见的完成记录，趋势线和今日/近七日数字里都不该有一笔。
+     */
+    private fun visibleCompletions(allTasks: List<Task>, skipped: Set<String>): List<Task> {
+        val templates = allTasks
+            .filter { it.templateId == 0 && it.repeatRule != TaskViewModel.REPEAT_NONE }
+            .associateBy { it.id }
+        return allTasks.filter { task ->
+            val day = task.dueDate
+            task.isCompleted && day != null && completionIsVisible(task, day, templates, skipped)
+        }
+    }
+
+    /**
+     * 一条完成记录在任务清单里是否可见（= 是否计入统计）。
+     *
+     * 三类幽灵记录都是从这个口子漏进来的，现象都叫「任务删了，趋势线还顶着」：
+     * 1. 重复任务模板：残留的 isCompleted=true 是脏值，模板本身从不代表「完成过一次」；
+     * 2. 「仅删除该事件」只在 TaskSkipStore 记了一条，当天的完成快照还留在库里；
+     * 3. 规则被改过（每天 → 每周）或模板已被删除，快照的日期落在规则覆盖之外 ——
+     *    清单里的快照由模板带出，带不出来就永远不显示，但统计照旧给它算一笔。
+     */
+    private fun completionIsVisible(
+        task: Task,
+        day: Long,
+        templates: Map<Int, Task>,
+        skipped: Set<String>
+    ): Boolean {
+        if (task.templateId == 0) return task.repeatRule == TaskViewModel.REPEAT_NONE
+        val template = templates[task.templateId] ?: return false
+        if (TaskSkipStore.key(task.templateId, day) in skipped) return false
+        val start = startOfDay(template.dueDate ?: template.createdAt)
+        return day >= start && RepeatRule.covers(template.repeatRule, start, day)
+    }
+
+    private fun startOfToday(): Long = startOfDay(System.currentTimeMillis())
+
+    private fun startOfDay(timeMillis: Long): Long = Calendar.getInstance().apply {
+        timeInMillis = timeMillis
         set(Calendar.HOUR_OF_DAY, 0)
         set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0)
