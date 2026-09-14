@@ -125,12 +125,13 @@
     <string name="app_limit_overlay_title">%1$s 今日额度已用完</string>
     <string name="app_limit_overlay_detail">每天可用 %1$d 分钟，明天自动恢复</string>
     <string name="app_limit_overlay_home">返回桌面</string>
-    <string name="app_limit_accessibility_hint">应用限额靠「无障碍」服务计时。现在没开，限额不会生效，点这里去开启。</string>
+    <string name="app_limit_accessibility_hint">「使用情况访问」和「无障碍」都没开，限额不会生效。优先开上面那张卡的「使用情况访问」—— 只靠无障碍的话，划掉后台计时就会停。</string>
     <string name="app_limit_overview_used">今日已用 %1$s · %2$d 个应用受限</string>
-    <string name="app_limit_status_off">无障碍服务未开启，限额不会生效。点这里去开启。</string>
+    <string name="app_limit_status_off">「使用情况访问」和「无障碍」都没开，限额不会生效。点这里去开启。</string>
     <string name="app_limit_status_ready">计时已就绪：被限制的应用出现在前台时才开始累计</string>
     <string name="app_limit_status_ok">计时正常 · 最近一次计时：%1$s</string>
     <string name="app_limit_status_restart">刚更新过？把「贤」的无障碍开关关掉再打开一次，计时才会生效。点这里去设置。</string>
+    <string name="app_limit_usage_access_hint">建议开启「使用情况访问」。应用限额现在靠系统的使用记录计时 —— 划掉后台、息屏、被系统冻结都算得准。不开也能用，但只靠「无障碍」服务，进程一被清就停。点这里去开启。</string>
     <string name="app_limit_ago_just_now">刚刚</string>
     <string name="app_limit_ago_minutes">%1$d 分钟前</string>
     <string name="app_limit_ago_hours">%1$d 小时前</string>

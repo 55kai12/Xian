@@ -81,6 +81,31 @@
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- 记账的主路径读系统使用记录，需要「使用情况访问」这个特殊权限。
+         没给也不会坏（退回无障碍计时），但划掉后台就停，所以显式引导。 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/usageAccessCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="20dp"
+        android:layout_marginBottom="10dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        app:cardCornerRadius="14dp"
+        app:cardElevation="0dp"
+        app:strokeColor="?attr/colorOutline"
+        app:strokeWidth="1dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="14dp"
+            android:text="@string/app_limit_usage_access_hint"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp" />
+    </com.google.android.material.card.MaterialCardView>
+
     <!-- 限额靠无障碍服务计时，没开时限额根本不会生效，所以显式提示 -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/accessibilityHintCard"

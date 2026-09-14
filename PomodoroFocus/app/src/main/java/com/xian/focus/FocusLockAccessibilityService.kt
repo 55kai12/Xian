@@ -130,6 +130,12 @@ class FocusLockAccessibilityService : AccessibilityService() {
      * 差值为负会让这一秒凭空消失，长期累计就是「用了一小时只记了半小时」。
      */
     private fun tickAppLimit(context: Context) {
+        // 记账的主路径已经搬去守护服务里的 AppLimitWatcher（读系统使用记录，进程被冻结也能补算）。
+        // 它活着时这里就彻底不碰 —— 两边同时算会把时长翻倍。
+        // 它掉线（守护服务被杀 / 用户没给「使用情况访问」）时才由这里顶上，
+        // 所以这条老路不能删：它是没有那个权限时的唯一依靠。
+        if (AppLimitWatcher.isRunning()) return
+
         val now = SystemClock.elapsedRealtime()
         val interactive = powerManager?.isInteractive == true
 

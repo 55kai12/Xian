@@ -125,12 +125,13 @@
     <string name="app_limit_overlay_title">%1$s is done for today</string>
     <string name="app_limit_overlay_detail">%1$d min per day. Resets tomorrow.</string>
     <string name="app_limit_overlay_home">Back to home screen</string>
-    <string name="app_limit_accessibility_hint">App limits are counted by the accessibility service, which is currently off, so limits will not work. Tap to enable it.</string>
+    <string name="app_limit_accessibility_hint">Neither "Usage access" nor accessibility is on, so limits will not work. Turn on "Usage access" from the card above first — accessibility alone stops counting as soon as the app is swiped away.</string>
     <string name="app_limit_overview_used">Used %1$s today · %2$d apps limited</string>
-    <string name="app_limit_status_off">Accessibility service is off, so limits will not work. Tap to enable it.</string>
+    <string name="app_limit_status_off">Neither "Usage access" nor accessibility is on, so limits will not work. Tap to enable.</string>
     <string name="app_limit_status_ready">Ready to count — it starts once a limited app comes to the foreground</string>
     <string name="app_limit_status_ok">Counting normally · last counted %1$s</string>
     <string name="app_limit_status_restart">Just updated? Turn Xian\'s accessibility switch off then on once, or counting may not start. Tap to open settings.</string>
+    <string name="app_limit_usage_access_hint">Turn on "Usage access". App limits are now counted from the system usage log, so counting survives swiping the app away, screen-off and the system freezing it. Without it limits still work, but only while the accessibility service is alive. Tap to open settings.</string>
     <string name="app_limit_ago_just_now">just now</string>
     <string name="app_limit_ago_minutes">%1$d min ago</string>
     <string name="app_limit_ago_hours">%1$d h ago</string>

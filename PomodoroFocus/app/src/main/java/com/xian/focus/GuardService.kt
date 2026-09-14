@@ -7,21 +7,33 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 
 /**
  * 守护前台服务：只要还有「需要一直盯着」的功能开着（应用限额 / 定时锁机时段），
  * 就常驻一个最低优先级的通知，把进程优先级抬上去。
  *
- * 起因：应用限额的计时和拦截都跑在无障碍服务里，而**用户从最近任务划掉贤之后，
- * 国产 ROM 会顺手清掉进程**（部分直接 force-stop）—— 无障碍服务随之停摆，
- * 限额就再也拦不住，看起来像「删了后台就失效」。
- * 有前台服务的应用不在这类清理的名单里，这是唯一能对抗它的手段。
+ * 起因：应用限额的计时和拦截原先跑在无障碍服务里，而**用户从最近任务划掉贤之后，
+ * 国产 ROM 会顺手清掉进程**（部分直接 force-stop）—— 服务随之停摆，限额就再也拦不住，
+ * 看起来像「删了后台就失效」。有前台服务的应用不在这类清理的名单里。
  *
- * 它只负责活着：计时、判断、拦截都在别的类里。
+ * 顺带承担应用的限额记账：前台应用改从系统使用记录读（见 [AppLimitWatcher]），
+ * 本服务活着的时候由它驱动，被冻结或掉线时无障碍那边的 tick 会自动接管。
  */
 class GuardService : Service() {
+
+    private val handler = Handler(Looper.getMainLooper())
+
+    private val limitTicker = object : Runnable {
+        override fun run() {
+            // 兜住异常：tick 里崩一下，下面这行 postDelayed 就不会执行，记账从此永久停摆
+            runCatching { AppLimitWatcher.tick(applicationContext) }
+            handler.postDelayed(this, AppLimitWatcher.POLL_MILLIS)
+        }
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         // 先无条件转前台：从 startForegroundService 进来却没能及时 startForeground
@@ -30,12 +42,23 @@ class GuardService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification())
 
         if (!needsGuard(this)) {
+            handler.removeCallbacks(limitTicker)
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
+        // 只为定时锁机常驻时不必记账（限额列表是空的，记了也没用）
+        handler.removeCallbacks(limitTicker)
+        if (AppLimitStore.limitedPackages(this).isNotEmpty()) {
+            handler.post(limitTicker)
+        }
         // 被系统回收后自动重建；重建时 intent 为 null，这里会再自检一遍条件
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(limitTicker)
+        super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

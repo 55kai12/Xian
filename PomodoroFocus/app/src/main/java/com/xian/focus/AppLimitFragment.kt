@@ -65,7 +65,15 @@ class AppLimitFragment : Fragment() {
             showLimitDialog(rows[position])
         }
         binding.accessibilityHintCard.setOnClickListener { openAccessibilitySettings() }
-        binding.overviewStatusText.setOnClickListener { openAccessibilitySettings() }
+        binding.usageAccessCard.setOnClickListener { openUsageAccessSettings() }
+        // 状态行缺什么就带用户去补什么，别让他自己猜是哪一项
+        binding.overviewStatusText.setOnClickListener {
+            if (AppLimitWatcher.hasUsageAccess(requireContext())) {
+                openAccessibilitySettings()
+            } else {
+                openUsageAccessSettings()
+            }
+        }
         // 停在页面上时数字要自己涨 —— 否则用户根本分不清「没在计时」和「界面没刷新」。
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
@@ -89,6 +97,10 @@ class AppLimitFragment : Fragment() {
 
     private fun openAccessibilitySettings() {
         runCatching { startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
+    }
+
+    private fun openUsageAccessSettings() {
+        runCatching { startActivity(AppLimitWatcher.usageAccessIntent()) }
     }
 
     private fun refresh() {
@@ -122,19 +134,25 @@ class AppLimitFragment : Fragment() {
             summary.appCount
         )
         val accessibilityOn = LockHealth.isAccessibilityOn(context)
-        binding.accessibilityHintCard.visibility = if (accessibilityOn) View.GONE else View.VISIBLE
+        val usageAccessOn = AppLimitWatcher.hasUsageAccess(context)
+        binding.accessibilityHintCard.visibility = if (accessibilityOn || usageAccessOn) {
+            View.GONE
+        } else {
+            View.VISIBLE
+        }
+        binding.usageAccessCard.visibility = if (usageAccessOn) View.GONE else View.VISIBLE
         val countedAt = AppLimitStore.lastCountedAt(context)
         lastShownCountedAt = countedAt
         binding.overviewStatusText.text = when {
-            !accessibilityOn -> getString(R.string.app_limit_status_off)
-            // 计时只在被限制的应用处于前台时才走，所以「从未计时」不代表坏了。
-            // 但若连「读窗口」能力都没有，说明是覆盖安装后系统还按旧配置派发事件 ——
+            // 两条来源都没了才是真的不会生效
+            !accessibilityOn && !usageAccessOn -> getString(R.string.app_limit_status_off)
+            // 计时只在被限制的应用出现在前台时才走，所以「从未计时」不代表坏了。
+            // 但只靠无障碍时，若连「读窗口」能力都没有，说明是覆盖安装后系统还按旧配置派发事件 ——
             // 那个差别用户看不见，只会觉得「更新完就不记录了」，所以明说出来。
-            countedAt == 0L -> if (LockHealth.canReadWindows(context)) {
-                getString(R.string.app_limit_status_ready)
-            } else {
+            countedAt == 0L && !usageAccessOn && !LockHealth.canReadWindows(context) ->
                 getString(R.string.app_limit_status_restart)
-            }
+
+            countedAt == 0L -> getString(R.string.app_limit_status_ready)
             else -> getString(
                 R.string.app_limit_status_ok,
                 formatAgo(System.currentTimeMillis() - countedAt)
