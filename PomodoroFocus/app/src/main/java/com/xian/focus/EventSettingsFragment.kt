@@ -1,6 +1,5 @@
 ﻿package com.xian.focus
 
-import android.app.AlertDialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -35,6 +34,24 @@ class EventSettingsFragment : Fragment() {
 
     /** 文案要跟着语言走，所以每次现取，不做字段初始化。 */
     private fun sortLabels() = sortResIds.map { getString(it) }.toTypedArray()
+
+    private val sortDescResIds = arrayOf(
+        R.string.sort_days_remaining_desc,
+        R.string.sort_target_date_desc,
+        R.string.sort_created_at_desc
+    )
+
+    /** 一行说明比三个相似的名字好分辨 —— 排序方式的差别本来就不好从名字上看出来。 */
+    private fun sortDescs() = sortDescResIds.map { getString(it) }
+
+    /** 提前天数的口语化说明：光看「3 天」还得自己换算成「三天前提醒」。 */
+    private fun reminderDaysDesc(days: Int): String = when (days) {
+        1 -> getString(R.string.event_reminder_days_desc_same_day)
+        7 -> getString(R.string.event_reminder_days_desc_week)
+        14 -> getString(R.string.event_reminder_days_desc_fortnight)
+        30 -> getString(R.string.event_reminder_days_desc_month)
+        else -> getString(R.string.event_reminder_days_desc_days, days)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -85,19 +102,23 @@ class EventSettingsFragment : Fragment() {
 
         binding.reminderDaysSection.setOnClickListener {
             val current = prefs.getInt("reminder_days", 1)
-            val values = intArrayOf(1, 3, 7, 14, 30)
-            val options = values.map { getString(R.string.days_count, it) }.toTypedArray()
-            val selected = values.indexOf(current).coerceAtLeast(0)
-            AlertDialog.Builder(requireContext())
-                .setTitle(R.string.event_reminder_days_title)
-                .setSingleChoiceItems(options, selected) { dialog, which ->
-                    prefs.edit().putInt("reminder_days", values[which]).apply()
-                    binding.reminderDaysText.text = getString(R.string.days_count, values[which])
-                    dialog.dismiss()
-                    resyncCountdownReminders()
-                }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
+            val selected = REMINDER_DAY_VALUES.indexOf(current).coerceAtLeast(0)
+            OptionPicker.show(
+                requireContext(),
+                R.string.event_reminder_days_title,
+                REMINDER_DAY_VALUES.map { days ->
+                    OptionPicker.Item(
+                        label = getString(R.string.days_count, days),
+                        desc = reminderDaysDesc(days)
+                    )
+                },
+                selected
+            ) { which ->
+                val days = REMINDER_DAY_VALUES[which]
+                prefs.edit().putInt("reminder_days", days).apply()
+                binding.reminderDaysText.text = getString(R.string.days_count, days)
+                resyncCountdownReminders()
+            }
         }
 
         binding.autoLinkTaskSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -111,15 +132,17 @@ class EventSettingsFragment : Fragment() {
             val current = prefs.getString("sort_by", "days_remaining")
             val selected = sortValues.indexOf(current).coerceAtLeast(0)
             val labels = sortLabels()
-            AlertDialog.Builder(requireContext())
-                .setTitle(R.string.event_sort_title)
-                .setSingleChoiceItems(labels, selected) { dialog, which ->
-                    prefs.edit().putString("sort_by", sortValues[which]).apply()
-                    binding.eventSortValueText.text = getString(sortResIds[which])
-                    dialog.dismiss()
-                }
-                .setNegativeButton(R.string.cancel, null)
-                .show()
+            OptionPicker.show(
+                requireContext(),
+                R.string.event_sort_title,
+                labels.mapIndexed { index, label ->
+                    OptionPicker.Item(label = label, desc = sortDescs()[index])
+                },
+                selected
+            ) { which ->
+                prefs.edit().putString("sort_by", sortValues[which]).apply()
+                binding.eventSortValueText.text = getString(sortResIds[which])
+            }
         }
 
         binding.showCompletedSwitch.setOnCheckedChangeListener { _, v ->
@@ -151,5 +174,10 @@ class EventSettingsFragment : Fragment() {
             val countdowns = runCatching { repository.getAllCountdownsOnce() }.getOrNull() ?: return@launch
             countdowns.forEach { CountdownReminderScheduler.sync(requireContext(), it) }
         }
+    }
+
+    private companion object {
+        /** 可选的提前提醒天数。 */
+        val REMINDER_DAY_VALUES = intArrayOf(1, 3, 7, 14, 30)
     }
 }

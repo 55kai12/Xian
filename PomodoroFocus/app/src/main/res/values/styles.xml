@@ -92,6 +92,16 @@
         <item name="android:textSize">15sp</item>
     </style>
 
+    <!-- 并排的小胶囊按钮（每日目标快捷值这类）：去掉默认的内外边距，才能等宽平分一行 -->
+    <style name="Widget.Xian.Button.Chip" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:paddingHorizontal">0dp</item>
+        <item name="android:textColor">?attr/colorBrandContent</item>
+        <item name="android:textSize">14sp</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+    </style>
+
     <style name="Widget.Xian.EditText" parent="Widget.AppCompat.EditText">
         <item name="android:background">@drawable/bg_edittext</item>
         <item name="android:padding">12dp</item>

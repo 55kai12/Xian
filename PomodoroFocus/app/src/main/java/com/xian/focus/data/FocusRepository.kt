@@ -1,5 +1,6 @@
 package com.xian.focus.data
 
+import com.xian.focus.TaskSkipStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
@@ -147,12 +148,23 @@ class FocusRepository(
         )
     }
 
-    suspend fun getLastSevenDaysCounts(): List<DailyCount> {
+    suspend fun getLastSevenDaysCounts(skipped: Set<String> = emptySet()): List<DailyCount> {
         val dayStart = startOfToday()
-        return getDailyCountsBetween(dayStart - 6L * DAY_MILLIS, dayStart + DAY_MILLIS)
+        return getDailyCountsBetween(dayStart - 6L * DAY_MILLIS, dayStart + DAY_MILLIS, skipped)
     }
 
-    suspend fun getDailyCountsBetween(start: Long, end: Long): List<DailyCount> = withContext(Dispatchers.IO) {
+    /**
+     * 区间内每天的「贤时」数 = 计时完成的专注次数 + 当天勾选完成的任务数。
+     *
+     * [skipped] 是 TaskSkipStore 里「该日不要出现」的键集合。重复任务用「只删除这一天的」
+     * 把某天藏起来时，只是记了一条 skip，当天的完成快照行仍留在库里 —— 不过滤的话，
+     * 用户明明删掉的那一天还会在趋势线上继续计一笔。
+     */
+    suspend fun getDailyCountsBetween(
+        start: Long,
+        end: Long,
+        skipped: Set<String> = emptySet()
+    ): List<DailyCount> = withContext(Dispatchers.IO) {
         val startTimes = recordDao.getFocusStartTimesBetween(start, end)
         val labelFormat = SimpleDateFormat("MM-dd", Locale.getDefault())
         val counts = LinkedHashMap<String, Int>()
@@ -172,6 +184,11 @@ class FocusRepository(
             .filter {
                 it.isCompleted && it.dueDate != null && !it.isRepeatTemplate() &&
                     it.dueDate >= start && it.dueDate < end
+            }
+            // 「只删除这一天」藏起来的完成快照不再计数
+            .filter {
+                val seriesId = if (it.templateId != 0) it.templateId else it.id
+                TaskSkipStore.key(seriesId, it.dueDate!!) !in skipped
             }
             .forEach { task ->
                 val label = labelFormat.format(Date(task.dueDate!!))

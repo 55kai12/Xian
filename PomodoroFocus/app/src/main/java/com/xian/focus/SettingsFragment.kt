@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -139,19 +140,22 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showDailyGoalDialog() {
-        val input = EditText(requireContext()).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            setText(goalPrefs.getDailyGoal().toString())
-            setSelection(text.length)
-            hint = getString(R.string.goal_input_hint)
-        }
-        val container = LinearLayout(requireContext()).apply {
-            setPadding(48, 24, 48, 0)
-            addView(input)
+        val view = layoutInflater.inflate(R.layout.dialog_daily_goal, null, false)
+        val input = view.findViewById<EditText>(R.id.goalInput)
+        input.setText(goalPrefs.getDailyGoal().toString())
+        input.setSelection(input.text.length)
+        // 快捷值只把数字填进输入框，落盘仍然只走「保存」这一条路径
+        val presets = view.findViewById<LinearLayout>(R.id.goalPresets)
+        for (index in 0 until presets.childCount) {
+            val preset = presets.getChildAt(index) as TextView
+            preset.setOnClickListener {
+                input.setText(preset.text.toString())
+                input.setSelection(input.text.length)
+            }
         }
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.goal_dialog_title)
-            .setView(container)
+            .setView(view)
             .setPositiveButton(R.string.save) { _, _ ->
                 val value = input.text.toString().toIntOrNull()
                 if (value != null && value >= 1) {
@@ -174,9 +178,12 @@ class SettingsFragment : Fragment() {
         val versionName = requireContext().packageManager
             .getPackageInfo(requireContext().packageName, 0)
             .versionName
+        val view = layoutInflater.inflate(R.layout.dialog_about, null, false)
+        view.findViewById<TextView>(R.id.aboutDialogVersion).text =
+            getString(R.string.about_version, versionName)
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.about_title)
-            .setMessage(getString(R.string.about_message, versionName))
+            .setView(view)
             .setPositiveButton(R.string.action_ok, null)
             .show()
     }

@@ -223,13 +223,21 @@ object LockMachineOverlayController {
 
         val packageManager = context.packageManager
         val inflater = LayoutInflater.from(view.context)
-        whitelist.forEach { packageName ->
-            val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return@forEach
+        // 白名单是 Set，直接遍历顺序随机；按应用名（中文拼音）排一遍，跟选择器里的顺序保持一致。
+        whitelist.mapNotNull { packageName ->
+            val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+                ?: return@mapNotNull null
             val appInfo = try {
                 packageManager.getApplicationInfo(packageName, 0)
             } catch (_: Exception) {
                 null
             }
+            Triple(packageName, launchIntent, appInfo)
+        }.sortedWith(
+            compareBy(WhitelistAppPicker.LABEL_ORDER) {
+                it.third?.loadLabel(packageManager)?.toString() ?: it.first
+            }
+        ).forEach { (packageName, launchIntent, appInfo) ->
             val row = ItemWhitelistAppBinding.inflate(inflater, container, false)
             row.whitelistAppName.text =
                 appInfo?.loadLabel(packageManager)?.toString() ?: packageName

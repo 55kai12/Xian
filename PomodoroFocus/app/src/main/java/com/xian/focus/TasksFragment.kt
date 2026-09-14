@@ -249,8 +249,11 @@ class TasksFragment : Fragment() {
     }
 
     private fun loadWeekTrend() {
+        // 先把周起始时刻抓下来：协程真正执行时 weekStartMillis 可能已经被滑周改掉了，
+        // 那样算出来的就是别的周的数据，曲线会跟当前显示的一周对不上。
+        val weekStart = weekStartMillis
         viewLifecycleOwner.lifecycleScope.launch {
-            statsViewModel.loadWeeklyCountsForWeek(weekStartMillis)
+            statsViewModel.loadWeeklyCountsForWeek(weekStart)
         }
     }
 
@@ -517,7 +520,13 @@ class TasksFragment : Fragment() {
                 launch {
                     while (true) {
                         try {
-                            taskViewModel.pendingTasks.collect { renderCurrentList() }
+                            taskViewModel.pendingTasks.collect {
+                                renderCurrentList()
+                                // 任务增删 / 勾选后趋势线必须跟着重算。
+                                // 只靠切周和 onResume 触发的话，删掉已完成任务后曲线还挂着旧数据 ——
+                                // 看起来就像「删了还在」。（周视图圆环走 renderCurrentList，一直是实时更新的。）
+                                loadWeekTrend()
+                            }
                             break
                         } catch (e: Exception) {
                             android.util.Log.e("TasksFragment", "pendingTasks collect error", e)

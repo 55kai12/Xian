@@ -523,4 +523,30 @@
     <string name="guard_notification_title">贤正在守护</string>
     <string name="guard_notification_text">应用限额与定时锁机生效中 · 划掉后台也不停</string>
     <string name="guard_channel_name">后台守护</string>
+
+    <!-- ===== 界面细化 ===== -->
+    <string name="lock_status_label">锁机状态</string>
+    <string name="lock_mode_label">锁机方式</string>
+    <string name="scheduled_slots_label">定时时段</string>
+
+    <string name="lock_quotes_count">共 %1$d 条</string>
+
+    <string name="daily_goal_presets_label">快捷选择</string>
+
+    <string name="about_tagline">中国古风专注助手</string>
+    <string name="about_authors_label">作者</string>
+    <string name="about_authors">ShoweR · Yocai咏材 · 55kai</string>
+    <string name="about_features_label">功能</string>
+    <string name="about_features">任务清单与番茄钟 · 锁机专注 · 复盘日记 · 倒数日 · 每日祈福</string>
+    <string name="about_authors_card">作者：ShoweR · Yocai咏材 · 55kai</string>
+
+    <string name="sort_days_remaining_desc">离今天最近的排在前面</string>
+    <string name="sort_target_date_desc">按目标日期的先后排序</string>
+    <string name="sort_created_at_desc">最近创建的排在前面</string>
+
+    <string name="event_reminder_days_desc_same_day">当天提醒</string>
+    <string name="event_reminder_days_desc_week">提前一周</string>
+    <string name="event_reminder_days_desc_fortnight">提前两周</string>
+    <string name="event_reminder_days_desc_month">提前一个月</string>
+    <string name="event_reminder_days_desc_days">提前 %1$d 天</string>
 </resources>

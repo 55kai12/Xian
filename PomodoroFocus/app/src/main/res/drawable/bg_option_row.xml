@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 设置页里的输入框：跟 bg_overlay_input 同款，但描边取主题色 —— 那是给悬浮窗（半透明白卡片）用的。 -->
+<!-- 选项行的未选中态：透明底 + 细描边 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@android:color/transparent" />

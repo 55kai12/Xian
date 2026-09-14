@@ -118,7 +118,7 @@ class AppLimitFragment : Fragment() {
                 usedMinutes = AppLimitStore.usedSeconds(context, packageName) / 60L,
                 locked = AppLimitStore.isLocked(context, packageName)
             )
-        }.sortedBy { it.label }
+        }.sortedWith(compareBy(WhitelistAppPicker.LABEL_ORDER) { it.label })
         adapter.notifyDataSetChanged()
         binding.emptyLimitText.visibility = if (rows.isEmpty()) View.VISIBLE else View.GONE
         updateOverview()

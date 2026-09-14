@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  锁机页：即时锁机 + 定时锁机时段 + 权限自检。
+  视觉分三层：顶上品牌色「状态卡」说此刻在不在锁，中间卡片放设置项，底部卡片放权限。
+  所有 id 都被 LockFragment 引用，改动只能改样式，不能改名。
+-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
@@ -9,289 +15,435 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:paddingHorizontal="20dp"
-        android:paddingTop="48dp"
-        android:paddingBottom="20dp">
+        android:paddingTop="20dp"
+        android:paddingBottom="28dp">
 
-        <TextView
-            android:id="@+id/lockStatusText"
+        <!-- 状态卡：品牌色底，白色字 -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/lock_not_running"
-            android:textColor="?attr/colorBrandContent"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            app:cardBackgroundColor="?attr/colorBrandSurface"
+            app:cardCornerRadius="22dp"
+            app:cardElevation="2dp"
+            app:strokeWidth="0dp">
 
-        <TextView
-            android:id="@+id/lockRemainingText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:textColor="@color/warning_orange"
-            android:textSize="28sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/lockEndText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:alpha="0.7"
-            android:gravity="center"
-            android:textColor="?attr/colorBrandContent"
-            android:textSize="13sp"
-            android:visibility="gone" />
-
-        <TextView
-            android:id="@+id/exitQuotaHintText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:alpha="0.6"
-            android:gravity="center"
-            android:textColor="?attr/colorBrandContent"
-            android:textSize="12sp" />
-
-        <RadioGroup
-            android:id="@+id/lockModeRadioGroup"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:orientation="horizontal">
-
-            <RadioButton
-                android:id="@+id/modeImmediate"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:checked="true"
-                android:text="@string/lock_mode_immediate" />
+                android:orientation="vertical"
+                android:paddingHorizontal="20dp"
+                android:paddingVertical="20dp">
 
-            <RadioButton
-                android:id="@+id/modeScheduled"
-                android:layout_width="0dp"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.75"
+                    android:text="@string/lock_status_label"
+                    android:textColor="@color/on_primary"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/lockStatusText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/lock_not_running"
+                    android:textColor="@color/on_primary"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/lockRemainingText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="@color/calendar_gold_light"
+                    android:textSize="34sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/lockEndText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:alpha="0.75"
+                    android:textColor="@color/on_primary"
+                    android:textSize="13sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/exitQuotaHintText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:alpha="0.65"
+                    android:textColor="@color/on_primary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 锁机方式 -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/lock_mode_scheduled" />
-        </RadioGroup>
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <LinearLayout
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/lock_mode_label"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/lockModeRadioGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_option_row"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="4dp">
+
+                    <RadioButton
+                        android:id="@+id/modeImmediate"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:checked="true"
+                        android:gravity="center_vertical"
+                        android:text="@string/lock_mode_immediate"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/modeScheduled"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_vertical"
+                        android:text="@string/lock_mode_scheduled"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="14sp" />
+                </RadioGroup>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- 即时锁机 -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/immediateSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/lock_duration"
-                android:textStyle="bold" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <RadioGroup
-                android:id="@+id/durationRadioGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:orientation="horizontal">
-
-                <RadioButton
-                    android:id="@+id/duration15"
-                    android:layout_width="0dp"
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/duration_15" />
+                    android:text="@string/lock_duration"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-                <RadioButton
-                    android:id="@+id/duration30"
-                    android:layout_width="0dp"
+                <RadioGroup
+                    android:id="@+id/durationRadioGroup"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/duration_30" />
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
 
-                <RadioButton
-                    android:id="@+id/duration60"
-                    android:layout_width="0dp"
+                    <RadioButton
+                        android:id="@+id/duration15"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/duration_15"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/duration30"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/duration_30"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/duration60"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/duration_60"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="14sp" />
+
+                    <RadioButton
+                        android:id="@+id/duration90"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/duration_90"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="14sp" />
+                </RadioGroup>
+
+                <EditText
+                    android:id="@+id/customDurationInput"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/duration_60" />
+                    android:layout_marginTop="8dp"
+                    android:autofillHints=""
+                    android:background="@drawable/bg_quote_input"
+                    android:hint="@string/custom_minutes_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="number"
+                    android:maxLength="3"
+                    android:maxLines="1"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textColorHint="?attr/colorOnSurfaceVariant" />
 
-                <RadioButton
-                    android:id="@+id/duration90"
-                    android:layout_width="0dp"
+                <Button
+                    android:id="@+id/whitelistButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/duration_90" />
-            </RadioGroup>
+                    android:layout_marginTop="14dp"
+                    android:minWidth="0dp"
+                    android:text="@string/whitelist_apps"
+                    android:textColor="?attr/colorBrandContent"
+                    app:icon="@android:drawable/ic_menu_manage"
+                    app:iconTint="?attr/colorBrandContent"
+                    app:strokeColor="?attr/colorOutline" />
 
-            <EditText
-                android:id="@+id/customDurationInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:autofillHints=""
-                android:hint="@string/custom_minutes_hint"
-                android:importantForAutofill="no"
-                android:inputType="number"
-                android:maxLength="3" />
+                <Button
+                    android:id="@+id/startStopButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:minWidth="0dp"
+                    android:text="@string/start_lock_machine" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <Button
-            android:id="@+id/whitelistButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="12dp"
-            android:minWidth="0dp"
-            android:text="@string/whitelist_apps" />
-
-            <Button
-                android:id="@+id/startStopButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="12dp"
-                android:minWidth="0dp"
-                android:text="@string/start_lock_machine" />
-        </LinearLayout>
-
-        <LinearLayout
+        <!-- 定时锁机 -->
+        <com.google.android.material.card.MaterialCardView
             android:id="@+id/scheduledSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/scheduledInfoText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/no_schedule"
-                android:textColor="?attr/colorBrandContent"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/scheduledNextText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:alpha="0.7"
-                android:textColor="?attr/colorBrandContent"
-                android:textSize="13sp"
-                android:visibility="gone" />
-
-            <LinearLayout
-                android:id="@+id/slotContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="vertical" />
-
-            <TextView
-                android:id="@+id/emptySlotsText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/slot_empty_hint"
-                android:textColor="@color/text_secondary"
-                android:textSize="13sp" />
-
-            <TextView
-                android:id="@+id/slotHintText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/slot_hint"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/unsavedHintText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/slot_unsaved_hint"
-                android:textColor="@color/warning_orange"
-                android:textSize="12sp"
-                android:visibility="gone" />
-
-            <Button
-                android:id="@+id/addSlotButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="8dp"
-                android:minWidth="0dp"
-                android:text="@string/add_slot" />
+            android:layout_marginTop="14dp"
+            android:visibility="gone"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp">
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/scheduled_slots_label"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/scheduledInfoText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/no_schedule"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/scheduledNextText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_value_chip"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:textColor="?attr/colorBrandContent"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/slotContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="vertical" />
+
+                <TextView
+                    android:id="@+id/emptySlotsText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/slot_empty_hint"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/slotHintText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="2dp"
+                    android:text="@string/slot_hint"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/unsavedHintText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/slot_unsaved_hint"
+                    android:textColor="@color/warning_orange"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
                 <Button
-                    android:id="@+id/saveScheduleButton"
-                    android:layout_width="0dp"
+                    android:id="@+id/addSlotButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/save_schedule" />
+                    android:layout_marginTop="12dp"
+                    android:minWidth="0dp"
+                    android:text="@string/add_slot"
+                    android:textColor="?attr/colorBrandContent"
+                    app:icon="@android:drawable/ic_input_add"
+                    app:iconTint="?attr/colorBrandContent"
+                    app:strokeColor="?attr/colorOutline" />
 
-                <Button
-                    android:id="@+id/cancelScheduleButton"
-                    android:layout_width="0dp"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="@string/cancel_schedule" />
+                    android:layout_marginTop="10dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/saveScheduleButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:minWidth="0dp"
+                        android:text="@string/save_schedule" />
+
+                    <Button
+                        android:id="@+id/cancelScheduleButton"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:minWidth="0dp"
+                        android:text="@string/cancel_schedule"
+                        android:textColor="?attr/colorBrandContent"
+                        app:strokeColor="?attr/colorOutline" />
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginVertical="16dp"
-            android:background="@color/muted_grey" />
-
-        <TextView
+        <!-- 权限自检 -->
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/lock_permissions_title"
-            android:textStyle="bold" />
+            android:layout_marginTop="14dp"
+            app:cardBackgroundColor="?attr/colorSurface"
+            app:cardCornerRadius="18dp"
+            app:cardElevation="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:strokeWidth="1dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
-
-            <Button
-                android:id="@+id/overlayPermissionButton"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minWidth="0dp"
-                android:text="@string/overlay_permission_title" />
+                android:orientation="vertical"
+                android:padding="16dp">
 
-            <Button
-                android:id="@+id/accessibilityPermissionButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:minWidth="0dp"
-                android:text="@string/accessibility_permission_title" />
-        </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/lock_permissions_title"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:text="@string/lock_page_notice"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/overlayPermissionButton"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:minWidth="0dp"
+                        android:text="@string/overlay_permission_title"
+                        android:textColor="?attr/colorBrandContent"
+                        android:textSize="13sp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                    <Button
+                        android:id="@+id/accessibilityPermissionButton"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:minWidth="0dp"
+                        android:text="@string/accessibility_permission_title"
+                        android:textColor="?attr/colorBrandContent"
+                        android:textSize="13sp"
+                        app:strokeColor="?attr/colorOutline" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:lineSpacingExtra="2dp"
+                    android:text="@string/lock_page_notice"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </ScrollView>

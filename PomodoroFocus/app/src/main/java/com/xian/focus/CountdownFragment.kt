@@ -68,6 +68,12 @@ class CountdownFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // 排序方式可能刚在设置页改过：Room 流不会因此重发数据，手动让列表按新规则重排一次
+        viewModel.refreshSort()
+    }
+
     private fun setupRecyclerView() {
         adapter = CountdownAdapter(
             viewModel = viewModel,

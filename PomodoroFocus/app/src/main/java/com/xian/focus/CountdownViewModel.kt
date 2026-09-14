@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import android.content.Context
 import javax.inject.Inject
@@ -26,6 +27,13 @@ class CountdownViewModel @Inject constructor(
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
 
+    /**
+     * 排序方式的「手动重发」信号。
+     * 「按剩余天数」这类排序依赖的是 prefs，而 Room 的流只在数据变动时才发 ——
+     * 用户在设置页换了排序方式回来，列表顺序不会自己变，得靠这个信号敲一下。
+     */
+    private val sortTick = MutableStateFlow(0)
+
     init {
         // 冷启动重建提醒闹钟：升级前就有的事件、以及重启后丢失的闹钟都靠这一步补回来
         // （幂等，requestCode 固定，重复排等于原地覆盖）。放在 collect 外面，避免每次
@@ -36,17 +44,23 @@ class CountdownViewModel @Inject constructor(
                 ?.forEach { CountdownReminderScheduler.sync(context, it) }
         }
         viewModelScope.launch {
-            repository.getAllCountdowns().collect { list ->
-                _countdowns.value = when (getSortBy()) {
-                    "target_date" -> list.sortedBy { getEffectiveTargetDate(it) }
-                    "created_at" -> list.sortedByDescending { it.createdAt }
-                    else -> list.sortedWith(compareBy(
-                        { getDaysRemaining(it) < 0 },
-                        { kotlin.math.abs(getDaysRemaining(it)) }
-                    ))
-                }
-            }
+            combine(repository.getAllCountdowns(), sortTick) { list, _ -> list }
+                .collect { list -> _countdowns.value = sortCountdowns(list) }
         }
+    }
+
+    /** 排序方式变了就调一下，让列表按新规则重排。 */
+    fun refreshSort() {
+        sortTick.value++
+    }
+
+    private fun sortCountdowns(list: List<Countdown>): List<Countdown> = when (getSortBy()) {
+        "target_date" -> list.sortedBy { getEffectiveTargetDate(it) }
+        "created_at" -> list.sortedByDescending { it.createdAt }
+        else -> list.sortedWith(compareBy(
+            { getDaysRemaining(it) < 0 },
+            { kotlin.math.abs(getDaysRemaining(it)) }
+        ))
     }
 
     fun addCountdown(countdown: Countdown) = execute {

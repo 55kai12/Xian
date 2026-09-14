@@ -1,26 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  每日贤时目标：大号数字输入 + 一排快捷值。
+  快捷值只是把数字填进输入框，仍然由「保存」统一校验落盘 —— 少一条独立的写入路径。
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:paddingHorizontal="22dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="2dp">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
         android:text="@string/daily_goal_label"
-        android:textColor="@color/ink_text"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="13sp" />
 
-    <EditText
-        android:id="@+id/goalInput"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:autofillHints=""
-        android:hint="8"
-        android:importantForAutofill="no"
-        android:inputType="number"
-        android:maxLength="3" />
+        android:layout_marginTop="10dp"
+        android:background="@drawable/bg_quote_input"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <EditText
+            android:id="@+id/goalInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:background="@null"
+            android:gravity="center"
+            android:hint="8"
+            android:importantForAutofill="no"
+            android:inputType="number"
+            android:maxLength="3"
+            android:paddingVertical="12dp"
+            android:textColor="?attr/colorOnSurface"
+            android:textColorHint="?attr/colorOnSurfaceVariant"
+            android:textSize="30sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:text="@string/daily_goal_presets_label"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:id="@+id/goalPresets"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="4" />
+
+        <com.google.android.material.button.MaterialButton
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="6" />
+
+        <com.google.android.material.button.MaterialButton
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="8" />
+
+        <com.google.android.material.button.MaterialButton
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="10" />
+
+        <com.google.android.material.button.MaterialButton
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="12" />
+    </LinearLayout>
 </LinearLayout>

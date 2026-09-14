@@ -16,9 +16,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.Collator
+import java.util.Locale
 
 object WhitelistAppPicker {
     data class AppInfo(val packageName: String, val label: String, val icon: Drawable?)
+
+    /**
+     * 应用名排序规则：中文按拼音、英文按字母。
+     *
+     * 直接 `sortedBy { label }` 走的是 String 的码位比较，中文部分看起来就是乱的
+     * （「支付宝」排在「微信」前面，因为「支」的码位更小）。Collator(Locale.CHINA)
+     * 是标准库里现成的拼音排序，不用引第三方拼音库。白名单列表（锁机页 / 覆盖层）
+     * 和应用限额列表都共用这一份规则，三处顺序才一致。
+     */
+    private val collator: Collator = Collator.getInstance(Locale.CHINA)
+
+    val LABEL_ORDER: Comparator<String> = Comparator { a, b -> collator.compare(a, b) }
 
     fun show(
         context: Context,
@@ -60,7 +74,7 @@ object WhitelistAppPicker {
                 )
             }
             .distinctBy { it.packageName }
-            .sortedBy { it.label }
+            .sortedWith(compareBy(LABEL_ORDER) { it.label })
     }
 
     private class AppAdapter(

@@ -11,6 +11,7 @@ import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
@@ -167,6 +168,7 @@ class LockSettingsFragment : Fragment() {
         rows.removeAllViews()
         // 一条都没有时也得留一个空框，否则用户没有地方输入
         quotes.ifEmpty { listOf("") }.forEach { addQuoteRow(root, it) }
+        updateQuoteCount(root)
     }
 
     private fun addQuoteRow(root: View, text: String, focus: Boolean = false) {
@@ -182,12 +184,20 @@ class LockSettingsFragment : Fragment() {
             } else {
                 rows.removeView(row)
             }
+            updateQuoteCount(root)
         }
         rows.addView(row)
+        updateQuoteCount(root)
         // 行多了新加的那条在可视区外，不滚到底用户会以为按钮没反应
         val scroll = root.findViewById<ScrollView>(R.id.quoteScroll)
         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
         if (focus) input.requestFocus()
+    }
+
+    /** 顶部的「共 N 条」：只数有内容的，空框不算，免得用户以为空着也算一条。 */
+    private fun updateQuoteCount(root: View) {
+        root.findViewById<TextView>(R.id.quoteCountText).text =
+            getString(R.string.lock_quotes_count, collectQuoteRows(root).size)
     }
 
     private fun collectQuoteRows(root: View): List<String> {

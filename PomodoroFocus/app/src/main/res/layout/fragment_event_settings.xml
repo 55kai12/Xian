@@ -3,16 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="?android:windowBackground"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
 
     <!-- 顶部标题栏 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
         android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingHorizontal="12dp"
         android:paddingTop="16dp"
         android:paddingBottom="12dp">
@@ -26,15 +26,29 @@
             app:srcCompat="@android:drawable/ic_media_previous"
             app:tint="?attr/colorOnSurface" />
 
-        <TextView
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:layout_marginStart="4dp"
-            android:text="@string/event_settings_title"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/event_settings_title"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/event_settings_desc"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="12sp" />
+        </LinearLayout>
     </LinearLayout>
 
     <ScrollView
@@ -48,13 +62,14 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="20dp"
-            android:paddingBottom="20dp">
+            android:paddingBottom="24dp">
 
             <!-- 事件提醒 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="18dp"
                 app:cardElevation="1dp"
                 app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
@@ -100,31 +115,57 @@
                             android:layout_height="wrap_content" />
                     </LinearLayout>
 
-                    <!-- 提前提醒天数 -->
+                    <!-- 提前提醒天数：整行可点，右侧是当前值胶囊 -->
                     <LinearLayout
                         android:id="@+id/reminderDaysSection"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="14dp"
+                        android:background="@drawable/bg_option_row"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:minHeight="56dp"
+                        android:orientation="horizontal"
+                        android:paddingHorizontal="14dp">
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:contentDescription="@null"
+                            app:srcCompat="@android:drawable/ic_menu_recent_history"
+                            app:tint="?attr/colorBrandContent" />
 
                         <TextView
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
                             android:layout_weight="1"
                             android:text="@string/reminder_days_label"
-                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textColor="?attr/colorOnSurface"
                             android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/reminderDaysText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:background="@drawable/bg_value_chip"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="5dp"
                             android:text="@string/reminder_days_default"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="14sp"
+                            android:textColor="?attr/colorBrandContent"
+                            android:textSize="13sp"
                             android:textStyle="bold" />
+
+                        <ImageView
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:layout_marginStart="6dp"
+                            android:alpha="0.6"
+                            android:contentDescription="@null"
+                            app:srcCompat="@android:drawable/ic_media_next"
+                            app:tint="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -134,7 +175,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="18dp"
                 app:cardElevation="1dp"
                 app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
@@ -183,7 +225,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
                 android:foreground="?attr/selectableItemBackground"
-                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="18dp"
                 app:cardElevation="1dp"
                 app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">
@@ -213,25 +256,32 @@
                             android:id="@+id/eventSortValueText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@drawable/bg_value_chip"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="5dp"
                             android:text="@string/sort_by_days_left"
-                            android:textColor="?attr/colorOnSurfaceVariant"
-                            android:textSize="13sp" />
+                            android:textColor="?attr/colorBrandContent"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
 
                     <ImageView
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:contentDescription="@null"
-                        app:srcCompat="@android:drawable/ic_media_next" />
+                        app:srcCompat="@android:drawable/ic_media_next"
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
             <!-- 显示设置 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardCornerRadius="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:cardCornerRadius="18dp"
                 app:cardElevation="1dp"
                 app:strokeColor="?attr/colorOutline"
                 app:strokeWidth="1dp">

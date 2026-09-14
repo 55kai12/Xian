@@ -9,38 +9,70 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingHorizontal="22dp"
-    android:paddingTop="4dp">
+    android:paddingHorizontal="20dp"
+    android:paddingTop="2dp">
 
-    <TextView
+    <!-- 说明 + 条数 -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:lineSpacingExtra="3dp"
-        android:text="@string/lock_quotes_hint"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="13sp" />
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:contentDescription="@null"
+            app:srcCompat="@android:drawable/ic_menu_edit"
+            app:tint="?attr/colorBrandContent" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:lineSpacingExtra="3dp"
+            android:text="@string/lock_quotes_hint"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/quoteCountText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_value_chip"
+            android:paddingHorizontal="9dp"
+            android:paddingVertical="4dp"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 
     <ScrollView
         android:id="@+id/quoteScroll"
         android:layout_width="match_parent"
         android:layout_height="300dp"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="10dp"
         android:scrollbars="none">
 
         <LinearLayout
             android:id="@+id/quoteRows"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical" />
+            android:orientation="vertical"
+            android:paddingBottom="4dp" />
     </ScrollView>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/quoteAddButton"
-        style="@style/Widget.Material3.Button.TextButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
         android:text="@string/lock_quotes_add"
-        android:textColor="?attr/colorBrandAccent"
+        android:textColor="?attr/colorBrandContent"
         app:icon="@android:drawable/ic_input_add"
-        app:iconTint="?attr/colorBrandAccent" />
+        app:iconTint="?attr/colorBrandContent"
+        app:strokeColor="?attr/colorOutline" />
 </LinearLayout>

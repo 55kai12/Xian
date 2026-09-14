@@ -1,31 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 定时锁机的一个时段：整行可点（改时间），右侧删除。行由 LockFragment 动态填充。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?android:attr/selectableItemBackground"
+    android:layout_marginTop="8dp"
+    android:background="@drawable/bg_option_row"
     android:clickable="true"
     android:focusable="true"
+    android:foreground="?attr/selectableItemBackground"
     android:gravity="center_vertical"
-    android:minHeight="48dp"
+    android:minHeight="52dp"
     android:orientation="horizontal"
-    android:paddingStart="4dp"
-    android:paddingEnd="0dp">
+    android:paddingStart="12dp"
+    android:paddingEnd="6dp">
+
+    <View
+        android:layout_width="3dp"
+        android:layout_height="22dp"
+        android:background="@drawable/bg_accent_bar"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="10dp"
+        android:contentDescription="@null"
+        app:srcCompat="@android:drawable/ic_menu_recent_history"
+        app:tint="?attr/colorBrandContent" />
 
     <TextView
         android:id="@+id/slotTimeText"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
         android:layout_weight="1"
-        android:textColor="?attr/colorBrandContent"
-        android:textSize="16sp" />
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="15sp"
+        android:textStyle="bold" />
 
-    <Button
+    <ImageButton
         android:id="@+id/slotDeleteButton"
-        style="?android:attr/borderlessButtonStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_icon_button"
         android:contentDescription="@string/slot_delete"
-        android:minWidth="44dp"
-        android:text="✕" />
-
+        android:padding="10dp"
+        app:srcCompat="@drawable/ic_note_trash"
+        app:tint="?attr/colorOnSurfaceVariant" />
 </LinearLayout>

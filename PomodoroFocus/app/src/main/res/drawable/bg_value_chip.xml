@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 设置页右侧「当前值」的小胶囊：比一行灰字更像一个可点的状态，也更抓得住视线 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid
+        android:alpha="0.14"
+        android:color="?attr/colorBrandAccent" />
+    <corners android:radius="10dp" />
+</shape>

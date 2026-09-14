@@ -520,4 +520,30 @@
     <string name="guard_notification_title">Xian is guarding</string>
     <string name="guard_notification_text">App limits and scheduled lock stay on, even after you swipe the app away</string>
     <string name="guard_channel_name">Background guard</string>
+
+    <!-- ===== UI polish ===== -->
+    <string name="lock_status_label">Lock status</string>
+    <string name="lock_mode_label">Lock mode</string>
+    <string name="scheduled_slots_label">Scheduled window</string>
+
+    <string name="lock_quotes_count">%1$d in total</string>
+
+    <string name="daily_goal_presets_label">Quick pick</string>
+
+    <string name="about_tagline">A Chinese-style focus assistant</string>
+    <string name="about_authors_label">Authors</string>
+    <string name="about_authors">ShoweR · Yocai咏材 · 55kai</string>
+    <string name="about_features_label">Features</string>
+    <string name="about_features">Tasks &amp; pomodoro · Lock-in focus · Review diary · Countdown · Daily blessing</string>
+    <string name="about_authors_card">By ShoweR · Yocai咏材 · 55kai</string>
+
+    <string name="sort_days_remaining_desc">Closest to today comes first</string>
+    <string name="sort_target_date_desc">Ordered by target date</string>
+    <string name="sort_created_at_desc">Newest first</string>
+
+    <string name="event_reminder_days_desc_same_day">On the day</string>
+    <string name="event_reminder_days_desc_week">A week ahead</string>
+    <string name="event_reminder_days_desc_fortnight">Two weeks ahead</string>
+    <string name="event_reminder_days_desc_month">A month ahead</string>
+    <string name="event_reminder_days_desc_days">%1$d days ahead</string>
 </resources>
