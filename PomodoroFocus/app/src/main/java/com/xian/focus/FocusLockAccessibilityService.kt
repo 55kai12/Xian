@@ -19,8 +19,16 @@ class FocusLockAccessibilityService : AccessibilityService() {
         getSystemService(Context.POWER_SERVICE) as? PowerManager
     }
 
-    /** 当前前台应用（系统组件除外），供应用限额计时用。 */
-    private var foregroundPackage: String? = null
+    /**
+     * 当前前台应用（系统组件除外）。供应用限额计时用，同时通过 [ForegroundApp] 对外共享 ——
+     * 锁机的起锁路径（定时到点、开机自启、时段自检）手上没有前台信息，
+     * 而「现在这个应用在白名单里吗」正是它们盖屏前唯一该问的问题。
+     */
+    private var foregroundPackage: String?
+        get() = ForegroundApp.packageName
+        set(value) {
+            ForegroundApp.packageName = value
+        }
 
     /** [foregroundPackage] 最后一次被「窗口事件」确认的时刻（单调时钟）。 */
     private var foregroundConfirmedAt = 0L
@@ -105,16 +113,22 @@ class FocusLockAccessibilityService : AccessibilityService() {
         }
 
         if (LockMachineController.isActive(context)) {
+            val selfEvent = packageName == context.packageName
             if (LockMachineController.isAllowed(context, packageName)) {
                 if (LockMachineOverlayController.isShowing()) {
-                    LockMachineOverlayController.hide(context)
+                    // 用户真的切进了白名单里的应用 —— 必须立刻让开。
+                    // 防抖只是用来吞掉「自己那层抢焦点」那一瞬间的自事件（包名是本应用），
+                    // 非自己的包名没有任何理由再拦；否则用户刚进白名单应用，这一下就被吞住、
+                    // 层盖着不走，看起来就是「加了白名单还老是弹」。
+                    LockMachineOverlayController.hide(context, force = !selfEvent)
                 }
             } else {
                 LockMachineOverlayController.show(context)
             }
             return
         } else if (LockMachineOverlayController.isShowing()) {
-            LockMachineOverlayController.hide(context)
+            // 锁机已经结束了，层必须立刻收 —— 这里的判断比防抖可靠
+            LockMachineOverlayController.hide(context, force = true)
         }
 
         // 番茄钟锁机状态改由持久化数据推导，进程被杀后重新拉起依然生效

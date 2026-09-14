@@ -82,6 +82,28 @@ object LockMachineOverlayController {
 
     fun isShowing(): Boolean = overlayView != null
 
+    /**
+     * 「现在到底该不该盖」的唯一判定入口，供起锁路径调用（见 `LockMachineService`）。
+     *
+     * 起锁是无条件的：定时时段到点、开机自启、保存时段后自检，任何一条都可能在用户
+     * 正用着白名单应用时把锁打开。所以这里先问一句当前前台应用是谁 —— 在白名单里
+     * （或就是贤自己）就一个像素都不盖，否则才 show()。
+     * 前台未知时按「该锁」处理：漏锁比误锁严重得多。
+     */
+    fun sync(context: Context) {
+        val applicationContext = context.applicationContext
+        if (!LockMachineController.isActive(applicationContext)) {
+            hide(applicationContext, force = true)
+            return
+        }
+        val foreground = ForegroundApp.packageName
+        if (foreground != null && LockMachineController.isAllowed(applicationContext, foreground)) {
+            hide(applicationContext, force = true)
+        } else {
+            show(applicationContext)
+        }
+    }
+
     @Suppress("DEPRECATION")
     fun show(context: Context) {
         val applicationContext = context.applicationContext
@@ -156,12 +178,21 @@ object LockMachineOverlayController {
         }
     }
 
-    fun hide(context: Context) {
+    /**
+     * 收起覆盖层。
+     *
+     * [force] 给「调用方已经确定该收起来」的场景用（用户切进了白名单应用、锁机结束）——
+     * 那种判断比防抖可靠，不能被吞掉。防抖只服务于一个目的：刚 addView 的那一瞬间，
+     * 系统会为我们自己的悬浮窗补一个窗口事件，那个自事件会把层当成「切到了贤」而撤掉。
+     */
+    fun hide(context: Context, force: Boolean = false) {
         val view = overlayView ?: return
-        if (System.currentTimeMillis() - lastShowAt < DEBOUNCE_MILLIS) return
+        if (!force && System.currentTimeMillis() - lastShowAt < DEBOUNCE_MILLIS) return
         overlayView = null
         lastHideAt = System.currentTimeMillis()
         cooldownEndsAt = 0L
+        // 这层没了，列表也跟着没了：下次新建必须重建，别被旧指纹判成「没变」
+        whitelistSignature = -1
         handler.removeCallbacks(tickRunnable)
         val applicationContext = context.applicationContext
         val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -196,20 +227,36 @@ object LockMachineOverlayController {
         }
     }
 
+    /**
+     * 白名单内容指纹（排序后的包名集合的 hashCode）；-1 表示当前这层还没建过列表。
+     *
+     * `show()` 在「层已经存在」时只调 `updateContent()`，而它会被**每一次切换应用事件**触发。
+     * 每建一次列表就是 `removeAllViews()` + 每行重新 `loadLabel`/`loadIcon`，全在主线程上。
+     * 不拦的话，用户展开白名单的那一刻正好有事件进来，列表就被推倒重来：闪烁 + 滚动归位 ——
+     * 这就是「打开白名单一点都不流畅」。
+     */
+    private var whitelistSignature = -1
+
     private fun updateContent(context: Context) {
         val view = overlayView ?: return
         view.findViewById<FlipClockView>(R.id.remainingText)
             .setDisplay(LockMachineController.remainingText(context))
         updateClockText(context, view)
+        rebuildWhitelistIfChanged(context, view)
+    }
 
+    /** 白名单内容没变就一个像素都不动；变了（或这层是新建的）才整表重建。 */
+    private fun rebuildWhitelistIfChanged(context: Context, view: View) {
         val container = view.findViewById<LinearLayout>(R.id.whitelistContainer)
         val folderRow = view.findViewById<View>(R.id.whitelistFolderRow)
         val folderCount = view.findViewById<TextView>(R.id.whitelistFolderCount)
         val emptyView = view.findViewById<TextView>(R.id.emptyWhitelistText)
         val scrollView = view.findViewById<ScrollView>(R.id.whitelistScroll)
-        container.removeAllViews()
 
         val whitelist = LockMachineController.whitelist(context).toList()
+        if (whitelist.sorted().hashCode() == whitelistSignature) return
+        whitelistSignature = whitelist.sorted().hashCode()
+        container.removeAllViews()
         if (whitelist.isEmpty()) {
             folderRow.visibility = View.GONE
             emptyView.visibility = View.VISIBLE
@@ -253,9 +300,18 @@ object LockMachineOverlayController {
     }
 
     private fun applyWhitelistVisibility(view: View) {
-        view.findViewById<ScrollView>(R.id.whitelistScroll).visibility =
-            if (whitelistExpanded) View.VISIBLE else View.GONE
-        view.findViewById<TextView>(R.id.whitelistFolderArrow).text =
-            if (whitelistExpanded) "▴" else "▾"
+        val scroll = view.findViewById<ScrollView>(R.id.whitelistScroll)
+        val arrow = view.findViewById<TextView>(R.id.whitelistFolderArrow)
+        if (whitelistExpanded) {
+            // 展开加一点淡入 + 上移：列表高度是 0dp+weight，直接 VISIBLE 会「啪」地把整块
+            // 区域瞬间顶满，看着就是「不流畅」。收起不做动画 —— 收起来用户视线已经离开。
+            scroll.visibility = View.VISIBLE
+            scroll.alpha = 0f
+            scroll.translationY = -8f * view.resources.displayMetrics.density
+            scroll.animate().alpha(1f).translationY(0f).setDuration(180L).start()
+        } else {
+            scroll.visibility = View.GONE
+        }
+        arrow.text = if (whitelistExpanded) "▴" else "▾"
     }
 }

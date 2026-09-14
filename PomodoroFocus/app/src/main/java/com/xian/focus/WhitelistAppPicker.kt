@@ -42,7 +42,7 @@ object WhitelistAppPicker {
         onResult: (Set<String>) -> Unit
     ) {
         lifecycleScope.launch {
-            val apps = withContext(Dispatchers.IO) { loadApps(context) }
+            val apps = loadAppsCached(context)
             val checked = apps.map { selected.contains(it.packageName) }.toBooleanArray()
             val listView = ListView(context).apply {
                 adapter = AppAdapter(context, apps, checked)
@@ -60,6 +60,33 @@ object WhitelistAppPicker {
                 .setNegativeButton(R.string.cancel, null)
                 .show()
         }
+    }
+
+    /**
+     * 应用列表缓存。
+     *
+     * `queryIntentActivities` + 每个应用的 `loadLabel` / `loadIcon` 在几百个应用的机器上
+     * 要跑几百毫秒，而对话框是「加载完才弹」的 —— 第一次点「白名单」会有一下明显的空档，
+     * 用户体感就是「不流畅」。缓存住之后第二次起是秒开；60 秒的短有效期只是为了防止
+     * 刚装的新应用一直不出现（不值得为它挂一个安装广播接收器）。
+     */
+    @Volatile
+    private var cachedApps: List<AppInfo>? = null
+
+    @Volatile
+    private var cachedAt = 0L
+
+    private const val CACHE_TTL_MILLIS = 60_000L
+
+    private suspend fun loadAppsCached(context: Context): List<AppInfo> {
+        val cached = cachedApps
+        if (cached != null && System.currentTimeMillis() - cachedAt < CACHE_TTL_MILLIS) {
+            return cached
+        }
+        val apps = withContext(Dispatchers.IO) { loadApps(context) }
+        cachedApps = apps
+        cachedAt = System.currentTimeMillis()
+        return apps
     }
 
     private fun loadApps(context: Context): List<AppInfo> {

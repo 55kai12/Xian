@@ -28,7 +28,9 @@ class LockMachineService : LifecycleService() {
         }
         createChannel()
         startForeground(NOTIFICATION_ID, buildNotification())
-        LockMachineOverlayController.show(this)
+        // 起锁前先自检一次，而不是无脑盖屏：定时到点 / 开机自启 / 保存时段后自检 都会走到这里，
+        // 那几条路径手上都没有「用户现在在哪个应用」的信息，而用户此刻很可能就在白名单应用里。
+        LockMachineOverlayController.sync(this)
         lifecycleScope.launch(Dispatchers.Main) {
             while (LockMachineController.isActive(this@LockMachineService)) {
                 updateNotification()
@@ -61,7 +63,7 @@ class LockMachineService : LifecycleService() {
         // 必须在 stop() 清掉开始时刻之前记数
         LockStats.record(this, heldOut = false)
         LockMachineController.stop(this)
-        LockMachineOverlayController.hide(this)
+        LockMachineOverlayController.hide(this, force = true)
         stopSelf()
     }
 
@@ -69,7 +71,7 @@ class LockMachineService : LifecycleService() {
         // 自然到期 = 忍住没退；同样要在 stop() 之前记
         LockStats.record(this, heldOut = true)
         LockMachineController.stop(this)
-        LockMachineOverlayController.hide(this)
+        LockMachineOverlayController.hide(this, force = true)
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(
             NOTIFICATION_ID,
