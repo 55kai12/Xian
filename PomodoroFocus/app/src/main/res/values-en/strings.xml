@@ -515,4 +515,7 @@
     <string name="lock_quotes_add">Add a quote</string>
     <string name="lock_quotes_reset">Restore defaults</string>
     <string name="lock_quotes_saved">Saved</string>
+    <string name="guard_notification_title">Xian is guarding</string>
+    <string name="guard_notification_text">App limits and scheduled lock stay on, even after you swipe the app away</string>
+    <string name="guard_channel_name">Background guard</string>
 </resources>

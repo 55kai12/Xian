@@ -49,6 +49,15 @@
         </service>
 
         <service
+            android:name=".GuardService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Keep app limits and scheduled lock running after the task is swiped away" />
+        </service>
+
+        <service
             android:name=".FocusLockAccessibilityService"
             android:exported="true"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">

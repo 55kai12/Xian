@@ -84,6 +84,13 @@ class MainActivity : AppCompatActivity() {
         if (AppLockStore.isEnabled(this)) showPinLock()
     }
 
+    override fun onStart() {
+        super.onStart()
+        // 回到前台是最稳的拉起时机：Android 12+ 不允许从后台启动前台服务。
+        // 应用内改设置时 Activity 不会重新走 onStart，所以那几处也各自喊了一次 sync。
+        GuardService.sync(this)
+    }
+
     private fun loadWallpaper() {
         val path = WallpaperStore.getPath(this) ?: return
         val file = File(path)

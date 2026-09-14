@@ -85,6 +85,9 @@ object LockMachineScheduler {
             .remove(KEY_LEGACY_END)
             .apply()
         applyAlarms(context)
+        // 时段列表非空就要有守护服务兜着：进程被 ROM 清掉时，AlarmManager 的闹钟一起没，
+        // 锁机就静默失效了。有前台服务的应用不会被这样清。
+        GuardService.sync(context)
     }
 
     fun cancel(context: Context) {
@@ -95,6 +98,7 @@ object LockMachineScheduler {
             .remove(KEY_LEGACY_END)
             .apply()
         cancelAllAlarms(context)
+        GuardService.sync(context)
     }
 
     fun applyAlarms(context: Context) {

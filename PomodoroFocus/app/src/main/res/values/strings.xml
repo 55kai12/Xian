@@ -518,4 +518,7 @@
     <string name="lock_quotes_add">添加一条</string>
     <string name="lock_quotes_reset">恢复默认</string>
     <string name="lock_quotes_saved">已保存</string>
+    <string name="guard_notification_title">贤正在守护</string>
+    <string name="guard_notification_text">应用限额与定时锁机生效中 · 划掉后台也不停</string>
+    <string name="guard_channel_name">后台守护</string>
 </resources>

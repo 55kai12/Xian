@@ -93,6 +93,8 @@ class AppLimitFragment : Fragment() {
 
     private fun refresh() {
         val context = requireContext()
+        // 限额列表一变，「该不该有守护服务」也可能跟着变。挂在这儿，省得每个改动点各写一遍。
+        GuardService.sync(context)
         val pm = context.packageManager
         rows = AppLimitStore.limitedPackages(context).map { packageName ->
             val info = runCatching { pm.getApplicationInfo(packageName, 0) }.getOrNull()
