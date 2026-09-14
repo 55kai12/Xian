@@ -146,12 +146,14 @@ class AppLimitFragment : Fragment() {
         binding.overviewStatusText.text = when {
             // 两条来源都没了才是真的不会生效
             !accessibilityOn && !usageAccessOn -> getString(R.string.app_limit_status_off)
-            // 计时只在被限制的应用出现在前台时才走，所以「从未计时」不代表坏了。
-            // 但只靠无障碍时，若连「读窗口」能力都没有，说明是覆盖安装后系统还按旧配置派发事件 ——
+            // 只靠无障碍时，覆盖安装后系统还按旧配置派发事件、连「读窗口」都没拿到 ——
             // 那个差别用户看不见，只会觉得「更新完就不记录了」，所以明说出来。
-            countedAt == 0L && !usageAccessOn && !LockHealth.canReadWindows(context) ->
-                getString(R.string.app_limit_status_restart)
+            !usageAccessOn && !LockHealth.canReadWindows(context) &&
+                countedAt == 0L -> getString(R.string.app_limit_status_restart)
 
+            // 只靠无障碍计时：进程活着时能记，但**从最近任务划掉贤就停**。
+            // 这正是「删了后台就失效」的成因，得提前讲清楚，而不是等用户自己撞上。
+            !usageAccessOn -> getString(R.string.app_limit_status_background_risk)
             countedAt == 0L -> getString(R.string.app_limit_status_ready)
             else -> getString(
                 R.string.app_limit_status_ok,

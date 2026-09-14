@@ -47,6 +47,14 @@ object AppLimitWatcher {
     private var accessGranted = false
 
     /**
+     * 不足一秒的零头攒着下次一起算。
+     *
+     * 驱动源不止一个（守护服务 2 秒一次、无障碍接管时 1 秒一次），交错时段长常常不是整秒，
+     * 逐段各自截断会把零头全部丢掉 —— 一小时能少记十几分钟。
+     */
+    private var pendingMillis = 0L
+
+    /**
      * 记账到底有没有在跑。
      *
      * 无障碍那边的 tick 靠它决定要不要接管：两边同时算会把时长翻倍，
@@ -82,8 +90,10 @@ object AppLimitWatcher {
 
         val now = System.currentTimeMillis()
         val from = cursorMs
-        // 第一次跑、墙上时间被往前拨、或者中间断了一大段：不对账，从此刻重新开始
-        if (from == 0L || now <= from || now - from > MAX_REPLAY_MILLIS) {
+        // 第一次跑、墙上时间被往前拨、或者中间断了一大段：不对账，从此刻重新开始。
+        // ⚠️ 判定必须是 now < from（严格小于）：两个驱动源可能在同一毫秒各调一次，
+        // 用 <= 会把这种正常情况当成「时间被拨回去」，每次都重走 reset、这段时间直接不记账。
+        if (from == 0L || now < from || now - from > MAX_REPLAY_MILLIS) {
             reset(context, now)
             return
         }
@@ -117,7 +127,11 @@ object AppLimitWatcher {
         if (AppLimitOverlayController.isShowing()) return
         if (LockMachineController.isActive(context)) return
         // 没设限额的应用在这里就被挡掉了，不产生任何写入
-        AppLimitStore.addSeconds(context, packageName, (to - from) / 1_000L)
+        pendingMillis += to - from
+        val seconds = pendingMillis / 1_000L
+        if (seconds <= 0L) return
+        pendingMillis -= seconds * 1_000L
+        AppLimitStore.addSeconds(context, packageName, seconds)
     }
 
     private fun applyOverlay(context: Context, packageName: String?) {

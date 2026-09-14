@@ -17,6 +17,10 @@ class BootReceiver : BroadcastReceiver() {
         LockMachineService.resume(context)
         LockMachineScheduler.applyAlarms(context)
         LockMachineScheduler.resumeIfInScheduledWindow(context)
+        // 覆盖安装会把 AlarmManager 的闹钟连同常驻服务一起清掉，开机重启同理 ——
+        // 守护服务不重启的话，限额和定时锁机会静默失效到用户下次手动打开应用。
+        // 开机 / 覆盖安装这两个动作在 Android 12+ 的前台服务启动豁免名单里，可以放心调。
+        GuardService.sync(context)
         LockHealthMonitor.schedule(context)
         rescheduleReminders(context)
         // 开机是最该确认「保护还在不在」的时刻：无障碍服务被 ROM 的自启动管理拦掉时，

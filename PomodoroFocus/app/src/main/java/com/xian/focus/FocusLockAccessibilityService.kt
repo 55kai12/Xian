@@ -43,6 +43,20 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        // 覆盖安装 APK 之后，系统仍按**旧的**服务配置派发事件，「读窗口内容」这项能力
+        // 要用户把无障碍开关关掉再打开一次才会重新生效 —— 用户看不见这个差别，
+        // 只会觉得「更新完就不记录了」。这里在运行时把 flag 补上
+        // （capabilities 由系统按 XML 授予、运行时改不了，只能补 flag），
+        // 能免掉一部分机型上的那次隐形操作。
+        runCatching {
+            val info = serviceInfo ?: return@runCatching
+            info.flags = info.flags or
+                android.accessibilityservice.AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+            setServiceInfo(info)
+        }
+        // 系统重新拉起无障碍服务（进程被清后它常会这么做）时，顺手把守护服务也带回来：
+        // 那是记账和拦截真正依赖的东西，它没了光有无障碍也不够。
+        GuardService.sync(applicationContext)
         lastTickAt = 0L
         pendingMillis = 0L
         foregroundConfirmedAt = 0L
@@ -130,12 +144,17 @@ class FocusLockAccessibilityService : AccessibilityService() {
      * 差值为负会让这一秒凭空消失，长期累计就是「用了一小时只记了半小时」。
      */
     private fun tickAppLimit(context: Context) {
-        // 记账的主路径已经搬去守护服务里的 AppLimitWatcher（读系统使用记录，进程被冻结也能补算）。
-        // 它活着时这里就彻底不碰 —— 两边同时算会把时长翻倍。
-        // 它掉线（守护服务被杀 / 用户没给「使用情况访问」）时才由这里顶上，
-        // 所以这条老路不能删：它是没有那个权限时的唯一依靠。
+        // 记账主路径是守护服务里的 AppLimitWatcher（读系统使用记录，进程被冻结也能补算）。
+        // 它活着时由它驱动，这里不插手。
         if (AppLimitWatcher.isRunning()) return
-
+        // 守护服务被 ROM 清掉时，从这里继续驱动**同一个**记账器 —— 它是游标式的，
+        // 谁驱动都不会重复计，而这条比下面那条老路（依赖窗口事件）可靠得多。
+        // 少了这一段，守护服务一被清就只能退回到不可靠的窗口事件，表现就是「删了后台就失效」。
+        if (AppLimitWatcher.hasUsageAccess(context)) {
+            AppLimitWatcher.tick(context)
+            return
+        }
+        // 连「使用情况访问」都没给，才走老路 —— 它是那种情况下唯一还能用的依靠，不能删。
         val now = SystemClock.elapsedRealtime()
         val interactive = powerManager?.isInteractive == true
 

@@ -131,6 +131,7 @@
     <string name="app_limit_status_ready">计时已就绪：被限制的应用出现在前台时才开始累计</string>
     <string name="app_limit_status_ok">计时正常 · 最近一次计时：%1$s</string>
     <string name="app_limit_status_restart">刚更新过？把「贤」的无障碍开关关掉再打开一次，计时才会生效。点这里去设置。</string>
+    <string name="app_limit_status_background_risk">计时已在跑，但还没给「使用情况访问」：从最近任务划掉「贤」之后就会停。点这里去开启，划掉后台也不受影响。</string>
     <string name="app_limit_usage_access_hint">建议开启「使用情况访问」。应用限额现在靠系统的使用记录计时 —— 划掉后台、息屏、被系统冻结都算得准。不开也能用，但只靠「无障碍」服务，进程一被清就停。点这里去开启。</string>
     <string name="app_limit_ago_just_now">刚刚</string>
     <string name="app_limit_ago_minutes">%1$d 分钟前</string>
