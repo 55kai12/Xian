@@ -10,7 +10,7 @@ import android.widget.TextView
  * 存成**一整段多行文本**（`\n` 分隔）而不是 StringSet：StringSet 不保序，
  * 而用户在编辑框里看到的顺序就是他排的顺序 —— 存成无序集合，编辑一次顺序就乱一次。
  *
- * 挂在 `lock_machine_prefs`（锁机设置那一份）上，同 [LockExitPin]：少一个 prefs 文件，
+ * 挂在 `lock_machine_prefs`（锁机设置那一份）上，同 [LockPin]：少一个 prefs 文件，
  * 少一处清数据/漏备份的地方；这份数据同样不参与备份导出。
  */
 object LockQuotes {

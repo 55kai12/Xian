@@ -479,13 +479,19 @@
 
     <!-- Settings → Lock settings -->
     <string name="lock_settings_title">Lock settings</string>
-    <string name="lock_settings_desc">Whitelist, exit PIN and quotes</string>
+    <string name="lock_settings_desc">Whitelist, PIN lock and quotes</string>
     <string name="lock_settings_whitelist_title">Whitelist apps</string>
     <string name="lock_settings_whitelist_desc">Apps allowed while locked</string>
     <string name="lock_settings_whitelist_summary">%1$d apps selected, tap to edit</string>
-    <string name="lock_settings_pin_title">Require PIN to exit lock</string>
-    <string name="lock_settings_pin_desc">When on, exiting the lock needs a 4-digit PIN. Forget it and you can only wait for the lock to end.</string>
+    <string name="lock_settings_pin_title">PIN lock</string>
+    <string name="lock_settings_pin_desc">One 4-digit PIN, used for whichever places you turn on below. If you forget it, the lock can only end on its own.</string>
+    <string name="lock_settings_pin_exit_title">Require PIN to exit the lock</string>
+    <string name="lock_settings_pin_app_limit_title">Require PIN for app limits</string>
+    <string name="lock_settings_pin_app_limit_desc">After the daily quota runs out, bonus time needs the PIN</string>
     <string name="lock_settings_pin_change">Change PIN</string>
+    <string name="app_limit_pin_title">Enter PIN</string>
+    <string name="app_limit_pin_body">Quota used up. Enter your 4-digit PIN to get bonus time.</string>
+    <string name="app_limit_pin_confirm">Add time</string>
     <string name="exit_pin_title">Enter exit PIN</string>
     <string name="exit_pin_body">Enter your 4-digit PIN to exit the lock</string>
     <string name="exit_pin_hint">4 digits</string>

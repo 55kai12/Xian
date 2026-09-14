@@ -2,59 +2,74 @@
 <!--
   应用限额用完后的整屏遮挡层。
   配色沿用锁机覆盖层那套：品牌色铺底 + 半透明白元素，8 种主题/昼夜组合共用一份。
+
+  外层包 FrameLayout 是为了放密码面板（「额度用完后加时」这一步可以要求输密码）：
+  悬浮窗没有 Activity token，弹不了 AlertDialog，只能内嵌一层遮罩。
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/colorBrandSurface"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:paddingHorizontal="34dp">
+    android:layout_height="match_parent">
 
-    <ImageView
-        android:id="@+id/limitAppIcon"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
-        android:contentDescription="@null" />
-
-    <TextView
-        android:id="@+id/limitAppName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?attr/colorBrandSurface"
         android:gravity="center"
-        android:textColor="@color/on_primary"
-        android:textSize="22sp"
-        android:textStyle="bold" />
+        android:orientation="vertical"
+        android:paddingHorizontal="34dp">
 
-    <TextView
-        android:id="@+id/limitAppDetail"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:gravity="center"
-        android:lineSpacingExtra="4dp"
-        android:textColor="@color/on_primary_dim"
-        android:textSize="15sp" />
+        <ImageView
+            android:id="@+id/limitAppIcon"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:contentDescription="@null" />
 
-    <!-- 每月有限的加时口子：额度用完剩最后一次机会时，别把人逼到只能卸载 -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/limitBonusButton"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:textColor="@color/on_primary"
-        app:strokeColor="@color/overlay_outline" />
+        <TextView
+            android:id="@+id/limitAppName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:textColor="@color/on_primary"
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/limitHomeButton"
-        style="@style/Widget.Material3.Button.OutlinedButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="@string/app_limit_overlay_home"
-        android:textColor="@color/on_primary"
-        app:strokeColor="@color/overlay_outline" />
-</LinearLayout>
+        <TextView
+            android:id="@+id/limitAppDetail"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:textColor="@color/on_primary_dim"
+            android:textSize="15sp" />
+
+        <!-- 每月有限的加时口子：额度用完剩最后一次机会时，别把人逼到只能卸载 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/limitBonusButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:textColor="@color/on_primary"
+            app:strokeColor="@color/overlay_outline" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/limitHomeButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/app_limit_overlay_home"
+            android:textColor="@color/on_primary"
+            app:strokeColor="@color/overlay_outline" />
+    </LinearLayout>
+
+    <!-- 密码面板：设置里开了「应用限额需要密码」才用得上 -->
+    <include
+        android:id="@+id/exitPinOverlay"
+        layout="@layout/view_exit_pin_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+</FrameLayout>

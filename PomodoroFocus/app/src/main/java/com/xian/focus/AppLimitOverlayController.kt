@@ -44,7 +44,7 @@ object AppLimitOverlayController {
         view.findViewById<TextView>(R.id.limitAppName).text =
             appContext.getString(R.string.app_limit_overlay_title, label)
         view.findViewById<View>(R.id.limitBonusButton).setOnClickListener {
-            applyBonus(appContext, view, packageName)
+            requestBonus(appContext, view, packageName)
         }
         view.findViewById<View>(R.id.limitHomeButton).setOnClickListener {
             runCatching {
@@ -71,6 +71,8 @@ object AppLimitOverlayController {
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.TOP or Gravity.START
+        // 密码面板会带出输入法：让窗口重排，别把卡片挡在键盘后面
+        params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         val windowManager = appContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         try {
             windowManager.addView(view, params)
@@ -102,6 +104,43 @@ object AppLimitOverlayController {
                 AppLimitStore.BONUS_MINUTES,
                 remaining
             )
+        }
+    }
+
+    /**
+     * 加时前先过密码（设置里开了「应用限额需要密码」时）。
+     *
+     * 这一层默认是 `FLAG_NOT_FOCUSABLE`（见 [show] 里的注释），而输密码必须能拿到焦点，
+     * 所以只为密码面板临时把焦点放开，收起面板立刻还回去 —— 常态下仍不跟被限应用抢焦点。
+     */
+    private fun requestBonus(appContext: Context, view: View, packageName: String) {
+        if (!LockPin.isRequired(appContext, PinScope.APP_LIMIT)) {
+            applyBonus(appContext, view, packageName)
+            return
+        }
+        setFocusable(appContext, true)
+        LockPinPanel.show(
+            root = view,
+            context = appContext,
+            scope = PinScope.APP_LIMIT,
+            onCancel = { setFocusable(appContext, false) }
+        ) {
+            setFocusable(appContext, false)
+            applyBonus(appContext, view, packageName)
+        }
+    }
+
+    private fun setFocusable(appContext: Context, focusable: Boolean) {
+        val view = overlayView ?: return
+        val params = view.layoutParams as? WindowManager.LayoutParams ?: return
+        params.flags = if (focusable) {
+            params.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv()
+        } else {
+            params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+        }
+        runCatching {
+            (appContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager)
+                .updateViewLayout(view, params)
         }
     }
 

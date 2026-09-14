@@ -44,7 +44,7 @@ object LockOverlayController {
         }
         view.findViewById<Button>(R.id.exitLockButton).setOnLongClickListener {
             // 设置里开了「退出锁机需要密码」时，长按只把密码面板叫出来
-            LockExitPinPanel.show(view, applicationContext) { exitLock(applicationContext) }
+            LockPinPanel.show(view, applicationContext, PinScope.EXIT_LOCK) { exitLock(applicationContext) }
             true
         }
         // alpha 先归零再 addView，否则会闪一帧全不透明

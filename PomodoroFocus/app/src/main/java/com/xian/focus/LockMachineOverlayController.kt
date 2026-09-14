@@ -131,7 +131,7 @@ object LockMachineOverlayController {
         view.findViewById<Button>(R.id.confirmExitButton).setOnClickListener {
             if (System.currentTimeMillis() < cooldownEndsAt) return@setOnClickListener
             // 密码锁夹在冷静期之后、真退出之前：冷静期拦冲动，密码拦「我自己」
-            LockExitPinPanel.show(view, applicationContext) { exitNow(applicationContext) }
+            LockPinPanel.show(view, applicationContext, PinScope.EXIT_LOCK) { exitNow(applicationContext) }
         }
         view.findViewById<View>(R.id.whitelistFolderRow).setOnClickListener {
             whitelistExpanded = !whitelistExpanded
