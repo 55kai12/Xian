@@ -15,7 +15,8 @@ import androidx.core.app.NotificationCompat
 
 /**
  * 守护前台服务：只要还有「需要一直盯着」的功能开着（应用限额 / 定时锁机时段），
- * 就常驻一个最低优先级的通知，把进程优先级抬上去。
+ * 就常驻下来，把进程优先级抬上去。通知走「完全不显示」的频道（见 [createChannel]），
+ * 用户看不到它 —— 前台服务必须有通知是系统的规定，但没人规定它必须看得见。
  *
  * 起因：应用限额的计时和拦截原先跑在无障碍服务里，而**用户从最近任务划掉贤之后，
  * 国产 ROM 会顺手清掉进程**（部分直接 force-stop）—— 服务随之停摆，限额就再也拦不住，
@@ -100,21 +101,33 @@ class GuardService : Service() {
             .build()
     }
 
-    /** 最低重要性：不出现在状态栏、不发声、不亮屏，只在通知栏下拉里看得到。 */
+    /**
+     * 频道重要性 NONE：这条通知**完全不显示**（状态栏无图标、下拉里也没有）。
+     *
+     * 前台服务必须有通知是系统的硬性要求，但没人规定它必须看得见 —— 重要性 NONE 的频道是合法的，
+     * `startForeground` 照常成立、服务照样是前台优先级，只是通知被系统收起来不画。
+     *
+     * ⚠️ 重要性创建后**改不了**（用户自己改的还优先于代码），所以换只能换 ID 重建 ——
+     * 旧频道顺手删掉，免得在「设置 → 通知」里留一条僵尸。
+     * ⚠️ Android 13+ 会自己往通知栏放一条系统的「后台运行的应用」汇总，那是系统发的，应用删不掉。
+     */
     private fun createChannel() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        runCatching { manager.deleteNotificationChannel(LEGACY_CHANNEL_ID) }
         if (manager.getNotificationChannel(CHANNEL_ID) != null) return
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
                 getString(R.string.guard_channel_name),
-                NotificationManager.IMPORTANCE_MIN
+                NotificationManager.IMPORTANCE_NONE
             )
         )
     }
 
     companion object {
-        private const val CHANNEL_ID = "guard_channel"
+        /** 带版本后缀：通知频道的重要性创建后不可改，想换成「完全不显示」只能换 ID 重建。 */
+        private const val CHANNEL_ID = "guard_channel_v2"
+        private const val LEGACY_CHANNEL_ID = "guard_channel"
         private const val NOTIFICATION_ID = 2002
         private const val REQ_RESTART = 2003
 

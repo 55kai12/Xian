@@ -27,9 +27,12 @@
         android:supportsRtl="false"
         android:allowBackup="false"
         android:theme="@style/Theme.PomodoroFocus">
+        <!-- excludeFromRecents：不进最近任务列表 ⇒ 划不掉、也进不了「一键清理」的名单，
+             而划掉正是国产 ROM 清进程的触发点（见 GuardService 的说明）。 -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:excludeFromRecents="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
