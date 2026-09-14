@@ -105,6 +105,8 @@ object LockMachineOverlayController {
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.TOP or Gravity.START
+        // 退出密码面板会带出输入法：让窗口重排，别把卡片挡在键盘后面
+        params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         view.findViewById<Button>(R.id.exitLockButton).setOnClickListener {
             Toast.makeText(applicationContext, R.string.long_press_required, Toast.LENGTH_SHORT).show()
         }
@@ -128,19 +130,8 @@ object LockMachineOverlayController {
         }
         view.findViewById<Button>(R.id.confirmExitButton).setOnClickListener {
             if (System.currentTimeMillis() < cooldownEndsAt) return@setOnClickListener
-            if (LockExitQuota.canExit(applicationContext)) {
-                LockMachineService.stop(applicationContext)
-                hide(applicationContext)
-            } else {
-                Toast.makeText(
-                    applicationContext,
-                    applicationContext.getString(
-                        R.string.exit_quota_exhausted,
-                        LockExitQuota.MONTHLY_LIMIT
-                    ),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            // 密码锁夹在冷静期之后、真退出之前：冷静期拦冲动，密码拦「我自己」
+            LockExitPinPanel.show(view, applicationContext) { exitNow(applicationContext) }
         }
         view.findViewById<View>(R.id.whitelistFolderRow).setOnClickListener {
             whitelistExpanded = !whitelistExpanded
@@ -186,6 +177,20 @@ object LockMachineOverlayController {
     private fun hideExitConfirm(view: View) {
         cooldownEndsAt = 0L
         view.findViewById<View>(R.id.exitConfirmOverlay).visibility = View.GONE
+    }
+
+    /** 冷静期已过、密码也输对了，才真的退出 —— 最后还要过本月退出额度这一关。 */
+    private fun exitNow(context: Context) {
+        if (LockExitQuota.canExit(context)) {
+            LockMachineService.stop(context)
+            hide(context)
+        } else {
+            Toast.makeText(
+                context,
+                context.getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT),
+                Toast.LENGTH_LONG
+            ).show()
+        }
     }
 
     private fun updateContent(context: Context) {

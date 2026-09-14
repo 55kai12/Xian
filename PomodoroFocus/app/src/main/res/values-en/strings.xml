@@ -476,4 +476,25 @@
     <string name="note_blank">(empty)</string>
     <string name="note_hint_drag">Release to delete, drag back to cancel</string>
     <string name="note_trash">Trash</string>
+
+    <!-- Settings → Lock settings -->
+    <string name="lock_settings_title">Lock settings</string>
+    <string name="lock_settings_desc">Whitelist and exit PIN</string>
+    <string name="lock_settings_whitelist_title">Whitelist apps</string>
+    <string name="lock_settings_whitelist_desc">Apps allowed while locked</string>
+    <string name="lock_settings_whitelist_summary">%1$d apps selected, tap to edit</string>
+    <string name="lock_settings_pin_title">Require PIN to exit lock</string>
+    <string name="lock_settings_pin_desc">When on, exiting the lock needs a 4-digit PIN. Forget it and you can only wait for the lock to end.</string>
+    <string name="lock_settings_pin_change">Change PIN</string>
+    <string name="exit_pin_title">Enter exit PIN</string>
+    <string name="exit_pin_body">Enter your 4-digit PIN to exit the lock</string>
+    <string name="exit_pin_hint">4 digits</string>
+    <string name="exit_pin_wrong">Wrong PIN, try again</string>
+    <string name="exit_pin_confirm">Confirm exit</string>
+    <string name="exit_pin_set_title">Set exit PIN</string>
+    <string name="exit_pin_new_hint">New 4-digit PIN</string>
+    <string name="exit_pin_repeat_hint">Repeat PIN</string>
+    <string name="exit_pin_invalid">PIN must be 4 digits</string>
+    <string name="exit_pin_mismatch">The two PINs do not match</string>
+    <string name="exit_pin_set_done">Exit PIN saved</string>
 </resources>

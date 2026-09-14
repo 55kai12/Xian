@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  退出锁机的密码面板。
+
+  悬浮窗没有 Activity token，弹不了 AlertDialog，只能做成内嵌遮罩，
+  由两个锁机覆盖层（overlay_lock / overlay_lock_machine）用 <include> 引进来。
+  面板自己不认识「退出」这件事：输对了就回调，退不退、退什么由调用方决定。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/exitPinOverlay"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/overlay_scrim"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginHorizontal="34dp"
+        android:background="@drawable/bg_overlay_card"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="22dp"
+        android:paddingTop="24dp"
+        android:paddingBottom="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/exit_pin_title"
+            android:textColor="@color/on_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:lineSpacingExtra="3dp"
+            android:text="@string/exit_pin_body"
+            android:textColor="@color/on_primary_dim"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/exitPinInput"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_overlay_input"
+            android:gravity="center"
+            android:hint="@string/exit_pin_hint"
+            android:importantForAutofill="no"
+            android:inputType="numberPassword"
+            android:letterSpacing="0.4"
+            android:paddingVertical="12dp"
+            android:textColor="@color/on_primary"
+            android:textColorHint="@color/on_primary_dim"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/exitPinError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/exit_pin_wrong"
+            android:textColor="@color/danger_alt"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <!-- 悬浮窗里普通 <Button> 不会被换成 MaterialButton，必须写全限定标签 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/exitPinConfirm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/exit_pin_confirm"
+            android:textColor="?attr/colorBrandSurface"
+            app:backgroundTint="@color/on_primary"
+            app:cornerRadius="14dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/exitPinCancel"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/exit_confirm_cancel"
+            android:textColor="@color/on_primary"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="14dp"
+            app:strokeColor="@color/overlay_outline"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
+</FrameLayout>

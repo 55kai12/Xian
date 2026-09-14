@@ -149,6 +149,56 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 锁机设置：白名单 + 退出密码 -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/lockSettingsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:foreground="?attr/selectableItemBackground"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="1dp"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/lock_settings_title"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/lock_settings_desc"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        app:srcCompat="@android:drawable/ic_media_next" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- 锁机运行状态自检：四项前提，逐项显状态、点击跳转 -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/healthCard"

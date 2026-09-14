@@ -1,7 +1,6 @@
 package com.xian.focus
 
 import android.content.Context
-import java.security.MessageDigest
 
 object AppLockStore {
     private const val PREFS_NAME = "app_lock_prefs"
@@ -14,7 +13,7 @@ object AppLockStore {
         prefs(context).contains(KEY_PIN_HASH)
 
     fun setPin(context: Context, pin: String) {
-        prefs(context).edit().putString(KEY_PIN_HASH, sha256(pin)).apply()
+        prefs(context).edit().putString(KEY_PIN_HASH, PinHash.sha256(pin)).apply()
     }
 
     fun clearPin(context: Context) {
@@ -22,10 +21,5 @@ object AppLockStore {
     }
 
     fun checkPin(context: Context, pin: String): Boolean =
-        prefs(context).getString(KEY_PIN_HASH, null) == sha256(pin)
-
-    private fun sha256(input: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        return digest.digest(input.toByteArray()).joinToString("") { "%02x".format(it) }
-    }
+        prefs(context).getString(KEY_PIN_HASH, null) == PinHash.sha256(pin)
 }

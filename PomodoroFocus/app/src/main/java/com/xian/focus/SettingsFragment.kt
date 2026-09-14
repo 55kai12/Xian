@@ -69,6 +69,18 @@ class SettingsFragment : Fragment() {
                 .commit()
         }
         binding.aboutCard.setOnClickListener { showAboutDialog() }
+        binding.lockSettingsCard.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
+                .replace(R.id.fragmentContainer, LockSettingsFragment())
+                .addToBackStack(null)
+                .commit()
+        }
         binding.clearDataCard.setOnClickListener { showClearDataDialog() }
         refreshHealth()
     }

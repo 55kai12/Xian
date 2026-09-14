@@ -37,11 +37,14 @@ object LockOverlayController {
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.TOP or Gravity.START
+        // 退出密码面板会带出输入法：让窗口重排，别把卡片挡在键盘后面
+        params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         view.findViewById<Button>(R.id.exitLockButton).setOnClickListener {
             Toast.makeText(applicationContext, R.string.long_press_required, Toast.LENGTH_SHORT).show()
         }
         view.findViewById<Button>(R.id.exitLockButton).setOnLongClickListener {
-            exitLock(applicationContext)
+            // 设置里开了「退出锁机需要密码」时，长按只把密码面板叫出来
+            LockExitPinPanel.show(view, applicationContext) { exitLock(applicationContext) }
             true
         }
         // alpha 先归零再 addView，否则会闪一帧全不透明

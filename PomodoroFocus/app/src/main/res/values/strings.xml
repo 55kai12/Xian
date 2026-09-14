@@ -479,4 +479,25 @@
     <string name="note_blank">（空白）</string>
     <string name="note_hint_drag">松手即删除，拖回原处取消</string>
     <string name="note_trash">垃圾桶</string>
+
+    <!-- 设置 → 锁机设置 -->
+    <string name="lock_settings_title">锁机设置</string>
+    <string name="lock_settings_desc">白名单与退出密码</string>
+    <string name="lock_settings_whitelist_title">白名单应用</string>
+    <string name="lock_settings_whitelist_desc">锁机期间允许使用的应用</string>
+    <string name="lock_settings_whitelist_summary">已选 %1$d 个应用，点击修改</string>
+    <string name="lock_settings_pin_title">退出锁机需要密码</string>
+    <string name="lock_settings_pin_desc">开启后，长按退出锁机时要先输入 4 位数字密码；忘了密码就只能等锁机到点自动结束。</string>
+    <string name="lock_settings_pin_change">修改密码</string>
+    <string name="exit_pin_title">输入退出密码</string>
+    <string name="exit_pin_body">输入 4 位数字密码才能退出锁机</string>
+    <string name="exit_pin_hint">4 位数字</string>
+    <string name="exit_pin_wrong">密码不对，再试一次</string>
+    <string name="exit_pin_confirm">确认退出</string>
+    <string name="exit_pin_set_title">设置退出密码</string>
+    <string name="exit_pin_new_hint">新的 4 位密码</string>
+    <string name="exit_pin_repeat_hint">再输一次</string>
+    <string name="exit_pin_invalid">密码要是 4 位数字</string>
+    <string name="exit_pin_mismatch">两次输入不一致</string>
+    <string name="exit_pin_set_done">已设置退出密码</string>
 </resources>

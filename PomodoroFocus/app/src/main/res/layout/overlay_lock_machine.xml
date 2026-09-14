@@ -263,4 +263,14 @@
                 app:strokeWidth="1dp" />
         </LinearLayout>
     </FrameLayout>
+
+    <!--
+      退出密码面板：叠在冷静期弹窗之上。取消它只收起自己，用户回到冷静期那一层
+      （不用为了一次误触重新长按 + 再等 30 秒）。
+    -->
+    <include
+        android:id="@+id/exitPinOverlay"
+        layout="@layout/view_exit_pin_panel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </FrameLayout>

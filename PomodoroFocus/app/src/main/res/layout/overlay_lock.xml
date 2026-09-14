@@ -2,54 +2,69 @@
 <!--
   专注计时中切出「贤」时盖上的那层。
   视觉语言跟 overlay_lock_machine 一致：品牌色打底 + 半透明白元素。
+
+  外层包 FrameLayout 是为了放「退出密码面板」：悬浮窗没有 Activity token，
+  弹不了 AlertDialog，只能内嵌一层遮罩（默认 GONE）。
 -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="?attr/colorBrandSurface"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:paddingHorizontal="36dp"
-    tools:ignore="Overdraw">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:letterSpacing="0.08"
-        android:text="@string/lock_overlay_title"
-        android:textColor="@color/on_primary"
-        android:textSize="26sp"
-        android:textStyle="bold" />
-
-    <View
-        android:layout_width="40dp"
-        android:layout_height="2dp"
-        android:layout_marginTop="14dp"
-        android:background="?attr/colorBrandAccent" />
-
-    <TextView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
+        android:layout_height="match_parent"
+        android:background="?attr/colorBrandSurface"
         android:gravity="center"
-        android:lineSpacingExtra="4dp"
-        android:text="@string/lock_overlay_subtitle"
-        android:textColor="@color/on_primary_dim"
-        android:textSize="14sp" />
+        android:orientation="vertical"
+        android:paddingHorizontal="36dp"
+        tools:ignore="Overdraw">
 
-    <!-- 同上：悬浮窗里普通 <Button> 不会被换成 MaterialButton，必须写全限定标签 -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/exitLockButton"
-        style="@style/Widget.Material3.Button.OutlinedButton"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.08"
+            android:text="@string/lock_overlay_title"
+            android:textColor="@color/on_primary"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="2dp"
+            android:layout_marginTop="14dp"
+            android:background="?attr/colorBrandAccent" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:gravity="center"
+            android:lineSpacingExtra="4dp"
+            android:text="@string/lock_overlay_subtitle"
+            android:textColor="@color/on_primary_dim"
+            android:textSize="14sp" />
+
+        <!-- 同上：悬浮窗里普通 <Button> 不会被换成 MaterialButton，必须写全限定标签 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/exitLockButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:text="@string/long_press_exit"
+            android:textColor="@color/on_primary"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="14dp"
+            app:strokeColor="@color/overlay_outline"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
+
+    <!-- 退出密码面板：设置里开了「退出锁机需要密码」才用得上 -->
+    <include
+        android:id="@+id/exitPinOverlay"
+        layout="@layout/view_exit_pin_panel"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:text="@string/long_press_exit"
-        android:textColor="@color/on_primary"
-        app:backgroundTint="@android:color/transparent"
-        app:cornerRadius="14dp"
-        app:strokeColor="@color/overlay_outline"
-        app:strokeWidth="1dp" />
-</LinearLayout>
+        android:layout_height="match_parent" />
+</FrameLayout>
