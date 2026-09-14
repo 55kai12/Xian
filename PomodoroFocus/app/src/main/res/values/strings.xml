@@ -508,10 +508,13 @@
     <string name="exit_pin_set_done">已设置退出密码</string>
 
     <string name="lock_settings_quotes_title">锁机文案</string>
-    <string name="lock_settings_quotes_desc">锁机时显示在时间下方，每行一条，随机展示</string>
+    <string name="lock_settings_quotes_desc">锁机时显示在时间下方，随机展示其中一条</string>
     <string name="lock_settings_quotes_summary">已启用 %1$d 条，点击编辑</string>
     <string name="lock_quotes_editor_title">编辑锁机文案</string>
-    <string name="lock_quotes_hint">每行一条，锁机时随机显示其中一条</string>
+    <string name="lock_quotes_hint">锁机时随机显示其中一条</string>
+    <string name="lock_quotes_row_hint">写一条励志文案</string>
+    <string name="lock_quotes_row_delete">删除这条</string>
+    <string name="lock_quotes_add">添加一条</string>
     <string name="lock_quotes_reset">恢复默认</string>
     <string name="lock_quotes_saved">已保存</string>
 </resources>

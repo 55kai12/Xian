@@ -5,12 +5,12 @@ import android.os.Bundle
 import android.text.InputFilter
 import android.text.InputType
 import android.view.LayoutInflater
-import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CompoundButton
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
@@ -127,35 +127,77 @@ class LockSettingsFragment : Fragment() {
     }
 
     /**
-     * 文案编辑器：一整段多行文本，一行一条。
+     * 文案编辑器：**一条一个输入框**，可以加、可以删。
      *
-     * 首次打开时输入框里就是示例那几条 —— 用户改的是「已有的东西」，
-     * 而不是面对一个空框不知道该写什么格式。
+     * 首次打开时框里就是示例那几条 —— 用户改的是「已有的东西」，
+     * 而不是面对一个空框不知道该写什么格式。存储格式没变（还是 `\n` 拼接的整段），
+     * 变的只是编辑方式：一条条改比在一整块文本里数换行靠谱。
      */
     private fun showQuoteEditor() {
         val context = requireContext()
-        val input = EditText(context).apply {
-            setText(LockQuotes.rawText(context))
-            setPadding(48, 30, 48, 30)
-            hint = context.getString(R.string.lock_quotes_hint)
-            gravity = Gravity.TOP or Gravity.START
-            minLines = 6
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        val view = layoutInflater.inflate(R.layout.dialog_quote_editor, null, false)
+        fillQuoteRows(view, LockQuotes.list(context))
+        view.findViewById<View>(R.id.quoteAddButton).setOnClickListener {
+            addQuoteRow(view, "", focus = true)
         }
-        AlertDialog.Builder(context)
+        val dialog = AlertDialog.Builder(context)
             .setTitle(R.string.lock_quotes_editor_title)
-            .setView(input)
+            .setView(view)
             .setPositiveButton(R.string.save) { _, _ ->
-                LockQuotes.save(context, input.text.toString())
+                // 空框（加了没写）不落盘
+                LockQuotes.save(context, collectQuoteRows(view).joinToString("\n"))
                 Toast.makeText(context, R.string.lock_quotes_saved, Toast.LENGTH_SHORT).show()
             }
-            // 全删光了想找回示例，不用自己去翻版本
-            .setNeutralButton(R.string.lock_quotes_reset) { _, _ ->
-                LockQuotes.save(context, LockQuotes.defaultsText())
-            }
+            .setNeutralButton(R.string.lock_quotes_reset, null)
             .setNegativeButton(R.string.cancel, null)
             .setOnDismissListener { if (_binding != null) refresh() }
-            .show()
+            .create()
+        // 「恢复默认」只把示例摆回编辑框，不直接落盘 —— 用户可能只是想改其中一条
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                fillQuoteRows(view, LockQuotes.defaultList())
+            }
+        }
+        dialog.show()
+    }
+
+    /** 按给定内容重建整列输入框（恢复默认也走这里）。 */
+    private fun fillQuoteRows(root: View, quotes: List<String>) {
+        val rows = root.findViewById<LinearLayout>(R.id.quoteRows)
+        rows.removeAllViews()
+        // 一条都没有时也得留一个空框，否则用户没有地方输入
+        quotes.ifEmpty { listOf("") }.forEach { addQuoteRow(root, it) }
+    }
+
+    private fun addQuoteRow(root: View, text: String, focus: Boolean = false) {
+        val rows = root.findViewById<LinearLayout>(R.id.quoteRows)
+        val row = layoutInflater.inflate(R.layout.item_quote_row, rows, false)
+        val input = row.findViewById<EditText>(R.id.quoteRowInput)
+        input.setText(text)
+        input.setSelection(input.text.length)
+        row.findViewById<View>(R.id.quoteRowDelete).setOnClickListener {
+            if (rows.childCount == 1) {
+                // 删到只剩这一条就清空它：编辑框里不能一个输入处都没有
+                input.setText("")
+            } else {
+                rows.removeView(row)
+            }
+        }
+        rows.addView(row)
+        // 行多了新加的那条在可视区外，不滚到底用户会以为按钮没反应
+        val scroll = root.findViewById<ScrollView>(R.id.quoteScroll)
+        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+        if (focus) input.requestFocus()
+    }
+
+    private fun collectQuoteRows(root: View): List<String> {
+        val rows = root.findViewById<LinearLayout>(R.id.quoteRows)
+        return (0 until rows.childCount).mapNotNull { index ->
+            rows.getChildAt(index)
+                .findViewById<EditText>(R.id.quoteRowInput)
+                .text.toString().trim()
+                .takeIf { it.isNotEmpty() }
+        }
     }
 
     /**

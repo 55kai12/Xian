@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 文案编辑器里的一条：一个输入框 + 一个删除按钮。行由 LockSettingsFragment 动态加/删。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <EditText
+        android:id="@+id/quoteRowInput"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:background="@drawable/bg_quote_input"
+        android:hint="@string/lock_quotes_row_hint"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:maxLines="2"
+        android:paddingHorizontal="14dp"
+        android:paddingVertical="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
+        android:textSize="14sp" />
+
+    <ImageButton
+        android:id="@+id/quoteRowDelete"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_marginStart="6dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/lock_quotes_row_delete"
+        android:padding="9dp"
+        app:srcCompat="@drawable/ic_note_trash"
+        app:tint="?attr/colorOnSurfaceVariant" />
+</LinearLayout>

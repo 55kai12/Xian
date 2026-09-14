@@ -28,11 +28,14 @@ object LockQuotes {
     private fun prefs(context: Context) = context.applicationContext
         .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    /** 编辑框里的原文，保留用户自己排的换行与空行。没写过就是示例。 */
-    fun rawText(context: Context): String =
+    /** 存着的那段原文（保留用户自己排的换行）。没写过就是示例。 */
+    private fun rawText(context: Context): String =
         prefs(context).getString(KEY_TEXT, null) ?: defaultsText()
 
-    fun defaultsText(): String = DEFAULTS.joinToString("\n")
+    private fun defaultsText(): String = DEFAULTS.joinToString("\n")
+
+    /** 「恢复默认」用：把示例一条条摆回编辑框里（只是摆回去，落盘要等用户点保存）。 */
+    fun defaultList(): List<String> = DEFAULTS
 
     fun save(context: Context, text: String) {
         prefs(context).edit().putString(KEY_TEXT, text).apply()

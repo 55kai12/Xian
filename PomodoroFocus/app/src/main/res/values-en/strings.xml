@@ -505,10 +505,13 @@
     <string name="exit_pin_set_done">Exit PIN saved</string>
 
     <string name="lock_settings_quotes_title">Lock screen quotes</string>
-    <string name="lock_settings_quotes_desc">Shown under the clock while locked. One per line, picked at random.</string>
+    <string name="lock_settings_quotes_desc">Shown under the clock while locked, one at random.</string>
     <string name="lock_settings_quotes_summary">%1$d quotes in use, tap to edit</string>
     <string name="lock_quotes_editor_title">Edit lock screen quotes</string>
-    <string name="lock_quotes_hint">One quote per line; one is shown at random while locked</string>
+    <string name="lock_quotes_hint">One of them is shown at random while locked</string>
+    <string name="lock_quotes_row_hint">Write a quote</string>
+    <string name="lock_quotes_row_delete">Delete this quote</string>
+    <string name="lock_quotes_add">Add a quote</string>
     <string name="lock_quotes_reset">Restore defaults</string>
     <string name="lock_quotes_saved">Saved</string>
 </resources>
