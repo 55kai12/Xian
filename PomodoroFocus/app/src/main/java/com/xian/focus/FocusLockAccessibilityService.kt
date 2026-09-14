@@ -74,7 +74,18 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
         // 其他系统组件（输入法、来电界面）不算「在用某个应用」，
         // 保留上一个真实前台应用 —— 否则一打字限额计时就断了。
-        if (!SystemAppAllowlist.isEssential(context, packageName)) {
+        if (packageName == context.packageName && AppLimitOverlayController.isShowing()) {
+            // 限额层是本进程的悬浮窗，它一抢到焦点，系统发来的事件包名也是本应用。
+            // 若把它当成「用户切到了贤」，下一秒 tick 就会判定被限应用已经退出，
+            // 把刚盖上的那层撤掉 —— 表现就是「额度用完了只闪一下，然后接着玩」，
+            // 并且被污染的前台记录还有 60 秒信任期，这段时间既不记账也不弹窗。
+            // 所以这里清掉缓存、放开限频，让 tick 自己查一次窗口栈：
+            // 层还盖着时查不到活跃的应用窗口（悬浮层属于 TYPE_SYSTEM），
+            // 沿用上次的前台应用、层保持不动；用户真切走了才会查到别的应用。
+            foregroundPackage = null
+            foregroundConfirmedAt = 0L
+            lastWindowQueryAt = 0L
+        } else if (!SystemAppAllowlist.isEssential(context, packageName)) {
             foregroundPackage = packageName
             foregroundConfirmedAt = SystemClock.elapsedRealtime()
         }

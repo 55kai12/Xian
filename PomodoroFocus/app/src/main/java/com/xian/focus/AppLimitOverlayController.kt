@@ -61,7 +61,11 @@ object AppLimitOverlayController {
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+            // 不抢焦点：这一层只是「看」，被限的应用该一直是那个活跃的应用窗口，
+            // 计时与「什么时候该撤层」都靠前台应用判断，别让这层把自己变成前台。
+            // 触摸照旧（要屏蔽触摸得用 NOT_TOUCHABLE），返回键 / Home 键直达系统与应用。
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
                 or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
                 or WindowManager.LayoutParams.FLAG_FULLSCREEN,
             PixelFormat.TRANSLUCENT
