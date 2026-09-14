@@ -146,6 +146,9 @@ object LockMachineOverlayController {
             lastShowAt = System.currentTimeMillis()
             cooldownEndsAt = 0L
             whitelistExpanded = false
+            // 文案只在「新建这一层」时取一次：放进 updateContent 会在每次应用切换事件里重抽，
+            // 用户会看到文案一秒一跳。
+            LockQuotes.applyTo(view, applicationContext)
             view.animate().alpha(1f).setDuration(220L).start()
             updateContent(applicationContext)
             handler.post(tickRunnable)

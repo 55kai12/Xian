@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.text.InputFilter
 import android.text.InputType
 import android.view.LayoutInflater
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CompoundButton
@@ -43,6 +44,7 @@ class LockSettingsFragment : Fragment() {
         binding.lockSettingsBackButton.setOnClickListener { parentFragmentManager.popBackStack() }
         binding.whitelistCard.setOnClickListener { showAppPicker() }
         binding.pinChangeRow.setOnClickListener { showSetPinDialog() }
+        binding.quoteCard.setOnClickListener { showQuoteEditor() }
         binding.exitPinSwitch.setOnCheckedChangeListener(exitPinListener)
 
         refresh()
@@ -75,6 +77,12 @@ class LockSettingsFragment : Fragment() {
 
         binding.pinChangeRow.visibility =
             if (LockExitPin.hasPin(context)) View.VISIBLE else View.GONE
+        val quoteCount = LockQuotes.list(context).size
+        binding.quoteSummary.text = if (quoteCount > 0) {
+            getString(R.string.lock_settings_quotes_summary, quoteCount)
+        } else {
+            getString(R.string.lock_settings_quotes_desc)
+        }
         // 先摘掉 listener 再赋状态，否则这次赋值会被当成「用户拨了开关」
         binding.exitPinSwitch.setOnCheckedChangeListener(null)
         binding.exitPinSwitch.isChecked = LockExitPin.isEnabled(context)
@@ -91,6 +99,38 @@ class LockSettingsFragment : Fragment() {
             LockMachineController.saveWhitelist(requireContext(), updated)
             refresh()
         }
+    }
+
+    /**
+     * 文案编辑器：一整段多行文本，一行一条。
+     *
+     * 首次打开时输入框里就是示例那几条 —— 用户改的是「已有的东西」，
+     * 而不是面对一个空框不知道该写什么格式。
+     */
+    private fun showQuoteEditor() {
+        val context = requireContext()
+        val input = EditText(context).apply {
+            setText(LockQuotes.rawText(context))
+            setPadding(48, 30, 48, 30)
+            hint = context.getString(R.string.lock_quotes_hint)
+            gravity = Gravity.TOP or Gravity.START
+            minLines = 6
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+        }
+        AlertDialog.Builder(context)
+            .setTitle(R.string.lock_quotes_editor_title)
+            .setView(input)
+            .setPositiveButton(R.string.save) { _, _ ->
+                LockQuotes.save(context, input.text.toString())
+                Toast.makeText(context, R.string.lock_quotes_saved, Toast.LENGTH_SHORT).show()
+            }
+            // 全删光了想找回示例，不用自己去翻版本
+            .setNeutralButton(R.string.lock_quotes_reset) { _, _ ->
+                LockQuotes.save(context, LockQuotes.defaultsText())
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .setOnDismissListener { if (_binding != null) refresh() }
+            .show()
     }
 
     /** 设密码要输两遍：只输一遍的话，手滑设成了别的自己也发现不了，人就退不出锁机了。 */

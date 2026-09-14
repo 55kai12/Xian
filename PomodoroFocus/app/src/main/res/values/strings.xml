@@ -482,7 +482,7 @@
 
     <!-- 设置 → 锁机设置 -->
     <string name="lock_settings_title">锁机设置</string>
-    <string name="lock_settings_desc">白名单与退出密码</string>
+    <string name="lock_settings_desc">白名单、退出密码与锁机文案</string>
     <string name="lock_settings_whitelist_title">白名单应用</string>
     <string name="lock_settings_whitelist_desc">锁机期间允许使用的应用</string>
     <string name="lock_settings_whitelist_summary">已选 %1$d 个应用，点击修改</string>
@@ -500,4 +500,12 @@
     <string name="exit_pin_invalid">密码要是 4 位数字</string>
     <string name="exit_pin_mismatch">两次输入不一致</string>
     <string name="exit_pin_set_done">已设置退出密码</string>
+
+    <string name="lock_settings_quotes_title">锁机文案</string>
+    <string name="lock_settings_quotes_desc">锁机时显示在时间下方，每行一条，随机展示</string>
+    <string name="lock_settings_quotes_summary">已启用 %1$d 条，点击编辑</string>
+    <string name="lock_quotes_editor_title">编辑锁机文案</string>
+    <string name="lock_quotes_hint">每行一条，锁机时随机显示其中一条</string>
+    <string name="lock_quotes_reset">恢复默认</string>
+    <string name="lock_quotes_saved">已保存</string>
 </resources>

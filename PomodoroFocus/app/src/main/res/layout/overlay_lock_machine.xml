@@ -53,6 +53,19 @@
             android:textColor="@color/on_primary_dim"
             android:textSize="15sp" />
 
+        <!-- 励志文案：在设置 → 锁机设置里编辑，每行一条，每次盖上这层随机取一条 -->
+        <TextView
+            android:id="@+id/lockQuoteText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:gravity="center"
+            android:lineSpacingExtra="5dp"
+            android:paddingHorizontal="8dp"
+            android:textColor="@color/on_primary"
+            android:textSize="15sp"
+            android:visibility="gone" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

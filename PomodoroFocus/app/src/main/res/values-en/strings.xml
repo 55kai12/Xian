@@ -479,7 +479,7 @@
 
     <!-- Settings → Lock settings -->
     <string name="lock_settings_title">Lock settings</string>
-    <string name="lock_settings_desc">Whitelist and exit PIN</string>
+    <string name="lock_settings_desc">Whitelist, exit PIN and quotes</string>
     <string name="lock_settings_whitelist_title">Whitelist apps</string>
     <string name="lock_settings_whitelist_desc">Apps allowed while locked</string>
     <string name="lock_settings_whitelist_summary">%1$d apps selected, tap to edit</string>
@@ -497,4 +497,12 @@
     <string name="exit_pin_invalid">PIN must be 4 digits</string>
     <string name="exit_pin_mismatch">The two PINs do not match</string>
     <string name="exit_pin_set_done">Exit PIN saved</string>
+
+    <string name="lock_settings_quotes_title">Lock screen quotes</string>
+    <string name="lock_settings_quotes_desc">Shown under the clock while locked. One per line, picked at random.</string>
+    <string name="lock_settings_quotes_summary">%1$d quotes in use, tap to edit</string>
+    <string name="lock_quotes_editor_title">Edit lock screen quotes</string>
+    <string name="lock_quotes_hint">One quote per line; one is shown at random while locked</string>
+    <string name="lock_quotes_reset">Restore defaults</string>
+    <string name="lock_quotes_saved">Saved</string>
 </resources>

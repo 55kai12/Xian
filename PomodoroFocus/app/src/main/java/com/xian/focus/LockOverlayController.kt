@@ -52,6 +52,8 @@ object LockOverlayController {
         try {
             windowManager.addView(view, params)
             overlayView = view
+            // 文案只在新建这层时取一次，跟 LockMachineOverlayController 一致
+            LockQuotes.applyTo(view, applicationContext)
             view.animate().alpha(1f).setDuration(220L).start()
         } catch (_: Exception) {
         }
