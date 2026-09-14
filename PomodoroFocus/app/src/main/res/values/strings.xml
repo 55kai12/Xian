@@ -130,6 +130,7 @@
     <string name="app_limit_status_off">无障碍服务未开启，限额不会生效。点这里去开启。</string>
     <string name="app_limit_status_ready">计时已就绪：被限制的应用出现在前台时才开始累计</string>
     <string name="app_limit_status_ok">计时正常 · 最近一次计时：%1$s</string>
+    <string name="app_limit_status_restart">刚更新过？把「贤」的无障碍开关关掉再打开一次，计时才会生效。点这里去设置。</string>
     <string name="app_limit_ago_just_now">刚刚</string>
     <string name="app_limit_ago_minutes">%1$d 分钟前</string>
     <string name="app_limit_ago_hours">%1$d 小时前</string>

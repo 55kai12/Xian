@@ -1,11 +1,13 @@
 package com.xian.focus
 
+import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
+import android.view.accessibility.AccessibilityManager
 import androidx.core.app.NotificationManagerCompat
 
 /**
@@ -42,6 +44,24 @@ object LockHealth {
 
     /** 无障碍设置页 —— 掉线提醒的跳转目标也用它。 */
     fun accessibilityIntent() = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+
+    /**
+     * 无障碍服务是否真的拿到了「读窗口」能力。
+     *
+     * 应用限额的计时兜底（服务被 ROM 重启后自己查一次窗口）依赖 `canRetrieveWindowContent`，
+     * 而它是**服务配置**里声明的：覆盖安装 APK 之后系统仍按旧配置派发事件，
+     * 必须把开关关掉再打开一次才会重新读配置。用户看不到这个差别，
+     * 只会觉得「更新完就不记录了」—— 所以这里把状态查出来，让他能自己解决。
+     */
+    fun canReadWindows(context: Context): Boolean {
+        val manager = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+            ?: return false
+        val info = manager
+            .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            .firstOrNull { it.resolveInfo?.serviceInfo?.packageName == context.packageName }
+            ?: return false
+        return info.capabilities and AccessibilityServiceInfo.CAPABILITY_CAN_RETRIEVE_WINDOW_CONTENT != 0
+    }
 
     private fun overlayIntent(context: Context) = Intent(
         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,

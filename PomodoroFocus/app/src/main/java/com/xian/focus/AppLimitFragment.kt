@@ -125,8 +125,14 @@ class AppLimitFragment : Fragment() {
         lastShownCountedAt = countedAt
         binding.overviewStatusText.text = when {
             !accessibilityOn -> getString(R.string.app_limit_status_off)
-            // 计时只在被限制的应用处于前台时才走，所以「从未计时」不代表坏了
-            countedAt == 0L -> getString(R.string.app_limit_status_ready)
+            // 计时只在被限制的应用处于前台时才走，所以「从未计时」不代表坏了。
+            // 但若连「读窗口」能力都没有，说明是覆盖安装后系统还按旧配置派发事件 ——
+            // 那个差别用户看不见，只会觉得「更新完就不记录了」，所以明说出来。
+            countedAt == 0L -> if (LockHealth.canReadWindows(context)) {
+                getString(R.string.app_limit_status_ready)
+            } else {
+                getString(R.string.app_limit_status_restart)
+            }
             else -> getString(
                 R.string.app_limit_status_ok,
                 formatAgo(System.currentTimeMillis() - countedAt)

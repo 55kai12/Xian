@@ -23,8 +23,8 @@ android {
         applicationId = "com.xian.focus"
         minSdk = 26
         targetSdk = 35
-        versionCode = 247
-        versionName = "2.0.47"
+        versionCode = 248
+        versionName = "2.0.48"
     }
 
     signingConfigs {
@@ -35,6 +35,11 @@ android {
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
             }
+            // targetSdk >= 30 时 AGP 默认关掉 v1（JAR）签名，只留 v2。
+            // 安卓系统本身认 v2 就够了，但国产 ROM 的安装器（小米 / vivo / 华为等）
+            // 仍有校验 v1 的，缺了会直接报「安装包损坏 / 解析包出错」。
+            // 多签一层 v1 没有代价：同一个 keystore，v2 照旧在。
+            enableV1Signing = true
         }
     }
 
