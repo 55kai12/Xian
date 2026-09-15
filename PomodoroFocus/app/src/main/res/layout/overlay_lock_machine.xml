@@ -178,6 +178,20 @@
             android:textColor="?attr/colorBrandSurface"
             app:backgroundTint="@color/on_primary" />
 
+        <!-- 一键清后台：只清第三方应用，贤自己和系统应用不动 -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clearBackgroundButton"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/clear_background_apps"
+            android:textColor="@color/on_primary"
+            app:backgroundTint="@android:color/transparent"
+            app:cornerRadius="14dp"
+            app:strokeColor="@color/overlay_outline"
+            app:strokeWidth="1dp" />
+
         <TextView
             android:id="@+id/exitQuotaText"
             android:layout_width="match_parent"

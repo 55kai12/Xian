@@ -1,13 +1,16 @@
 package com.xian.focus
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -49,11 +52,11 @@ object LockMachineOverlayController {
     /**
      * 落在桌面上先宽限这么久。
      *
-     * 桌面给的时间更长：从白名单应用首页滑返回就是直接退到桌面，那确实是离开了，
-     * 但用户往往只想返回上一页，需要多一点反应时间点回去。
+     * 从白名单应用首页滑返回就是直接退到桌面，那确实是离开了，但用户往往只想返回
+     * 上一页 —— 0.5 秒够点一下「返回」了，再宽就显得锁机没在管。
      * 宽限期内回到白名单应用完全不盖；点开别的应用仍然立刻盖（那时前台已不是桌面）。
      */
-    private const val HOME_GRACE_MILLIS = 2_500L
+    private const val HOME_GRACE_MILLIS = 500L
 
     /** 系统桌面（launcher）包名，懒查一次；查不到为 null，此时不做宽限（按原样立刻盖）。 */
     private var homePackage: String? = null
@@ -151,10 +154,16 @@ object LockMachineOverlayController {
         // 退出流程进行中不对账：冷静期弹窗 / 密码面板开着时用户正在跟这层交互，
         // 输入法一弹出来前台就变成输入法，而输入法属于永远放行的系统组件 ——
         // 少了这道闸，用户刚长按完「退出锁机」，整层就连着面板一起被撤掉。
-        if (cooldownEndsAt > 0L) return
+        if (cooldownEndsAt > 0L) {
+            // [诊断]
+            Log.d("XianLock", "eval fg=$foreground -> cooldown, skip")
+            return
+        }
         // 在白名单里（含贤自己、来电/输入法等系统组件）—— 立刻让开，这条不能有任何延迟
         if (foreground != null && LockMachineController.isAllowed(applicationContext, foreground)) {
             pendingLeaveSince = 0L
+            // [诊断]
+            Log.d("XianLock", "eval fg=$foreground -> ALLOWED, hide (overlay was ${isShowing()})")
             hide(applicationContext, force = true)
             return
         }
@@ -168,7 +177,17 @@ object LockMachineOverlayController {
         } else {
             LEAVE_CONFIRM_MILLIS
         }
-        if (now - pendingLeaveSince < grace) return
+        if (now - pendingLeaveSince < grace) {
+            // [诊断]
+            Log.d(
+                "XianLock",
+                "eval fg=$foreground -> WAIT ${now - pendingLeaveSince}/$grace" +
+                    " overlay=${isShowing()}"
+            )
+            return
+        }
+        // [诊断]
+        Log.d("XianLock", "eval fg=$foreground -> SHOW (overlay was ${isShowing()})")
         show(applicationContext)
     }
 
@@ -200,7 +219,13 @@ object LockMachineOverlayController {
             updateContent(applicationContext)
             return
         }
-        if (System.currentTimeMillis() - lastHideAt < DEBOUNCE_MILLIS) return
+        if (System.currentTimeMillis() - lastHideAt < DEBOUNCE_MILLIS) {
+            // [诊断]
+            Log.d("XianLock", "show -> 被防抖吞掉（距上次 hide ${System.currentTimeMillis() - lastHideAt}ms）")
+            return
+        }
+        // [诊断]
+        Log.d("XianLock", "show -> addView 锁机层")
         val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         // 悬浮窗只能靠 application context 渲染，拿到的是清单里的默认主题；
         // 套一层用户当前主题，铺底的主色才跟设置里选的一致。
@@ -235,6 +260,15 @@ object LockMachineOverlayController {
                 )
             } catch (_: Exception) {
             }
+        }
+        // 锁机期间一键清后台：把第三方应用全踢掉（贤自己和系统应用不动）。
+        view.findViewById<Button>(R.id.clearBackgroundButton).setOnClickListener {
+            val count = clearBackgroundApps(applicationContext)
+            Toast.makeText(
+                applicationContext,
+                applicationContext.getString(R.string.cleared_background_apps, count),
+                Toast.LENGTH_SHORT
+            ).show()
         }
         // 长按退出 → 先过 30 秒冷静期弹窗；冷静期满且本月额度没用完才真的退
         view.findViewById<Button>(R.id.exitLockButton).setOnLongClickListener {
@@ -282,6 +316,8 @@ object LockMachineOverlayController {
     fun hide(context: Context, force: Boolean = false) {
         val view = overlayView ?: return
         if (!force && System.currentTimeMillis() - lastShowAt < DEBOUNCE_MILLIS) return
+        // [诊断]
+        Log.d("XianLock", "hide -> removeView 锁机层 (force=$force)")
         overlayView = null
         lastHideAt = System.currentTimeMillis()
         cooldownEndsAt = 0L
@@ -294,6 +330,32 @@ object LockMachineOverlayController {
             windowManager.removeView(view)
         } catch (_: Exception) {
         }
+    }
+
+    /**
+     * 清掉后台的第三方应用，返回清掉的数量。
+     *
+     * 用 [ActivityManager.killBackgroundProcesses]：这是不需要系统权限、普通应用唯一能用的
+     * 「清后台」API。⚠️ Android 8 之后它只能清掉应用的**缓存进程**，常驻服务 / 推送拉起的
+     * 进程杀不掉，重开只是冷启 —— 这是系统层面的限制，第三方「一键清理」类应用效果也一样，
+     * 想真杀得系统签名或用 shizuku 那类提权。
+     *
+     * 两类一律跳过：
+     *  · 贤自己 —— 锁机层挂在本应用的前台服务上，把自己杀掉锁机就断了；
+     *  · 系统应用 —— 清掉 systemui 会连状态栏和手势一起搞坏，桌面进程也在其中。
+     */
+    private fun clearBackgroundApps(context: Context): Int {
+        val activityManager =
+            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return 0
+        val self = context.packageName
+        var count = 0
+        for (app in context.packageManager.getInstalledApplications(0)) {
+            if (app.packageName == self) continue
+            if (app.flags and ApplicationInfo.FLAG_SYSTEM != 0) continue
+            activityManager.killBackgroundProcesses(app.packageName)
+            count++
+        }
+        return count
     }
 
     private fun showExitConfirm(view: View) {

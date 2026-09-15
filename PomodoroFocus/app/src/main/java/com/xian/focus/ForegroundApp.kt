@@ -2,6 +2,7 @@ package com.xian.focus
 
 import android.content.Context
 import android.os.SystemClock
+import android.util.Log
 
 /**
  * 进程内共享的「最近确认的前台应用」。
@@ -68,9 +69,17 @@ object ForegroundApp {
      */
     fun resolve(context: Context): String? {
         val cached = packageName
-        if (cached != null && SystemClock.elapsedRealtime() - confirmedAt < TRUST_MILLIS) {
+        val age = SystemClock.elapsedRealtime() - confirmedAt
+        if (cached != null && age < TRUST_MILLIS) {
+            Log.d("XianLock", "resolve=$cached <- cache(age=${age}ms)")
             return cached
         }
-        return UsageForeground.lastResumed(context) ?: cached ?: lastKnown
+        val usage = runCatching { UsageForeground.lastResumed(context) }.getOrNull()
+        val result = usage ?: cached ?: lastKnown
+        Log.d(
+            "XianLock",
+            "resolve=$result <- usage=$usage cached=$cached lastKnown=$lastKnown age=${age}ms"
+        )
+        return result
     }
 }

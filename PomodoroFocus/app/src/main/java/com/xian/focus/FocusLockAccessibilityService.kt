@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
 
@@ -89,6 +90,15 @@ class FocusLockAccessibilityService : AccessibilityService() {
         if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val packageName = event.packageName?.toString() ?: return
         val context = applicationContext
+
+        // [诊断] 抓「左滑返回那一下，系统报的前台包名是什么」。
+        Log.d(
+            "XianLock",
+            "win pkg=$packageName cls=${event.className?.toString()?.substringAfterLast('.')}" +
+                " lock=${LockMachineController.isActive(context)}" +
+                " overlay=${LockMachineOverlayController.isShowing()}" +
+                " cached=${ForegroundApp.packageName}"
+        )
 
         // 状态栏 / 通知栏：下拉时它会拿到焦点窗口，但这不是「用户切到了别的应用」。
         // 必须直接返回、保持覆盖层原样 —— 否则一下拉通知栏，锁机界面就被当成「切走了」撤掉，
@@ -264,12 +274,34 @@ class FocusLockAccessibilityService : AccessibilityService() {
         private const val WINDOW_QUERY_INTERVAL_MILLIS = 5_000L
 
         /**
-         * 状态栏 / 通知栏的包名。它们拿到焦点窗口只说明「系统 UI 露出来了」，
-         * 不代表用户离开了当前应用，覆盖层必须保持原样。
+         * 「闪一下的系统层」包名 —— 它们拿到焦点窗口只说明系统 UI 露出来了，
+         * **不代表用户离开了当前应用**。这些事件必须直接丢掉：既不写前台应用缓存，
+         * 也不参与「该不该盖锁机层」的判定。
+         *
+         * 两类：
+         * 1. 状态栏 / 通知栏。下拉时它拿到焦点，收起时还不会补发窗口事件 ——
+         *    当成「切走了」会把锁机界面撤掉，而且再也回不来。
+         * 2. 厂商手势导航的过渡层，即各家自己的 UpSlide。**vivo 上实测到的元凶**：
+         *    从屏幕边缘往里滑（返回手势）时 `com.vivo.upslide` 会抢一下焦点，
+         *    无障碍事件报出的包名就是它。它既不在白名单、也不是系统必需组件，
+         *    于是被当成「用户切到了别的应用」，等一秒确认期过后整屏锁上 ——
+         *    而用户从头到尾都在微信里没动过（系统使用记录里它根本不是 Activity，
+         *    微信一直是 RESUMED）。表现就是「左滑返回就弹锁机，太敏感」。
+         *
+         * 忽略它是安全的：用户真的滑走时，目标应用（或桌面）会补发自己的窗口事件，
+         * 前台照样能跟上。手势层只是中间闪过的那一帧。
          */
         private val SYSTEM_UI_PACKAGES = setOf(
             "com.android.systemui",
-            "com.miui.systemui"
+            "com.miui.systemui",
+            // 厂商手势导航过渡层
+            "com.vivo.upslide",
+            "com.oplus.upslide",
+            "com.oppo.upslide",
+            "com.huawei.upslide",
+            "com.hihonor.upslide",
+            "com.miui.upslide",
+            "com.samsung.android.upslide"
         )
     }
 }
