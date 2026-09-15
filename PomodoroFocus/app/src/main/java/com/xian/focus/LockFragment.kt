@@ -13,6 +13,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -65,6 +66,21 @@ class LockFragment : Fragment() {
             val immediate = checkedId == R.id.modeImmediate
             binding.immediateSection.visibility = if (immediate) View.VISIBLE else View.GONE
             binding.scheduledSection.visibility = if (immediate) View.GONE else View.VISIBLE
+        }
+        // 「自定义分钟数」那行的圆点跟上面 15/30/60/90 是同一组单选：谁被选中就用谁的值。
+        // RadioGroup 管不到框外的那个圆点，两边互相清一下就行 ——
+        // clearCheck() 会把 checkedId 回调成 -1，所以这边要判一下再动，
+        // 否则两个监听会互相触发。
+        binding.durationRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            if (checkedId != -1) binding.durationCustom.isChecked = false
+        }
+        binding.durationCustom.setOnCheckedChangeListener { _, checked ->
+            if (checked) binding.durationRadioGroup.clearCheck()
+        }
+        // 输入了分钟数就默认选中自定义 —— 填了数字却忘了点圆点、结果按 30 分钟锁上，
+        // 那才是真的坑。想改回预设，点一下上面四个圈就行。
+        binding.customDurationInput.doAfterTextChanged {
+            if (!it.isNullOrEmpty()) binding.durationCustom.isChecked = true
         }
         binding.addSlotButton.setOnClickListener { addSlot() }
         binding.saveScheduleButton.setOnClickListener { saveSchedule() }
@@ -164,12 +180,16 @@ class LockFragment : Fragment() {
             toast(getString(R.string.accessibility_permission_title))
             return
         }
-        val custom = binding.customDurationInput.text?.toString()?.toIntOrNull()
-        val duration = custom ?: when (binding.durationRadioGroup.checkedRadioButtonId) {
-            R.id.duration15 -> 15
-            R.id.duration60 -> 60
-            R.id.duration90 -> 90
-            else -> 30
+        // 时长由「哪个圆点被选中」决定 —— 不再让输入框里残留的数字偷偷压过预设。
+        val duration = if (binding.durationCustom.isChecked) {
+            binding.customDurationInput.text?.toString()?.toIntOrNull() ?: 0
+        } else {
+            when (binding.durationRadioGroup.checkedRadioButtonId) {
+                R.id.duration15 -> 15
+                R.id.duration60 -> 60
+                R.id.duration90 -> 90
+                else -> 30
+            }
         }
         if (duration <= 0) {
             toast(getString(R.string.custom_minutes_hint))
