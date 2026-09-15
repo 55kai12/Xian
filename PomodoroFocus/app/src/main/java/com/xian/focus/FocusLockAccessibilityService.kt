@@ -128,14 +128,10 @@ class FocusLockAccessibilityService : AccessibilityService() {
             // 所以这里直接不作数 —— 交给锁机层自己每秒的判定，那条路读系统使用记录，
             // 不受这个事件影响，一秒内就会给出正确答案。
             if (selfEvent && selfOverlayShowing()) return
-            if (LockMachineController.isAllowed(context, packageName)) {
-                if (LockMachineOverlayController.isShowing()) {
-                    // 用户真的切进了白名单里的应用 —— 必须立刻让开，没有理由再拦。
-                    LockMachineOverlayController.hide(context, force = true)
-                }
-            } else {
-                LockMachineOverlayController.show(context)
-            }
+            // 放行还是该盖，统一交给锁机层自己的判定入口 ——
+            // 那里还管着「落在桌面上先宽限一会儿」这一条：手势导航下从屏幕边缘往里滑
+            // 太容易把白名单应用整个退出到桌面，立刻盖上来会把用户堵在里面。
+            LockMachineOverlayController.evaluate(context, packageName)
             return
         } else if (LockMachineOverlayController.isShowing()) {
             // 锁机已经结束了，层必须立刻收 —— 这里的判断比防抖可靠

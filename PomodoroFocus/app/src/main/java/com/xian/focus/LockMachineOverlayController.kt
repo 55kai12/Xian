@@ -3,6 +3,7 @@ package com.xian.focus
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import android.os.Handler
@@ -33,6 +34,23 @@ object LockMachineOverlayController {
 
     /** 白名单文件夹展开状态；悬浮窗每次重建都回到收起。 */
     private var whitelistExpanded = false
+
+    /**
+     * 落在桌面上之后，先宽限这么久不盖。
+     *
+     * 桌面是「过渡态」，不是「用户跑别处玩去了」。手势导航下从屏幕边缘往里滑就是返回，
+     * 用户在白名单应用的首页再滑一次，整个应用就退到桌面了 —— 而他本意往往只是返回上一页。
+     * 这一刻立刻盖上来，体验就是「轻轻碰一下就被锁住」，还得展开白名单重新点一次才回得去。
+     *
+     * 宽限期内回到任何白名单应用都完全不盖；点开别的应用仍然立刻盖（那时前台已不是桌面）。
+     */
+    private const val HOME_GRACE_MILLIS = 2_500L
+
+    /** 系统桌面（launcher）包名，懒查一次；查不到为 null，此时不做宽限（按原样立刻盖）。 */
+    private var homePackage: String? = null
+
+    /** 落在桌面上的起始时刻；0 表示当前不在桌面上。 */
+    private var onHomeSince = 0L
 
     private val tickRunnable = object : Runnable {
         override fun run() {
@@ -104,31 +122,64 @@ object LockMachineOverlayController {
     fun isShowing(): Boolean = overlayView != null
 
     /**
-     * 「现在到底该不该盖」的唯一判定入口，供起锁路径调用（见 `LockMachineService`）。
+     * 「现在到底该不该盖」的唯一判定入口，窗口事件与每秒对账两路共用。
      *
      * 起锁是无条件的：定时时段到点、开机自启、保存时段后自检，任何一条都可能在用户
      * 正用着白名单应用时把锁打开。所以这里先问一句当前前台应用是谁 —— 在白名单里
-     * （或就是贤自己）就一个像素都不盖，否则才 show()。
-     * 前台未知时按「该锁」处理：漏锁比误锁严重得多。
+     * （或就是贤自己、或来电/输入法等系统组件）就一个像素都不盖，否则才 show()。
+     * [foreground] 为 null 表示**不知道**，按「该锁」处理：漏锁比误锁严重得多。
      *
-     * 判断用的 [ForegroundApp.resolve] 在无障碍事件不可靠时会退回系统使用记录，
+     * 判定用的 [ForegroundApp.resolve] 在无障碍事件不可靠时会退回系统使用记录，
      * 所以「无障碍没开」不再等于「白名单失效」。
      */
+    fun evaluate(context: Context, foreground: String?) {
+        val applicationContext = context.applicationContext
+        if (!LockMachineController.isActive(applicationContext)) {
+            hide(applicationContext, force = true)
+            return
+        }
+        // 退出流程进行中不对账：冷静期弹窗 / 密码面板开着时用户正在跟这层交互，
+        // 输入法一弹出来前台就变成输入法，而输入法属于永远放行的系统组件 ——
+        // 少了这道闸，用户刚长按完「退出锁机」，整层就连着面板一起被撤掉。
+        if (cooldownEndsAt > 0L) return
+        if (foreground != null && LockMachineController.isAllowed(applicationContext, foreground)) {
+            onHomeSince = 0L
+            hide(applicationContext, force = true)
+            return
+        }
+        if (foreground != null && isHome(applicationContext, foreground)) {
+            val now = System.currentTimeMillis()
+            if (onHomeSince == 0L) onHomeSince = now
+            if (now - onHomeSince < HOME_GRACE_MILLIS) {
+                // 宽限中：层保持让开，用户随时能点回白名单应用
+                hide(applicationContext, force = true)
+                return
+            }
+        } else {
+            onHomeSince = 0L
+        }
+        show(applicationContext)
+    }
+
+    /** 前台是不是系统桌面。桌面包名拿不到时返回 false —— 不做宽限，按原样立刻盖。 */
+    private fun isHome(context: Context, packageName: String): Boolean {
+        val home = homePackage ?: runCatching {
+            context.packageManager.resolveActivity(
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME),
+                PackageManager.MATCH_DEFAULT_ONLY
+            )?.activityInfo?.packageName
+        }.getOrNull()?.also { homePackage = it }
+        return home == packageName
+    }
+
+    /** 供起锁路径调用（见 `LockMachineService`）：自己看一眼前台是谁，然后走 [evaluate]。 */
     fun sync(context: Context) {
         val applicationContext = context.applicationContext
         if (!LockMachineController.isActive(applicationContext)) {
             hide(applicationContext, force = true)
             return
         }
-        // 退出流程进行中不对账 —— 同上，冷静期弹窗/密码面板开着时前台会变成输入法，
-        // 一秒钟对一次账就会把整层连着弹窗一起撤掉。
-        if (cooldownEndsAt > 0L) return
-        val foreground = ForegroundApp.resolve(applicationContext)
-        if (foreground != null && LockMachineController.isAllowed(applicationContext, foreground)) {
-            hide(applicationContext, force = true)
-        } else {
-            show(applicationContext)
-        }
+        evaluate(applicationContext, ForegroundApp.resolve(applicationContext))
     }
 
     @Suppress("DEPRECATION")
