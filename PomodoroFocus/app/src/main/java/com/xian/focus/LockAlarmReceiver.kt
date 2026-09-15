@@ -10,7 +10,11 @@ class LockAlarmReceiver : BroadcastReceiver() {
             LockMachineScheduler.ACTION_START -> {
                 val durationMinutes = slotDurationMinutes(context, intent)
                 if (durationMinutes > 0) {
-                    LockMachineService.start(context, durationMinutes)
+                    // ⚠️ 必须兜住：拿到精确闹钟权限时系统会豁免「后台起前台服务」，
+                    // 但**没拿到**时闹钟走的是不精确通道、没有那层豁免，系统可能直接抛
+                    // ForegroundServiceStartNotAllowedException。那种情况锁确实起不来
+                    // （界面上的权限提示是唯一的告知），但绝不能让一条半夜的广播把应用崩掉。
+                    runCatching { LockMachineService.start(context, durationMinutes) }
                 }
                 // 重新排下一次闹钟。
                 // setAlarmClock 是一次性闹钟，触发后不会自动重复；不重排的话
