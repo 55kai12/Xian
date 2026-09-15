@@ -179,6 +179,8 @@ Xian/
 > 回退版本时**代码回退、版本号继续递增** —— 手机上已装的 `versionCode` 更高时，
 > Android 会直接拒绝安装降级包（`INSTALL_FAILED_VERSION_DOWNGRADE`）。
 
+---
+
 ## 作者
 
 **ShoweR** · **Yocai 咏材** · **55kai**
