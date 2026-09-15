@@ -8,8 +8,9 @@ import android.content.Intent
 /**
  * 「到点发一条通知」的公共管道，目前有两个使用者：任务到期提醒、倒数日提醒。
  *
- * 用 setAlarmClock 而不是 setExact —— 与锁机调度同一口径，免得再引入
- * SCHEDULE_EXACT_ALARM 这个要用户手动去系统设置里开的权限。
+ * 精确性交给 [ExactAlarms]：拿到「闹钟和提醒」权限就用精确闹钟，拿不到自动退化成不精确的
+ * —— 晚几十秒，但不会抛异常。（原先这里写着「用 setAlarmClock 就不用申请
+ * SCHEDULE_EXACT_ALARM」，那是错的：setAlarmClock 本身就是要权限的精确闹钟 API。）
  *
  * 标题 / 通知 id 走 extra 直接带给接收器，接收器因此不需要碰数据库。
  * PendingIntent 的相等性只看 requestCode + action + component，不看 extra，
@@ -29,13 +30,12 @@ object ReminderScheduler {
             cancel(context, requestCode)
             return
         }
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val showIntent = PendingIntent.getActivity(
             context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE
         )
-        alarmManager.setAlarmClock(
-            AlarmManager.AlarmClockInfo(triggerAt, showIntent),
+        ExactAlarms.schedule(
+            context, triggerAt, showIntent,
             alarmIntent(context, requestCode, notificationId, title, text)
         )
     }

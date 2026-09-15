@@ -7,6 +7,10 @@
     <!-- 锁机页的「清空后台应用」：普通权限，声明即得（效果见 LockMachineOverlayController） -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 定时锁机与到期提醒：Android 12 起 setAlarmClock 必须持有本权限，缺了会抛异常。
+         Android 14 起不再默认授予，用户需在「闹钟和提醒」里手动开；
+         拿不到时代码会自动退化成不精确闹钟（见 ExactAlarms），功能不会失效。 -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <!-- 应用限额的前台应用识别：读系统使用记录（数字健康用的同一份），
          比无障碍窗口事件可靠得多 —— 进程被冻结/清掉也能补算。
          这是特殊权限，声明后还需用户在「使用情况访问」里手动授予。 -->

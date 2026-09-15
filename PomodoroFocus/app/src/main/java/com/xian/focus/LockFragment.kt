@@ -99,6 +99,10 @@ class LockFragment : Fragment() {
         binding.usagePermissionButton.setOnClickListener {
             startActivity(AppLimitWatcher.usageAccessIntent())
         }
+        // 定时锁机/提醒到点要准，靠的是精确闹钟权限；没有它功能照常（自动退化），只是会晚。
+        binding.exactAlarmPermissionButton.setOnClickListener {
+            ExactAlarms.openSettings(requireContext())
+        }
 
         renderSlots()
         updateScheduledInfo()
@@ -148,6 +152,10 @@ class LockFragment : Fragment() {
         binding.overlayPermissionButton.alpha = if (Settings.canDrawOverlays(context)) 1f else 0.55f
         binding.accessibilityPermissionButton.alpha = if (accessibilityOn) 1f else 0.55f
         binding.usagePermissionButton.alpha = if (usageOn) 1f else 0.55f
+        // 精确闹钟跟上面三个不是一档：缺了不影响锁机能不能跑，只影响准不准（晚几十秒），
+        // 所以不做「变暗提示」这种常驻噪音 —— 没开才露出来，开了就收起来。
+        binding.exactAlarmPermissionButton.visibility =
+            if (ExactAlarms.canUseExact(context)) View.GONE else View.VISIBLE
         // 白名单要生效，前提是「当前前台是哪个应用」有源可查。无障碍事件更实时，但服务未必
         // 开着或活着；使用记录是系统自己的账本，不依赖任何服务。两个源都给出来，
         // 一个都不亮时就等于白名单失效 —— 起锁照盖、盖上没人让开，人被卡在里面还不知道为什么。

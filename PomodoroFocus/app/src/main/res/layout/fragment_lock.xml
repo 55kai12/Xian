@@ -471,6 +471,20 @@
                         app:strokeColor="?attr/colorOutline" />
                 </LinearLayout>
 
+                <!-- 只在没开「闹钟和提醒」时露出来：缺它不影响功能（自动退化成不精确闹钟），
+                     只让定时锁机晚几十秒，所以不占常驻位置。 -->
+                <Button
+                    android:id="@+id/exactAlarmPermissionButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:minWidth="0dp"
+                    android:text="@string/permission_exact_alarm_enable"
+                    android:textColor="?attr/colorBrandContent"
+                    android:textSize="12sp"
+                    app:strokeColor="?attr/colorOutline" />
+
                 <TextView
                     android:id="@+id/foregroundSourceText"
                     android:layout_width="match_parent"

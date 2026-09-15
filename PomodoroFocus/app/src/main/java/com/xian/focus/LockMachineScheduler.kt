@@ -105,7 +105,6 @@ object LockMachineScheduler {
         cancelAllAlarms(context)
         val list = slots(context).filter { it.valid }.take(MAX_SLOTS)
         if (list.isEmpty()) return
-        val alarmManager = alarmManager(context)
         val showIntent = PendingIntent.getActivity(
             context, 0, Intent(context, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE
@@ -113,14 +112,11 @@ object LockMachineScheduler {
         list.forEachIndexed { index, slot ->
             val startAt = nextStartAt(slot, System.currentTimeMillis() + RESCHEDULE_GUARD_MILLIS)
             val endAt = startAt + slot.durationMinutes * 60_000L
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(startAt, showIntent),
-                startPendingIntent(context, index, slot)
-            )
-            alarmManager.setAlarmClock(
-                AlarmManager.AlarmClockInfo(endAt, showIntent),
-                endPendingIntent(context, index)
-            )
+            // 走 ExactAlarms 而不是直接 setAlarmClock：拿不到「闹钟和提醒」权限时它会
+            // 自动退化成不精确闹钟。以前直接调，SecurityException 会从这里冒到调用方 ——
+            // 「保存时段」那一处没有兜住（闪退），「开机补排」那一处同样没有（开机就崩）。
+            ExactAlarms.schedule(context, startAt, showIntent, startPendingIntent(context, index, slot))
+            ExactAlarms.schedule(context, endAt, showIntent, endPendingIntent(context, index))
         }
     }
 
