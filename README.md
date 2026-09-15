@@ -83,7 +83,7 @@
 - **语言**：Kotlin
 - **构建**：Gradle（Kotlin DSL）+ Android Gradle Plugin；Release 开启 R8 混淆与资源压缩
 - **UI**：View 体系（ViewBinding）、Fragment、RecyclerView、自定义 Canvas 自绘图表
-- **架构**：单 Activity + Fragment，`ViewModel` + `Repository`，持久化用 `SharedPreferences`
+- **架构**：单 Activity + Fragment，`ViewModel` + `Repository`；任务 / 子任务 / 倒数日 / 专注记录走 **Room** 数据库，设置项、日记与壁纸走 `SharedPreferences`
 - **关键系统能力**：`AccessibilityService`（前台应用感知）、`WindowManager` 悬浮窗、`UsageStatsManager`（应用限额）、`AlarmManager`（定时锁机）
 
 第三方库：MPAndroidChart、CalendarView（com.haibin）、MaterialSpinner、colorpicker、SwitchButton、PinLockView、CircleImageView、picasso、AVLoadingIndicatorView。
@@ -135,7 +135,12 @@ cd PomodoroFocus
 | `FOREGROUND_SERVICE` / `FOREGROUND_SERVICE_SPECIAL_USE` | 前台计时与锁机服务 |
 | `POST_NOTIFICATIONS` | 计时状态与完成提醒 |
 | `SYSTEM_ALERT_WINDOW` | 锁机悬浮遮罩 |
+| `KILL_BACKGROUND_PROCESSES` | 锁机页「清空后台应用」按钮 —— 只清缓存进程，跳过贤自己与系统应用 |
 | `RECEIVE_BOOT_COMPLETED` | 开机恢复锁机时间段 |
+
+> **「不联网」的技术依据**：Release 版 APK 的 Manifest 里**没有 `INTERNET` 权限**。
+> 在 Android 上，未声明这条权限的应用无法建立任何网络连接 —— 所以这不是一句承诺，
+> 而是系统层面的限制。可用 `aapt2 dump badging` 自行验证。
 
 应用**不申请**相机、存储、定位权限，且**无任何 `WAKE_LOCK`**（周期任务走 `Handler.postDelayed`，
 深睡自动停摆，不占后台电）。`allowBackup` 已关闭，任务库与日记不会被系统自动备份导出。
@@ -168,6 +173,7 @@ Xian/
 ├── .gitignore
 ├── .gitattributes
 ├── LICENSE
+├── PRIVACY.md                  # 隐私政策
 └── README.md
 ```
 
@@ -183,10 +189,16 @@ Xian/
 
 ---
 
+## 相关文档
+
+- 📄 [隐私政策](PRIVACY.md) —— 不联网的完整说明与权限边界
+- 📝 [更新日志](docs/更新日志.md) —— 逐版本完整更新史
+- ⚖️ [MIT License](LICENSE)
+
 ## 作者
 
 **ShoweR** · **Yocai 咏材** · **55kai**
 
-## 许可证
+---
 
-[MIT License](LICENSE)
+<p align="center"><sub>原创设计 · 无广告 · 不联网 · 数据全部留在本机</sub></p>
