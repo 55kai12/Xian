@@ -416,9 +416,11 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:minWidth="0dp"
-                        android:text="@string/overlay_permission_title"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:text="@string/permission_overlay_short"
                         android:textColor="?attr/colorBrandContent"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
                         app:strokeColor="?attr/colorOutline" />
 
                     <Button
@@ -429,11 +431,36 @@
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
                         android:minWidth="0dp"
-                        android:text="@string/accessibility_permission_title"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:text="@string/permission_accessibility_short"
                         android:textColor="?attr/colorBrandContent"
-                        android:textSize="13sp"
+                        android:textSize="12sp"
+                        app:strokeColor="?attr/colorOutline" />
+
+                    <Button
+                        android:id="@+id/usagePermissionButton"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:minWidth="0dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:text="@string/permission_usage_short"
+                        android:textColor="?attr/colorBrandContent"
+                        android:textSize="12sp"
                         app:strokeColor="?attr/colorOutline" />
                 </LinearLayout>
+
+                <TextView
+                    android:id="@+id/foregroundSourceText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="match_parent"

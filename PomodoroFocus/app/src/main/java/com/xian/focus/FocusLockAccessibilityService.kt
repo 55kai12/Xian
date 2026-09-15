@@ -27,7 +27,8 @@ class FocusLockAccessibilityService : AccessibilityService() {
     private var foregroundPackage: String?
         get() = ForegroundApp.packageName
         set(value) {
-            ForegroundApp.packageName = value
+            // 走 mark 而不是直接赋值：赋值时刻也要一起记下来，锁机那边靠它判断这个值还新不新鲜
+            ForegroundApp.mark(value)
         }
 
     /** [foregroundPackage] 最后一次被「窗口事件」确认的时刻（单调时钟）。 */

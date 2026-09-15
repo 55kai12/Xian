@@ -184,6 +184,12 @@
     <string name="lock_not_running">未锁机</string>
     <string name="lock_running">锁机中</string>
     <string name="lock_permissions_title">必要权限</string>
+    <string name="permission_overlay_short">悬浮窗</string>
+    <string name="permission_accessibility_short">无障碍</string>
+    <string name="permission_usage_short">使用记录</string>
+    <string name="lock_foreground_hint_accessibility">前台感知：无障碍服务</string>
+    <string name="lock_foreground_hint_usage">前台感知：使用记录</string>
+    <string name="lock_foreground_hint_missing">⚠ 白名单可能失效：请开启「使用记录」或「无障碍」</string>
     <string name="lock_page_notice">锁机需要悬浮窗和无障碍权限。开启后，除白名单应用外，切到其他应用或桌面都会显示锁机覆盖层；长按覆盖层上的退出按钮可结束锁机。部分手机还需在系统设置里允许本应用自启动和后台运行。</string>
     <string name="back_to_app">回到本应用</string>
     <string name="boot_restore_lock">重启后恢复锁机</string>

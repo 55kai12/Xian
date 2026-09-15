@@ -39,8 +39,25 @@ object LockMachineOverlayController {
             val view = overlayView ?: return
             val context = view.context.applicationContext
             if (!LockMachineController.isActive(context)) {
-                hide(context)
+                hide(context, force = true)
                 return
+            }
+            // 每秒对一次「现在到底该不该盖」。
+            //
+            // 主驱动是无障碍的窗口事件，但服务被系统重启或 ROM 清掉之后事件就断了；
+            // 断了的表现是：用户切进白名单应用，这层既不知道、也没人让它让开，就那么死死盖着 ——
+            // 用户看到的就是「明明在白名单里，还是被卡在锁机页面」。所以这里自己看一眼前台是谁，
+            // 数据源在无障碍不可用时会退到系统使用记录，不依赖任何服务活着。
+            //
+            // 退出流程进行中不让开：冷静期弹窗 / 密码面板开着时用户正在跟这层交互，
+            // 输入法一弹出来前台就变成输入法，而输入法属于永远放行的系统组件 ——
+            // 少了这道闸，用户刚长按完「退出锁机」，整层就直接没了。
+            if (cooldownEndsAt <= 0L) {
+                val foreground = ForegroundApp.resolve(context)
+                if (foreground != null && LockMachineController.isAllowed(context, foreground)) {
+                    hide(context, force = true)
+                    return
+                }
             }
             view.findViewById<FlipClockView>(R.id.remainingText)
                 .setDisplay(LockMachineController.remainingText(context))
@@ -91,6 +108,9 @@ object LockMachineOverlayController {
      * 正用着白名单应用时把锁打开。所以这里先问一句当前前台应用是谁 —— 在白名单里
      * （或就是贤自己）就一个像素都不盖，否则才 show()。
      * 前台未知时按「该锁」处理：漏锁比误锁严重得多。
+     *
+     * 判断用的 [ForegroundApp.resolve] 在无障碍事件不可靠时会退回系统使用记录，
+     * 所以「无障碍没开」不再等于「白名单失效」。
      */
     fun sync(context: Context) {
         val applicationContext = context.applicationContext
@@ -98,7 +118,10 @@ object LockMachineOverlayController {
             hide(applicationContext, force = true)
             return
         }
-        val foreground = ForegroundApp.packageName
+        // 退出流程进行中不对账 —— 同上，冷静期弹窗/密码面板开着时前台会变成输入法，
+        // 一秒钟对一次账就会把整层连着弹窗一起撤掉。
+        if (cooldownEndsAt > 0L) return
+        val foreground = ForegroundApp.resolve(applicationContext)
         if (foreground != null && LockMachineController.isAllowed(applicationContext, foreground)) {
             hide(applicationContext, force = true)
         } else {

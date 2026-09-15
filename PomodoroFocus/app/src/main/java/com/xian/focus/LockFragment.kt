@@ -80,6 +80,9 @@ class LockFragment : Fragment() {
         binding.accessibilityPermissionButton.setOnClickListener {
             startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
         }
+        binding.usagePermissionButton.setOnClickListener {
+            startActivity(AppLimitWatcher.usageAccessIntent())
+        }
 
         renderSlots()
         updateScheduledInfo()
@@ -121,8 +124,21 @@ class LockFragment : Fragment() {
             LockExitQuota.remaining(context),
             LockExitQuota.MONTHLY_LIMIT
         )
+        val accessibilityOn = isAccessibilityEnabled()
+        val usageOn = AppLimitWatcher.hasUsageAccess(context)
         binding.overlayPermissionButton.alpha = if (Settings.canDrawOverlays(context)) 1f else 0.55f
-        binding.accessibilityPermissionButton.alpha = if (isAccessibilityEnabled()) 1f else 0.55f
+        binding.accessibilityPermissionButton.alpha = if (accessibilityOn) 1f else 0.55f
+        binding.usagePermissionButton.alpha = if (usageOn) 1f else 0.55f
+        // 白名单要生效，前提是「当前前台是哪个应用」有源可查。无障碍事件更实时，但服务未必
+        // 开着或活着；使用记录是系统自己的账本，不依赖任何服务。两个源都给出来，
+        // 一个都不亮时就等于白名单失效 —— 起锁照盖、盖上没人让开，人被卡在里面还不知道为什么。
+        binding.foregroundSourceText.setText(
+            when {
+                accessibilityOn -> R.string.lock_foreground_hint_accessibility
+                usageOn -> R.string.lock_foreground_hint_usage
+                else -> R.string.lock_foreground_hint_missing
+            }
+        )
     }
 
     private fun toggleLock() {

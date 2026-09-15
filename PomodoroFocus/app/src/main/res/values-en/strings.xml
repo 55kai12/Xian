@@ -184,6 +184,12 @@
     <string name="lock_not_running">Not locked</string>
     <string name="lock_running">Locked</string>
     <string name="lock_permissions_title">Required permissions</string>
+    <string name="permission_overlay_short">Overlay</string>
+    <string name="permission_accessibility_short">Accessibility</string>
+    <string name="permission_usage_short">Usage access</string>
+    <string name="lock_foreground_hint_accessibility">Foreground tracking: accessibility service</string>
+    <string name="lock_foreground_hint_usage">Foreground tracking: usage access</string>
+    <string name="lock_foreground_hint_missing">⚠ Allowed list may fail: enable "Usage access" or "Accessibility"</string>
     <string name="lock_page_notice">The lock needs the overlay and accessibility permissions. Once enabled, switching to any app or the home screen outside the allowed list shows the lock overlay; long-press the exit button on the overlay to end the lock. On some phones you also need to allow autostart and background running.</string>
     <string name="back_to_app">Back to the app</string>
     <string name="boot_restore_lock">Restore lock after reboot</string>

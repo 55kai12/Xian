@@ -32,9 +32,24 @@ class LockMachineService : LifecycleService() {
         // 那几条路径手上都没有「用户现在在哪个应用」的信息，而用户此刻很可能就在白名单应用里。
         LockMachineOverlayController.sync(this)
         lifecycleScope.launch(Dispatchers.Main) {
+            var sinceNotification = 0L
             while (LockMachineController.isActive(this@LockMachineService)) {
-                updateNotification()
-                delay(NOTIFICATION_REFRESH_MILLIS)
+                // 每秒补一次「该不该盖」，但只在层没显示时做。
+                //
+                // 为什么需要它：盖屏这件事原本完全由无障碍窗口事件驱动，而服务没打开或
+                // 被 ROM 清掉之后事件就不来了 —— 那种情况下用户切进白名单应用，锁机层
+                // 根本不会让开，人就被卡死在里面。这一秒一次的判定读的是系统使用记录，
+                // 不依赖任何服务活着（见 ForegroundApp.resolve）。
+                // 层显示着的时候它自己每秒自检，这里不用重复跑。
+                if (!LockMachineOverlayController.isShowing()) {
+                    LockMachineOverlayController.sync(this@LockMachineService)
+                }
+                if (sinceNotification >= NOTIFICATION_REFRESH_MILLIS) {
+                    updateNotification()
+                    sinceNotification = 0L
+                }
+                delay(TICK_MILLIS)
+                sinceNotification += TICK_MILLIS
             }
             finishLock()
         }
@@ -123,6 +138,9 @@ class LockMachineService : LifecycleService() {
         private const val CHANNEL_ID = "lock_machine_channel"
         private const val NOTIFICATION_ID = 2001
         private const val NOTIFICATION_REFRESH_MILLIS = 30_000L
+
+        /** 「该不该盖」的巡检间隔。一秒是跟着时钟刷新走的，再慢用户就明显觉得「卡了一下才让开」。 */
+        private const val TICK_MILLIS = 1_000L
         private const val ACTION_STOP = "com.xian.focus.action.STOP_LOCK_MACHINE"
         private const val EXTRA_DURATION_MINUTES = "duration_minutes"
 
