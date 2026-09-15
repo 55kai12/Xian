@@ -12,10 +12,11 @@
 
 <table>
   <tr>
-    <td align="center"><img src="screenshots/02-focus.png" width="190" /><br /><sub><b>贤时</b><br />番茄钟 · 每日目标</sub></td>
-    <td align="center"><img src="screenshots/03-lock.png" width="190" /><br /><sub><b>锁机专注</b><br />时长 · 白名单 · 权限自检</sub></td>
-    <td align="center"><img src="screenshots/04-review.png" width="190" /><br /><sub><b>个性化复盘</b><br />数据卡 · 近 7 天趋势</sub></td>
-    <td align="center"><img src="screenshots/05-profile.png" width="190" /><br /><sub><b>我的</b><br />主题 · 数据导入导出</sub></td>
+    <td align="center"><img src="screenshots/01-tasks.jpg" width="190" /><br /><sub><b>任务清单</b><br />周视图 · 趋势线 · 倒数日</sub></td>
+    <td align="center"><img src="screenshots/02-focus.jpg" width="190" /><br /><sub><b>贤时</b><br />番茄钟 · 每日目标</sub></td>
+    <td align="center"><img src="screenshots/03-lock.jpg" width="190" /><br /><sub><b>锁机专注</b><br />时长 · 白名单 · 权限自检</sub></td>
+    <td align="center"><img src="screenshots/04-review.jpg" width="190" /><br /><sub><b>个性化复盘</b><br />数据卡 · 近 7 天趋势</sub></td>
+    <td align="center"><img src="screenshots/05-profile.jpg" width="190" /><br /><sub><b>我的</b><br />主题 · 数据导入导出</sub></td>
   </tr>
 </table>
 
