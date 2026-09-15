@@ -6,6 +6,8 @@
 
 **当前版本** `v2.0.65`（versionCode 265） · **最低系统** Android 8.0（API 26） · **目标系统** Android 15（API 35）
 
+📦 **[下载最新版 APK](https://github.com/55kai12/Xian/releases/latest)** —— 已 v1 + v2 双重签名，国产 ROM 安装器可直接校验。
+
 ---
 
 ## 界面
