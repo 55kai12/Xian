@@ -188,6 +188,7 @@
     <string name="permission_accessibility_short">无障碍</string>
     <string name="permission_usage_short">使用记录</string>
     <string name="permission_exact_alarm_enable">⚠ 精确闹钟未开启 · 定时锁机可能晚几十秒，点此开启</string>
+    <string name="permission_exact_alarm_ask">为了让提醒和定时锁机准点，请在接下来这页打开「闹钟和提醒」</string>
     <string name="lock_foreground_hint_accessibility">前台感知：无障碍服务</string>
     <string name="lock_foreground_hint_usage">前台感知：使用记录</string>
     <string name="lock_foreground_hint_missing">⚠ 白名单可能失效：请开启「使用记录」或「无障碍」</string>

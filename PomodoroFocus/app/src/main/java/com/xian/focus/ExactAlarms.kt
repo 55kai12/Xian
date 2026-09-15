@@ -7,6 +7,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.Toast
 
 /**
  * 精确闹钟的唯一入口。
@@ -55,14 +56,33 @@ object ExactAlarms {
         }
     }
 
+    /**
+     * 用户刚做完「需要准点」的动作（存了带提醒的任务 / 存了锁机时段）时调用：
+     * 没权限就**当场**把系统授权页拉起来问 —— 不指望用户自己想得起来点那个按钮。
+     *
+     * 什么 Context 都能起，是因为调用时机：这些都是「用户刚点完保存」的路径，应用正在前台。
+     * 不做「问过一次就不再问」的记忆 —— 跟悬浮窗、使用记录那几个权限向导的口径一致；
+     * 真开了之后 [canUseExact] 恒 true，自然就永远不再问了。
+     */
+    fun requestIfNeeded(context: Context) {
+        if (canUseExact(context)) return
+        Toast.makeText(context, R.string.permission_exact_alarm_ask, Toast.LENGTH_LONG).show()
+        openSettings(context)
+    }
+
     /** 跳到系统「闹钟和提醒」页；个别 ROM 没有这个页面，退到应用详情页让用户自己找。 */
-    fun openSettings(context: Context) {
+    private fun openSettings(context: Context) {
         val uri = Uri.parse("package:${context.packageName}")
-        runCatching { context.startActivity(Intent(ACTION_REQUEST_SCHEDULE_EXACT_ALARM, uri)) }
-            .onFailure {
-                runCatching {
-                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri))
-                }
+        // 带上 NEW_TASK：调用方不一定拿得到 Activity 的 context（从 Activity 起也无害）。
+        val intent = Intent(ACTION_REQUEST_SCHEDULE_EXACT_ALARM, uri)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        runCatching { context.startActivity(intent) }.onFailure {
+            runCatching {
+                context.startActivity(
+                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
             }
+        }
     }
 }

@@ -336,6 +336,11 @@ internal fun TasksFragment.showAddTaskDialog() {
                     ),
                     subtaskTitles
                 )
+                // 有截止日期就会排一个到期提醒闹钟 —— 顺手把「闹钟和提醒」权限要过来。
+                // 没有截止日期的任务不排闹钟，这里就不问，免得平白多一次打扰。
+                if ((selectedDueDate ?: selectedQuickDate) != null) {
+                    ExactAlarms.requestIfNeeded(requireContext())
+                }
                 if (dialogBinding.calendarReminderSwitch.isChecked) {
                     if (selectedDueDate != null) {
                         launchCalendarIntent(title, description, selectedDueDate, selectedDueTime)
@@ -651,6 +656,10 @@ internal fun TasksFragment.showEditTaskDialogCompat(task: Task) {
                         estimatedPomodoros = estimatedFrom(estimateInput),
                         repeatRule = repeatRule
                     ), subtaskTitles)
+                    // 同上：改了截止日期就要重排提醒闹钟，没权限就当场问一次。
+                    if (selectedDueDate != null) {
+                        ExactAlarms.requestIfNeeded(requireContext())
+                    }
                 }
             }
             .setNegativeButton(R.string.cancel, null)

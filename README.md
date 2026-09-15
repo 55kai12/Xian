@@ -142,7 +142,7 @@ cd PomodoroFocus
 | `SYSTEM_ALERT_WINDOW` | 锁机悬浮遮罩 |
 | `KILL_BACKGROUND_PROCESSES` | 锁机页「清空后台应用」按钮 —— 只清缓存进程，跳过贤自己与系统应用 |
 | `RECEIVE_BOOT_COMPLETED` | 开机恢复锁机时间段 |
-| `SCHEDULE_EXACT_ALARM` | 定时锁机与到期提醒的精确闹钟。**未授予也能用**：自动退化成不精确闹钟，只晚几十秒 |
+| `SCHEDULE_EXACT_ALARM` | 定时锁机与到期提醒的精确闹钟。**未授予也能用**：自动退化成不精确闹钟、只晚几十秒；保存任务或锁机时段时会自动引导开启 |
 
 > **「不联网」的技术依据**：Release 版 APK 的 Manifest 里**没有 `INTERNET` 权限**。
 > 在 Android 上，未声明这条权限的应用无法建立任何网络连接 —— 所以这不是一句承诺，

@@ -260,6 +260,10 @@ class CountdownFragment : Fragment() {
                         )
                     )
                 }
+                // 倒数日提醒同样是闹钟驱动。提醒开关关着根本不会排闹钟，那就不问。
+                if (CountdownReminderScheduler.isEnabled(requireContext())) {
+                    ExactAlarms.requestIfNeeded(requireContext())
+                }
             }
             .setNegativeButton(R.string.cancel, null)
             .show()

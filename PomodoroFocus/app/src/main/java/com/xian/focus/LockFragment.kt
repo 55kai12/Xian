@@ -101,7 +101,7 @@ class LockFragment : Fragment() {
         }
         // 定时锁机/提醒到点要准，靠的是精确闹钟权限；没有它功能照常（自动退化），只是会晚。
         binding.exactAlarmPermissionButton.setOnClickListener {
-            ExactAlarms.openSettings(requireContext())
+            ExactAlarms.requestIfNeeded(requireContext())
         }
 
         renderSlots()
@@ -356,6 +356,9 @@ class LockFragment : Fragment() {
                 toast(getString(R.string.schedule_saved_next, TimeLabels.relative(context, next)))
             }
         }
+        // 存完顺手把「闹钟和提醒」要过来 —— 定时锁机要准点，而这条权限 Android 14 起默认不给。
+        // 放在保存之后：先把用户的事办完，再问他要权限，顺序反了就成了拦路收费。
+        ExactAlarms.requestIfNeeded(context)
     }
 
     private fun cancelSchedule() {
