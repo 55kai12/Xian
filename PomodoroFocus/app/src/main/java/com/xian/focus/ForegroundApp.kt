@@ -32,6 +32,22 @@ object ForegroundApp {
     var packageName: String? = null
         private set
 
+    /**
+     * 最后一次**真的确定过**的前台应用，不会被「自事件」清掉。
+     *
+     * [packageName] 会被清成 null（覆盖层自己抢焦点时系统补发的窗口事件，包名是本应用，
+     * 那种事件说明不了用户在哪，所以清掉让调用方别信它）。但清掉之后如果**另一个源也读不到**
+     * —— 用户没授「使用情况访问」、或系统刚重启还没记录 —— 调用方就拿不到任何答案。
+     * 而「不知道」在锁机那边是按「该盖」算的：用户明明还在白名单应用里没动过，
+     * 整屏就盖下来了。这就是「明明在白名单里还被锁」最隐蔽的那条路。
+     *
+     * 所以留一份不会被自事件抹掉的值：拿不到更新鲜的信息时，沿用最后一次确定的前台应用。
+     * 真正切到别的应用会走 [mark]，这份值跟着更新，不会让锁机失灵。
+     */
+    @Volatile
+    var lastKnown: String? = null
+        private set
+
     /** [packageName] 被确认的时刻（单调时钟）；0 表示当前值不新鲜。 */
     @Volatile
     private var confirmedAt = 0L
@@ -40,19 +56,21 @@ object ForegroundApp {
     fun mark(packageName: String?) {
         this.packageName = packageName
         confirmedAt = if (packageName == null) 0L else SystemClock.elapsedRealtime()
+        if (packageName != null) lastKnown = packageName
     }
 
     /**
      * 现在的真实前台应用。窗口事件的值新鲜就直接用（零成本）；
      * 不新鲜或为空时读一次系统使用记录，那条路也拿不到才退回旧值（可能是 null）。
      *
-     * 返回 null 表示**不知道**，调用方应当按「该锁」处理 —— 漏锁比误锁严重得多。
+     * 返回 null 只代表**两台源都读不到、而且从来没有过任何一次确认**，
+     * 那时候才算真的不知道 —— 漏锁比误锁严重得多。
      */
     fun resolve(context: Context): String? {
         val cached = packageName
         if (cached != null && SystemClock.elapsedRealtime() - confirmedAt < TRUST_MILLIS) {
             return cached
         }
-        return UsageForeground.lastResumed(context) ?: cached
+        return UsageForeground.lastResumed(context) ?: cached ?: lastKnown
     }
 }

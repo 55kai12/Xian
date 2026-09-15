@@ -36,21 +36,30 @@ object LockMachineOverlayController {
     private var whitelistExpanded = false
 
     /**
-     * 落在桌面上之后，先宽限这么久不盖。
+     * 检测到「前台不在白名单里」之后，先观察这么久再盖。
      *
-     * 桌面是「过渡态」，不是「用户跑别处玩去了」。手势导航下从屏幕边缘往里滑就是返回，
-     * 用户在白名单应用的首页再滑一次，整个应用就退到桌面了 —— 而他本意往往只是返回上一页。
-     * 这一刻立刻盖上来，体验就是「轻轻碰一下就被锁住」，还得展开白名单重新点一次才回得去。
+     * 手势导航的返回手势不是一次到位：手指从屏幕边缘往里滑的过程中，系统会实时预览
+     * 上一屏（另一个应用 / 桌面），这时候收到的窗口事件已经是那个「目标」的包名了 ——
+     * 可手指一滑回去、手势取消，用户压根没离开。凭这一瞬间的包名就整屏盖上来，
+     * 用户看到的就是「轻轻一划就被锁住」。所以先等一小会儿再确认一次；
+     * 中间只要回到了白名单应用，就当作什么都没发生。
+     */
+    private const val LEAVE_CONFIRM_MILLIS = 1_000L
+
+    /**
+     * 落在桌面上先宽限这么久。
      *
-     * 宽限期内回到任何白名单应用都完全不盖；点开别的应用仍然立刻盖（那时前台已不是桌面）。
+     * 桌面给的时间更长：从白名单应用首页滑返回就是直接退到桌面，那确实是离开了，
+     * 但用户往往只想返回上一页，需要多一点反应时间点回去。
+     * 宽限期内回到白名单应用完全不盖；点开别的应用仍然立刻盖（那时前台已不是桌面）。
      */
     private const val HOME_GRACE_MILLIS = 2_500L
 
     /** 系统桌面（launcher）包名，懒查一次；查不到为 null，此时不做宽限（按原样立刻盖）。 */
     private var homePackage: String? = null
 
-    /** 落在桌面上的起始时刻；0 表示当前不在桌面上。 */
-    private var onHomeSince = 0L
+    /** 检测到「前台不在白名单里」的时刻；0 表示当前一切正常。 */
+    private var pendingLeaveSince = 0L
 
     private val tickRunnable = object : Runnable {
         override fun run() {
@@ -135,6 +144,7 @@ object LockMachineOverlayController {
     fun evaluate(context: Context, foreground: String?) {
         val applicationContext = context.applicationContext
         if (!LockMachineController.isActive(applicationContext)) {
+            pendingLeaveSince = 0L
             hide(applicationContext, force = true)
             return
         }
@@ -142,22 +152,23 @@ object LockMachineOverlayController {
         // 输入法一弹出来前台就变成输入法，而输入法属于永远放行的系统组件 ——
         // 少了这道闸，用户刚长按完「退出锁机」，整层就连着面板一起被撤掉。
         if (cooldownEndsAt > 0L) return
+        // 在白名单里（含贤自己、来电/输入法等系统组件）—— 立刻让开，这条不能有任何延迟
         if (foreground != null && LockMachineController.isAllowed(applicationContext, foreground)) {
-            onHomeSince = 0L
+            pendingLeaveSince = 0L
             hide(applicationContext, force = true)
             return
         }
-        if (foreground != null && isHome(applicationContext, foreground)) {
-            val now = System.currentTimeMillis()
-            if (onHomeSince == 0L) onHomeSince = now
-            if (now - onHomeSince < HOME_GRACE_MILLIS) {
-                // 宽限中：层保持让开，用户随时能点回白名单应用
-                hide(applicationContext, force = true)
-                return
-            }
+        // 不在白名单里：先让这个状态稳一会儿再盖。
+        // 这期间**什么都不做**（层是隐藏的就让它隐藏，是显示的就让它显示）——
+        // 「手势返回滑到一半又滑回去」那种一瞬就报出别的包名的情况，在这里就被吃掉了。
+        val now = System.currentTimeMillis()
+        if (pendingLeaveSince == 0L) pendingLeaveSince = now
+        val grace = if (foreground != null && isHome(applicationContext, foreground)) {
+            HOME_GRACE_MILLIS
         } else {
-            onHomeSince = 0L
+            LEAVE_CONFIRM_MILLIS
         }
+        if (now - pendingLeaveSince < grace) return
         show(applicationContext)
     }
 
