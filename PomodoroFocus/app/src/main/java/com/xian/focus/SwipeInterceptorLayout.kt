@@ -2,6 +2,8 @@ package com.xian.focus
 
 import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Rect
+import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.ViewConfiguration
@@ -76,6 +78,29 @@ class SwipeInterceptorLayout @JvmOverloads constructor(
         }
     }
 
+    /**
+     * 声明左右两条窄边不参与系统手势。
+     *
+     * Android 10 起，从屏幕边缘起手的滑动会被系统的「返回」手势优先接管：用户想在日历上
+     * 右划回上一周，手指只要落得靠边一点就变成**退出应用** —— 这就是「右划返回太敏感」。
+     * 系统不允许应用拦这个手势，只允许应用声明「这几块不参与」，所以只能在这里排掉。
+     *
+     * 系统的约束：只认列表里最前面的 200dp 高度（按矩形顺序累加），多出来的直接忽略，
+     * 所以高度夹在上限内。宽度取 24dp —— 系统手势热区一般就这么宽；
+     * 觉得还不够就调大 [GESTURE_EXCLUSION_EDGE_DP]，代价是这块的边缘返回手势会被让出来。
+     */
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val density = resources.displayMetrics.density
+        val edge = (GESTURE_EXCLUSION_EDGE_DP * density).toInt()
+        val height = minOf(h, (GESTURE_EXCLUSION_MAX_DP * density).toInt())
+        systemGestureExclusionRects = mutableListOf(
+            Rect(0, 0, edge, height),
+            Rect(w - edge, 0, w, height)
+        )
+    }
+
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
@@ -89,7 +114,11 @@ class SwipeInterceptorLayout @JvmOverloads constructor(
                 val dx = ev.x - downX
                 val dy = ev.y - downY
                 // 纵向拖拽由底部把手自身处理；这里仅拦截收起态的横向切周。
-                if (expandState <= 0.5f && interceptHorizontal && abs(dx) > touchSlop && abs(dx) > abs(dy) * 0.5f) {
+                //
+                // 判据必须是「横向位移 > 纵向位移」，不能只取纵向的一半 ——
+                // 取一半等于斜着划就算横划，用户上下滚列表时手指稍微带点偏角就被判成切周，
+                // 页面哗地翻到上一周（也就是用户说的「太敏感」）。
+                if (expandState <= 0.5f && interceptHorizontal && abs(dx) > touchSlop && abs(dx) > abs(dy)) {
                     dragging = true
                     parent?.requestDisallowInterceptTouchEvent(true)
                     return true
@@ -113,5 +142,13 @@ class SwipeInterceptorLayout @JvmOverloads constructor(
             }
         }
         return dragging || super.onTouchEvent(ev)
+    }
+
+    private companion object {
+        /** 左右各让出多宽的边条不参与系统手势；系统手势热区一般 24dp。 */
+        const val GESTURE_EXCLUSION_EDGE_DP = 24f
+
+        /** 系统只接受最前面 200dp 的排除高度，超出部分忽略。 */
+        const val GESTURE_EXCLUSION_MAX_DP = 200f
     }
 }
