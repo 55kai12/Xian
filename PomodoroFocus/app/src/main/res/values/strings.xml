@@ -110,6 +110,7 @@
     <string name="lock_duration">锁机时长</string>
     <string name="custom_minutes_hint">自定义分钟数</string>
     <string name="whitelist_apps">白名单应用</string>
+    <string name="whitelist_selected_count">已选 %1$d 个</string>
 
     <!-- 应用限额 -->
     <string name="app_limit_title">应用限额</string>

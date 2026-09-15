@@ -16,7 +16,6 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import com.xian.focus.databinding.FragmentLockSettingsBinding
 
 /**
@@ -46,7 +45,18 @@ class LockSettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.lockSettingsBackButton.setOnClickListener { parentFragmentManager.popBackStack() }
-        binding.whitelistCard.setOnClickListener { showAppPicker() }
+        binding.whitelistCard.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
+                .replace(R.id.fragmentContainer, WhitelistFragment())
+                .addToBackStack(null)
+                .commit()
+        }
         // 改密码：scope 传空 —— 只换密码，不动任何作用域开关
         binding.pinChangeRow.setOnClickListener { showSetPinDialog(null) }
         binding.quoteCard.setOnClickListener { showQuoteEditor() }
@@ -113,18 +123,6 @@ class LockSettingsFragment : Fragment() {
         switch.setOnCheckedChangeListener(null)
         switch.isChecked = LockPin.isRequired(requireContext(), scope)
         switch.setOnCheckedChangeListener(listener)
-    }
-
-    private fun showAppPicker() {
-        val selected = LockMachineController.whitelist(requireContext())
-        WhitelistAppPicker.show(
-            requireContext(),
-            viewLifecycleOwner.lifecycleScope,
-            selected
-        ) { updated ->
-            LockMachineController.saveWhitelist(requireContext(), updated)
-            refresh()
-        }
     }
 
     /**

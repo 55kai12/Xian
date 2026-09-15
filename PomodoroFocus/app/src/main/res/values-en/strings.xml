@@ -110,6 +110,7 @@
     <string name="lock_duration">Lock duration</string>
     <string name="custom_minutes_hint">Custom minutes</string>
     <string name="whitelist_apps">Allowed apps</string>
+    <string name="whitelist_selected_count">%1$d selected</string>
 
     <!-- App limits -->
     <string name="app_limit_title">App limits</string>

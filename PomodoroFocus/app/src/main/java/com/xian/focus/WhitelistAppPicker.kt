@@ -4,14 +4,9 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.BaseAdapter
-import android.widget.CheckBox
-import android.widget.ImageView
-import android.widget.ListView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -42,20 +37,22 @@ object WhitelistAppPicker {
         onResult: (Set<String>) -> Unit
     ) {
         lifecycleScope.launch {
-            val apps = loadAppsCached(context)
-            val checked = apps.map { selected.contains(it.packageName) }.toBooleanArray()
-            val listView = ListView(context).apply {
-                adapter = AppAdapter(context, apps, checked)
-                dividerHeight = 0
+            val apps = loadApps(context)
+            val content = LayoutInflater.from(context)
+                .inflate(R.layout.dialog_app_grid, null, false)
+            val countText = content.findViewById<TextView>(R.id.gridCountText)
+            val grid = content.findViewById<RecyclerView>(R.id.gridAppList)
+            val adapter = AppGridAdapter(apps, selected) { picked ->
+                countText.text = context.getString(R.string.whitelist_selected_count, picked.size)
             }
+            countText.text = context.getString(R.string.whitelist_selected_count, adapter.selectedCount)
+            grid.layoutManager = GridLayoutManager(context, AppGridAdapter.SPAN)
+            grid.adapter = adapter
             com.google.android.material.dialog.MaterialAlertDialogBuilder(context)
                 .setTitle(titleRes)
-                .setView(listView)
+                .setView(content)
                 .setPositiveButton(R.string.save) { _, _ ->
-                    val result = apps.filterIndexed { index, _ -> checked[index] }
-                        .map { it.packageName }
-                        .toSet()
-                    onResult(result)
+                    onResult(adapter.selectedPackages())
                 }
                 .setNegativeButton(R.string.cancel, null)
                 .show()
@@ -63,12 +60,15 @@ object WhitelistAppPicker {
     }
 
     /**
-     * 应用列表缓存。
+     * 应用列表（带缓存）。
      *
      * `queryIntentActivities` + 每个应用的 `loadLabel` / `loadIcon` 在几百个应用的机器上
      * 要跑几百毫秒，而对话框是「加载完才弹」的 —— 第一次点「白名单」会有一下明显的空档，
      * 用户体感就是「不流畅」。缓存住之后第二次起是秒开；60 秒的短有效期只是为了防止
      * 刚装的新应用一直不出现（不值得为它挂一个安装广播接收器）。
+     *
+     * 白名单二级页（[WhitelistFragment]）跟这里的选择器共用同一份缓存 —— 从二级页出来
+     * 再点别的入口选应用，不必重扫一遍。
      */
     @Volatile
     private var cachedApps: List<AppInfo>? = null
@@ -78,18 +78,18 @@ object WhitelistAppPicker {
 
     private const val CACHE_TTL_MILLIS = 60_000L
 
-    private suspend fun loadAppsCached(context: Context): List<AppInfo> {
+    internal suspend fun loadApps(context: Context): List<AppInfo> {
         val cached = cachedApps
         if (cached != null && System.currentTimeMillis() - cachedAt < CACHE_TTL_MILLIS) {
             return cached
         }
-        val apps = withContext(Dispatchers.IO) { loadApps(context) }
+        val apps = withContext(Dispatchers.IO) { queryApps(context) }
         cachedApps = apps
         cachedAt = System.currentTimeMillis()
         return apps
     }
 
-    private fun loadApps(context: Context): List<AppInfo> {
+    private fun queryApps(context: Context): List<AppInfo> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val pm = context.packageManager
         return pm.queryIntentActivities(intent, 0)
@@ -102,31 +102,5 @@ object WhitelistAppPicker {
             }
             .distinctBy { it.packageName }
             .sortedWith(compareBy(LABEL_ORDER) { it.label })
-    }
-
-    private class AppAdapter(
-        context: Context,
-        private val apps: List<AppInfo>,
-        private val checked: BooleanArray
-    ) : BaseAdapter() {
-        private val inflater = LayoutInflater.from(context)
-
-        override fun getCount(): Int = apps.size
-        override fun getItem(position: Int): Any = apps[position]
-        override fun getItemId(position: Int): Long = position.toLong()
-
-        override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-            val view = convertView ?: inflater.inflate(R.layout.item_app_picker, parent, false)
-            val app = apps[position]
-            view.findViewById<ImageView>(R.id.appIcon).setImageDrawable(app.icon)
-            view.findViewById<TextView>(R.id.appLabel).text = app.label
-            val checkBox = view.findViewById<CheckBox>(R.id.appCheck)
-            checkBox.isChecked = checked[position]
-            view.setOnClickListener {
-                checked[position] = !checked[position]
-                checkBox.isChecked = checked[position]
-            }
-            return view
-        }
     }
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 选中角标的圆底：点缀色实心 + 一圈底色描边，跟图标分开，深色下也看得出边界 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <solid android:color="?attr/colorBrandAccent" />
+
+    <stroke
+        android:width="1.5dp"
+        android:color="?android:colorBackground" />
+</shape>

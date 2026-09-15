@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  应用网格的一格：图标 + 名字，没有整行的条。
+  4 列铺开以后一屏能看二十来个，比一行一个应用省地方得多。
+  选中态靠三处一起表达：图上描边、右上角勾、名字变色。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_horizontal"
+    android:orientation="vertical"
+    android:paddingHorizontal="2dp"
+    android:paddingVertical="9dp">
+
+    <FrameLayout
+        android:layout_width="62dp"
+        android:layout_height="62dp">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/appIcon"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:id="@+id/appCheckBadge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="end|top"
+            android:background="@drawable/bg_check_badge"
+            android:contentDescription="@null"
+            android:padding="3dp"
+            android:visibility="gone"
+            app:srcCompat="@drawable/ic_check_badge" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/appLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="11sp" />
+</LinearLayout>
