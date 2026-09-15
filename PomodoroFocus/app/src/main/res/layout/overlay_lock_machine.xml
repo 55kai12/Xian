@@ -138,21 +138,20 @@
                     android:textSize="14sp" />
             </LinearLayout>
 
-            <ScrollView
-                android:id="@+id/whitelistScroll"
+            <!--
+              白名单应用网格：一行四个图标，比一行一个应用的条省地方得多。
+              普通 <ScrollView> 不会复用行，几十个应用全 inflate 一遍，展开就卡。
+              这里必须写全限定标签 —— 悬浮窗 inflate 不带 AppCompat 的 Factory2。
+            -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/whitelistGrid"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="6dp"
                 android:layout_weight="1"
+                android:clipToPadding="false"
                 android:scrollbars="none"
-                android:visibility="gone">
-
-                <LinearLayout
-                    android:id="@+id/whitelistContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
-            </ScrollView>
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/emptyWhitelistText"

@@ -4,18 +4,20 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Button
-import android.widget.LinearLayout
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import com.xian.focus.databinding.ItemWhitelistAppBinding
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.xian.focus.databinding.ItemOverlayAppGridBinding
 import java.util.Calendar
 
 @SuppressLint("StaticFieldLeak", "InflateParams")
@@ -245,22 +247,20 @@ object LockMachineOverlayController {
         rebuildWhitelistIfChanged(context, view)
     }
 
-    /** 白名单内容没变就一个像素都不动；变了（或这层是新建的）才整表重建。 */
+    /** 白名单内容没变就一个像素都不动；变了（或这层是新建的）才重建适配器。 */
     private fun rebuildWhitelistIfChanged(context: Context, view: View) {
-        val container = view.findViewById<LinearLayout>(R.id.whitelistContainer)
+        val grid = view.findViewById<RecyclerView>(R.id.whitelistGrid)
         val folderRow = view.findViewById<View>(R.id.whitelistFolderRow)
         val folderCount = view.findViewById<TextView>(R.id.whitelistFolderCount)
         val emptyView = view.findViewById<TextView>(R.id.emptyWhitelistText)
-        val scrollView = view.findViewById<ScrollView>(R.id.whitelistScroll)
 
         val whitelist = LockMachineController.whitelist(context).toList()
         if (whitelist.sorted().hashCode() == whitelistSignature) return
         whitelistSignature = whitelist.sorted().hashCode()
-        container.removeAllViews()
         if (whitelist.isEmpty()) {
             folderRow.visibility = View.GONE
             emptyView.visibility = View.VISIBLE
-            scrollView.visibility = View.GONE
+            grid.visibility = View.GONE
             return
         }
         folderRow.visibility = View.VISIBLE
@@ -269,9 +269,8 @@ object LockMachineOverlayController {
         applyWhitelistVisibility(view)
 
         val packageManager = context.packageManager
-        val inflater = LayoutInflater.from(view.context)
         // 白名单是 Set，直接遍历顺序随机；按应用名（中文拼音）排一遍，跟选择器里的顺序保持一致。
-        whitelist.mapNotNull { packageName ->
+        val apps = whitelist.mapNotNull { packageName ->
             val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
                 ?: return@mapNotNull null
             val appInfo = try {
@@ -284,34 +283,72 @@ object LockMachineOverlayController {
             compareBy(WhitelistAppPicker.LABEL_ORDER) {
                 it.third?.loadLabel(packageManager)?.toString() ?: it.first
             }
-        ).forEach { (packageName, launchIntent, appInfo) ->
-            val row = ItemWhitelistAppBinding.inflate(inflater, container, false)
-            row.whitelistAppName.text =
-                appInfo?.loadLabel(packageManager)?.toString() ?: packageName
-            appInfo?.loadIcon(packageManager)?.let { row.whitelistAppIcon.setImageDrawable(it) }
-            row.root.setOnClickListener {
-                try {
-                    context.startActivity(launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                } catch (_: Exception) {
-                }
-            }
-            container.addView(row.root)
+        ).map { (packageName, launchIntent, appInfo) ->
+            OverlayApp(
+                launchIntent = launchIntent,
+                label = appInfo?.loadLabel(packageManager)?.toString() ?: packageName,
+                icon = appInfo?.let { runCatching { it.loadIcon(packageManager) }.getOrNull() }
+            )
         }
+        grid.layoutManager = GridLayoutManager(view.context, AppGridAdapter.SPAN)
+        grid.adapter = OverlayAppAdapter(apps)
     }
 
     private fun applyWhitelistVisibility(view: View) {
-        val scroll = view.findViewById<ScrollView>(R.id.whitelistScroll)
+        val grid = view.findViewById<RecyclerView>(R.id.whitelistGrid)
         val arrow = view.findViewById<TextView>(R.id.whitelistFolderArrow)
         if (whitelistExpanded) {
-            // 展开加一点淡入 + 上移：列表高度是 0dp+weight，直接 VISIBLE 会「啪」地把整块
+            // 展开加一点淡入 + 上移：网格高度是 0dp+weight，直接 VISIBLE 会「啪」地把整块
             // 区域瞬间顶满，看着就是「不流畅」。收起不做动画 —— 收起来用户视线已经离开。
-            scroll.visibility = View.VISIBLE
-            scroll.alpha = 0f
-            scroll.translationY = -8f * view.resources.displayMetrics.density
-            scroll.animate().alpha(1f).translationY(0f).setDuration(180L).start()
+            grid.visibility = View.VISIBLE
+            grid.alpha = 0f
+            grid.translationY = -8f * view.resources.displayMetrics.density
+            grid.animate().alpha(1f).translationY(0f).setDuration(180L).start()
         } else {
-            scroll.visibility = View.GONE
+            grid.visibility = View.GONE
         }
         arrow.text = if (whitelistExpanded) "▴" else "▾"
+    }
+}
+
+/** 锁机层白名单里的一格：点一下就启动它。 */
+private data class OverlayApp(
+    val launchIntent: Intent,
+    val label: String,
+    val icon: Drawable?
+)
+
+/**
+ * 锁机层的白名单网格适配器。
+ *
+ * 不复用设置页那个 [AppGridAdapter]：那个管的是「勾选」，这里管的是「点一下启动应用」，
+ * 台账不一样，硬凑成一个类反而两边都要加开关。
+ */
+private class OverlayAppAdapter(private val apps: List<OverlayApp>) :
+    RecyclerView.Adapter<OverlayAppAdapter.Holder>() {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
+        ItemOverlayAppGridBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+    )
+
+    override fun onBindViewHolder(holder: Holder, position: Int) = holder.bind(apps[position])
+
+    override fun getItemCount(): Int = apps.size
+
+    class Holder(private val binding: ItemOverlayAppGridBinding) :
+        RecyclerView.ViewHolder(binding.root) {
+
+        fun bind(app: OverlayApp) {
+            binding.overlayAppName.text = app.label
+            binding.overlayAppIcon.setImageDrawable(app.icon)
+            binding.root.setOnClickListener {
+                try {
+                    binding.root.context.startActivity(
+                        app.launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                } catch (_: Exception) {
+                }
+            }
+        }
     }
 }
