@@ -1,5 +1,10 @@
 # 贤 · Xian
 
+[![Release](https://img.shields.io/github/v/release/55kai12/Xian?label=release&color=C9A961&labelColor=3B5B4E)](https://github.com/55kai12/Xian/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-C9A961?labelColor=3B5B4E)](#构建)
+[![Network](https://img.shields.io/badge/network-none-C9A961?labelColor=3B5B4E)](PRIVACY.md)
+[![License](https://img.shields.io/badge/license-MIT-C9A961?labelColor=3B5B4E)](LICENSE)
+
 > 一款中国古风主题的 Android 专注与任务管理应用 —— 任务清单、番茄钟（贤时）、锁机专注、个性化复盘。
 >
 > 原创设计。无广告、不联网、不索取相机/存储/定位权限，数据全部留在本机。
