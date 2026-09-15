@@ -76,12 +76,14 @@ object LockMachineOverlayController {
         )
         view.findViewById<TextView>(R.id.currentTimeText).text =
             context.getString(R.string.current_time_format, now)
-        view.findViewById<TextView>(R.id.exitQuotaText).text =
-            context.getString(
-                R.string.exit_quota_format,
-                LockExitQuota.remaining(context),
-                LockExitQuota.MONTHLY_LIMIT
-            )
+        val quota = LockExitQuota.remaining(context)
+        // 「剩余 0 / 2」太含蓄：额度用完时用户会以为是显示问题，长按、点确认，什么都没发生 ——
+        // 那就是「卡住」。所以用完时直接把话说满，让他知道锁机会一直撑到结束。
+        view.findViewById<TextView>(R.id.exitQuotaText).text = if (quota > 0) {
+            context.getString(R.string.exit_quota_format, quota, LockExitQuota.MONTHLY_LIMIT)
+        } else {
+            context.getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT)
+        }
     }
 
     /** 冷静期倒计时：走完前「确认退出」保持禁用。 */
@@ -158,6 +160,11 @@ object LockMachineOverlayController {
             Toast.makeText(applicationContext, R.string.long_press_required, Toast.LENGTH_SHORT).show()
         }
         view.findViewById<Button>(R.id.backToAppButton).setOnClickListener {
+            // 「回贤」是用户明确的意图，不必等任何前台感知：贤自己永远在放行名单里，
+            // 感知失灵时（无障碍没开、服务被 ROM 清掉）那条路永远不会来，
+            // 用户就只能对着一层盖在自己应用上的遮罩发愣 —— 那就是「卡住」。
+            ForegroundApp.mark(applicationContext.packageName)
+            hide(applicationContext, force = true)
             try {
                 applicationContext.startActivity(
                     Intent(applicationContext, MainActivity::class.java).apply {
@@ -243,13 +250,16 @@ object LockMachineOverlayController {
         if (LockExitQuota.canExit(context)) {
             LockMachineService.stop(context)
             hide(context)
-        } else {
-            Toast.makeText(
-                context,
-                context.getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT),
-                Toast.LENGTH_LONG
-            ).show()
+            return
         }
+        // 额度用完是最容易让人以为「坏了」的一步：只弹一个 Toast 的话，用户点完
+        // 「确认退出」看到的就是弹窗原样还在、什么也没发生 —— 也就是「卡住」。
+        // 把话写在弹窗里，并停掉冷静期的每秒刷新（否则下一秒就被倒计时覆盖回去）。
+        cooldownEndsAt = 0L
+        val view = overlayView ?: return
+        view.findViewById<TextView>(R.id.cooldownText).text =
+            context.getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT)
+        view.findViewById<Button>(R.id.confirmExitButton).isEnabled = false
     }
 
     /**
@@ -308,6 +318,7 @@ object LockMachineOverlayController {
             }
         ).map { (packageName, launchIntent, appInfo) ->
             OverlayApp(
+                packageName = packageName,
                 launchIntent = launchIntent,
                 label = appInfo?.loadLabel(packageManager)?.toString() ?: packageName,
                 icon = appInfo?.let { runCatching { it.loadIcon(packageManager) }.getOrNull() }
@@ -336,6 +347,7 @@ object LockMachineOverlayController {
 
 /** 锁机层白名单里的一格：点一下就启动它。 */
 private data class OverlayApp(
+    val packageName: String,
     val launchIntent: Intent,
     val label: String,
     val icon: Drawable?
@@ -365,8 +377,16 @@ private class OverlayAppAdapter(private val apps: List<OverlayApp>) :
             binding.overlayAppName.text = app.label
             binding.overlayAppIcon.setImageDrawable(app.icon)
             binding.root.setOnClickListener {
+                val context = binding.root.context
+                // 点白名单里的应用 = 用户明确要去用它。这一下必须让开，绝不能等前台感知 ——
+                // 感知断了（无障碍没开 / 服务被 ROM 清掉 / 使用记录没授权）时它永远不会来，
+                // 用户就会看着应用启动了、遮罩还盖在上面，也就是「明明在白名单里却被卡住」。
+                // mark 是给感知补一条「我确定用户去了这个包」：tick 和守护服务的每秒自检
+                // 都读它，所以遮罩不会在下一秒又被盖回来。
+                ForegroundApp.mark(app.packageName)
+                LockMachineOverlayController.hide(context, force = true)
                 try {
-                    binding.root.context.startActivity(
+                    context.startActivity(
                         app.launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     )
                 } catch (_: Exception) {

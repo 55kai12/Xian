@@ -18,8 +18,19 @@ class LockAlarmReceiver : BroadcastReceiver() {
                 rescheduleNext(context)
             }
             LockMachineScheduler.ACTION_END -> {
-                LockMachineService.stop(context)
-                // 结束闹钟同样是一次性的，必须重排，否则第二天不会开始、也不会结束。
+                // 时段结束是**自然到期**，不是用户主动退出 —— 所以绝不能走 stop()：
+                // 那条路的入口会先 `LockExitQuota.consume()` 扣一次月度退出额度，
+                // 还把这笔算成「主动退出」的统计。
+                //
+                // 闹钟的结束时刻来自 applyAlarms 排的那一刻，而真正生效的结束时刻
+                // 是服务启动时自己写的（now + 时长，通常比闹钟晚零点几秒），
+                // 所以这里触发时 isActive 往往还是 true —— 每次都实打实地扣。
+                // 额度只有 2 次/月：设一个每天晚上的时段，两天就被扣光，
+                // 之后用户想主动退出锁机也没额度了，看起来就是「卡在锁机里出不去」。
+                //
+                // 收尾本来也不需要这里做：时间一到，服务自己那个每秒循环的
+                // isActive 变 false 就会退出循环、记一次「忍住了」、清状态并撤层。
+                // 这里只负责把下一个周期的闹钟排上。
                 rescheduleNext(context)
             }
         }

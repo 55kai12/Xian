@@ -97,11 +97,18 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
         // 其他系统组件（输入法、来电界面）不算「在用某个应用」，
         // 保留上一个真实前台应用 —— 否则一打字限额计时就断了。
-        if (packageName == context.packageName && AppLimitOverlayController.isShowing()) {
-            // 限额层是本进程的悬浮窗，它一抢到焦点，系统发来的事件包名也是本应用。
-            // 若把它当成「用户切到了贤」，下一秒 tick 就会判定被限应用已经退出，
-            // 把刚盖上的那层撤掉 —— 表现就是「额度用完了只闪一下，然后接着玩」，
-            // 并且被污染的前台记录还有 60 秒信任期，这段时间既不记账也不弹窗。
+        if (packageName == context.packageName && selfOverlayShowing()) {
+            // 本进程的悬浮层**哪一个**都算：限额层和锁机层都跑在这个进程里，
+            // 谁抢到焦点，系统发来的事件包名都是本应用。
+            //
+            // 限额层：若把它当成「用户切到了贤」，下一秒 tick 就会判定被限应用已经退出，
+            // 把刚盖上的那层撤掉 —— 表现就是「额度用完了只闪一下，然后接着玩」。
+            //
+            // 锁机层（v2.0.59 补）：污染更糟。锁机层的每秒自检会读这里写下的值，
+            // 而「贤自己」在所有判断里都算放行 —— 于是刚 addView 上去的那一瞬间，
+            // 系统为我们补的自事件就把锁机层判成「该让开」，层立刻被自己撤掉。
+            // 用户看到的是锁机一闪而过、切到别的应用也不盖。
+            //
             // 所以这里清掉缓存、放开限频，让 tick 自己查一次窗口栈：
             // 层还盖着时查不到活跃的应用窗口（悬浮层属于 TYPE_SYSTEM），
             // 沿用上次的前台应用、层保持不动；用户真切走了才会查到别的应用。
@@ -115,13 +122,16 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
         if (LockMachineController.isActive(context)) {
             val selfEvent = packageName == context.packageName
+            // 覆盖层自己抢焦点发来的事件说明不了「用户现在在哪个应用」：包名必然是本应用，
+            // 而「刚 addView 补发的自事件」和「用户真切回了贤」在包名上分不出来。
+            // 走下面的放行分支只会把刚盖上的层撤掉（自事件迟到超过防抖窗口就露馅），
+            // 所以这里直接不作数 —— 交给锁机层自己每秒的判定，那条路读系统使用记录，
+            // 不受这个事件影响，一秒内就会给出正确答案。
+            if (selfEvent && selfOverlayShowing()) return
             if (LockMachineController.isAllowed(context, packageName)) {
                 if (LockMachineOverlayController.isShowing()) {
-                    // 用户真的切进了白名单里的应用 —— 必须立刻让开。
-                    // 防抖只是用来吞掉「自己那层抢焦点」那一瞬间的自事件（包名是本应用），
-                    // 非自己的包名没有任何理由再拦；否则用户刚进白名单应用，这一下就被吞住、
-                    // 层盖着不走，看起来就是「加了白名单还老是弹」。
-                    LockMachineOverlayController.hide(context, force = !selfEvent)
+                    // 用户真的切进了白名单里的应用 —— 必须立刻让开，没有理由再拦。
+                    LockMachineOverlayController.hide(context, force = true)
                 }
             } else {
                 LockMachineOverlayController.show(context)
@@ -238,6 +248,10 @@ class FocusLockAccessibilityService : AccessibilityService() {
             ?.toString()
             ?.takeIf { it.isNotBlank() && it !in SYSTEM_UI_PACKAGES }
     }.getOrNull()
+
+    /** 本进程的悬浮层（限额层或锁机层）是不是正显示着 —— 它们抢焦点时的包名都是本应用。 */
+    private fun selfOverlayShowing(): Boolean =
+        AppLimitOverlayController.isShowing() || LockMachineOverlayController.isShowing()
 
     override fun onInterrupt() = Unit
 

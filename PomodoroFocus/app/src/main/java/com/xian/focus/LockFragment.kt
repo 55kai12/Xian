@@ -119,11 +119,14 @@ class LockFragment : Fragment() {
             binding.lockEndText.visibility = View.GONE
             binding.startStopButton.setText(R.string.start_lock_machine)
         }
-        binding.exitQuotaHintText.text = getString(
-            R.string.exit_quota_format,
-            LockExitQuota.remaining(context),
-            LockExitQuota.MONTHLY_LIMIT
-        )
+        val quota = LockExitQuota.remaining(context)
+        // 用完时说满一点：只显示「剩余 0 / 2」，用户会以为是自己看错了，
+        // 然后反复点「停止锁机」—— 那里也只会再弹一次 Toast。
+        binding.exitQuotaHintText.text = if (quota > 0) {
+            getString(R.string.exit_quota_format, quota, LockExitQuota.MONTHLY_LIMIT)
+        } else {
+            getString(R.string.exit_quota_exhausted, LockExitQuota.MONTHLY_LIMIT)
+        }
         val accessibilityOn = isAccessibilityEnabled()
         val usageOn = AppLimitWatcher.hasUsageAccess(context)
         binding.overlayPermissionButton.alpha = if (Settings.canDrawOverlays(context)) 1f else 0.55f

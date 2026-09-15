@@ -83,8 +83,12 @@ class LockMachineService : LifecycleService() {
     }
 
     private fun finishLock() {
-        // 自然到期 = 忍住没退；同样要在 stop() 之前记
-        LockStats.record(this, heldOut = true)
+        // 自然到期 = 忍住没退；而结束时刻已经被清掉，说明是用户主动退出 ——
+        // 那条路（stopLock）已经按 heldOut = false 记过一次，别再当成「忍住」补记一遍。
+        // 循环退出的原因就是 isActive 变 false，所以这两种情况只能靠 prefs 是否还留着时刻来分。
+        if (LockMachineController.endAt(this) > 0L) {
+            LockStats.record(this, heldOut = true)
+        }
         LockMachineController.stop(this)
         LockMachineOverlayController.hide(this, force = true)
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
