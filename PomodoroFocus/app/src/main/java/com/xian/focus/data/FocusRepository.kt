@@ -15,7 +15,8 @@ class FocusRepository(
     private val taskDao: TaskDao,
     private val recordDao: PomodoroRecordDao,
     private val subtaskDao: SubtaskDao,
-    private val countdownDao: CountdownDao
+    private val countdownDao: CountdownDao,
+    private val habitDao: HabitDao
 ) {
     suspend fun getAllTasks() = withContext(Dispatchers.IO) {
         taskDao.getAllTasks()
@@ -67,24 +68,29 @@ class FocusRepository(
         taskDao.updateTasks(tasks.map { it.normalizeRepeatTemplate() })
     }
 
+    /**
+     * 删除任务 —— 实际是「移入回收站」：在行上打一个时间戳，30 天内可以还原。
+     * 方法名保留 delete 是刻意的：调用方语义没变（用户看到的就是删掉了），
+     * 只有存储层从 DELETE 换成了 UPDATE。
+     */
     suspend fun deleteTask(task: Task) = withContext(Dispatchers.IO) {
-        taskDao.deleteTask(task)
+        taskDao.trashTask(task.id, System.currentTimeMillis())
     }
 
-    /** 删除整个重复系列：模板 + 全部快照。 */
+    /** 移入回收站：整个重复系列（模板 + 全部快照）。 */
     suspend fun deleteTaskSeries(templateId: Int) = withContext(Dispatchers.IO) {
-        taskDao.deleteTemplateWithSnapshots(templateId)
+        taskDao.trashTemplateWithSnapshots(templateId, System.currentTimeMillis())
     }
 
     /**
-     * 删除整个重复系列，但把已完成的那几天留作历史。
+     * 移入回收站：整个重复系列，但把已完成的那几天留作历史。
      *
      * 两步顺序不能换：必须先把已完成的快照摘出来（templateId 置 0），
      * 否则第二步按 templateId 删的时候会把它们一起带走。
      */
     suspend fun deleteTaskSeriesKeepCompleted(templateId: Int) = withContext(Dispatchers.IO) {
         taskDao.detachCompletedSnapshots(templateId)
-        taskDao.deleteTemplateAndUnfinishedSnapshots(templateId)
+        taskDao.trashTemplateAndUnfinishedSnapshots(templateId, System.currentTimeMillis())
     }
 
     suspend fun getTaskById(id: Int) = withContext(Dispatchers.IO) {
@@ -203,8 +209,142 @@ class FocusRepository(
         countdownDao.update(countdown)
     }
 
+    /** 移入回收站（与任务的删除同义，只是不在同一张表）。 */
     suspend fun deleteCountdown(countdown: Countdown) = withContext(Dispatchers.IO) {
-        countdownDao.delete(countdown)
+        countdownDao.trash(countdown.id, System.currentTimeMillis())
+    }
+
+    // ------------------------------------------------------------------ 回收站
+
+    /** 回收站里的任务行。同一个重复系列的模板与快照都在里面，聚合由上层做。 */
+    suspend fun getTrashedTasks() = withContext(Dispatchers.IO) {
+        taskDao.getTrashedTasks()
+    }
+
+    suspend fun getTrashedCountdowns() = withContext(Dispatchers.IO) {
+        countdownDao.getTrashed()
+    }
+
+    /** 还原整个重复系列（单条任务就是它自己的 id）。 */
+    suspend fun restoreTaskSeries(seriesId: Int) = withContext(Dispatchers.IO) {
+        taskDao.restoreTaskSeries(seriesId)
+    }
+
+    suspend fun restoreCountdown(id: Int) = withContext(Dispatchers.IO) {
+        countdownDao.restore(id)
+    }
+
+    /** 彻底删除整个系列；子任务由外键 CASCADE 连带清掉。 */
+    suspend fun purgeTaskSeries(seriesId: Int) = withContext(Dispatchers.IO) {
+        taskDao.purgeTaskSeries(seriesId)
+    }
+
+    suspend fun purgeCountdown(id: Int) = withContext(Dispatchers.IO) {
+        countdownDao.purge(id)
+    }
+
+    /** 清空回收站（任务 + 倒数日 + 习惯）。便贴不在这 —— 它存在 prefs 里，见 NoteStore。 */
+    suspend fun purgeAllTrash() = withContext(Dispatchers.IO) {
+        taskDao.purgeAllTrashedTasks()
+        countdownDao.purgeAllTrashed()
+        // 日志必须先清：习惯行一删，就再也查不出「哪些日志属于已删习惯」了
+        habitDao.purgeLogsOfTrashed()
+        habitDao.purgeAllTrashed()
+    }
+
+    /**
+     * 回收站保留期到期清理：删除时间早于 `now - keepMillis` 的行真删。
+     *
+     * 习惯同样是先日志后主体 —— 反过来的话，习惯行没了，它的日志就成了孤儿，
+     * 库里留着、导出时也会多出一堆没人认领的行。
+     */
+    suspend fun purgeExpiredTrash(keepMillis: Long) = withContext(Dispatchers.IO) {
+        val cutoff = System.currentTimeMillis() - keepMillis
+        taskDao.purgeExpiredTasks(cutoff)
+        countdownDao.purgeExpired(cutoff)
+        habitDao.purgeLogsForExpired(cutoff)
+        habitDao.purgeExpired(cutoff)
+    }
+
+    // ------------------------------------------------------------------ 小习惯打卡
+
+    suspend fun getHabits(): List<Habit> = withContext(Dispatchers.IO) { habitDao.getAll() }
+
+    suspend fun getHabit(id: Int): Habit? = withContext(Dispatchers.IO) { habitDao.getById(id) }
+
+    /** 新增；返回新 id（撞 id 被跳过时返回 -1）。导入时会带上原备份里的 id。 */
+    suspend fun addHabit(habit: Habit): Long = withContext(Dispatchers.IO) {
+        habitDao.insert(habit)
+    }
+
+    suspend fun updateHabit(habit: Habit) = withContext(Dispatchers.IO) { habitDao.update(habit) }
+
+    /** 删除习惯 = 移入回收站。日志原样留着，还原回来历史就还在。 */
+    suspend fun deleteHabit(id: Int) = withContext(Dispatchers.IO) {
+        habitDao.trash(id, System.currentTimeMillis())
+    }
+
+    /**
+     * 打卡 +1，返回打卡后的次数（界面直接拿去更新那一行）。
+     *
+     * 先试 UPDATE：命中说明今天已经有记录，返回 0 行才是「今天第一次打」，此时插一行。
+     * 不用 `INSERT OR REPLACE` —— 那会换掉主键，也绕开了 (habitId, day) 的唯一约束。
+     */
+    suspend fun punchHabit(habitId: Int, day: Long): Int = withContext(Dispatchers.IO) {
+        if (habitDao.bumpLog(habitId, day) == 0) {
+            habitDao.insertLog(HabitLog(habitId = habitId, day = day, count = 1))
+            1
+        } else {
+            habitDao.findLog(habitId, day)?.count ?: 1
+        }
+    }
+
+    /** 撤销某天的打卡（界面上的「撤销今天」）。 */
+    suspend fun undoHabit(habitId: Int, day: Long) = withContext(Dispatchers.IO) {
+        habitDao.clearLog(habitId, day)
+    }
+
+    /** 某天起的全部日志。一次取回算今日进度与连续天数，免得每个习惯查一次库。 */
+    suspend fun getHabitLogsSince(fromDay: Long): List<HabitLog> = withContext(Dispatchers.IO) {
+        habitDao.getLogsSince(fromDay)
+    }
+
+    /** 某个习惯的全部日志。 */
+    suspend fun getHabitLogs(habitId: Int): List<HabitLog> = withContext(Dispatchers.IO) {
+        habitDao.getLogsFor(habitId)
+    }
+
+    /** 导出用的全量日志。**含已删习惯的** —— 还原之后历史还在（见 [HabitDao] 类注释）。 */
+    suspend fun getAllHabitLogs(): List<HabitLog> = withContext(Dispatchers.IO) {
+        habitDao.getAllLogs()
+    }
+
+    suspend fun getTrashedHabits(): List<Habit> = withContext(Dispatchers.IO) { habitDao.getTrashed() }
+
+    suspend fun restoreHabit(id: Int) = withContext(Dispatchers.IO) { habitDao.restore(id) }
+
+    /** 彻底删除习惯：连同它的全部日志，否则库里会留下认不出主人的行。 */
+    suspend fun purgeHabit(id: Int) = withContext(Dispatchers.IO) {
+        habitDao.purgeLogsFor(id)
+        habitDao.purge(id)
+    }
+
+    /**
+     * 导入用：按备份里原来的 id 整批写回（撞 id 的行由 DAO 的 IGNORE 跳过，不覆盖已有数据）。
+     * 带上原 id 才有意义 —— 打卡记录的「习惯编号」指的就是它。
+     */
+    suspend fun restoreHabits(habits: List<Habit>) = withContext(Dispatchers.IO) {
+        habits.forEach { habitDao.insert(it) }
+    }
+
+    /**
+     * 导入用：按备份里的次数整条写回某天的记录。
+     * 已经存在的那天不动（同「不覆盖已有数据」的总口径），所以先 UPDATE、没命中才 INSERT。
+     */
+    suspend fun restoreHabitLog(log: HabitLog) = withContext(Dispatchers.IO) {
+        if (habitDao.setLogCount(log.habitId, log.day, log.count) == 0) {
+            habitDao.insertLog(log)
+        }
     }
 
     /**
@@ -272,7 +412,13 @@ class FocusRepository(
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    private companion object {
-        const val DAY_MILLIS = 24L * 60L * 60L * 1000L
+    companion object {
+        private const val DAY_MILLIS = 24L * 60L * 60L * 1000L
+
+        /**
+         * 回收站保留期。到期由冷启动时的 [purgeExpiredTrash] 真删，
+         * 界面上「剩 N 天」也算自这里，两边必须同一个来源。
+         */
+        const val TRASH_KEEP_MILLIS = 30L * DAY_MILLIS
     }
 }

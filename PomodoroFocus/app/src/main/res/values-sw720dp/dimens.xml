@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 10 吋以上的平板：留白再宽一档，内容列维持在 700dp 上下。 -->
+<resources>
+    <dimen name="page_side_padding">160dp</dimen>
+</resources>

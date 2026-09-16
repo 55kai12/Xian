@@ -55,6 +55,10 @@ class BootReceiver : BroadcastReceiver() {
                     .forEach { TaskReminderScheduler.schedule(appContext, it) }
                 repository.getAllCountdownsOnce()
                     .forEach { CountdownReminderScheduler.sync(appContext, it) }
+                // 习惯提醒是「每天自我重排」的闹钟，平时不需要补；但重启会把 AlarmManager 清空，
+                // 不在这里排上，用户的打卡提醒会一直到下次编辑那个习惯才恢复。
+                repository.getHabits()
+                    .forEach { HabitReminderScheduler.sync(appContext, it) }
             } catch (e: Exception) {
                 // 重建失败不该让开机流程崩掉，下次进应用时会重新排。
             } finally {

@@ -577,6 +577,7 @@ internal fun TasksFragment.showEditTaskDialogCompat(task: Task) {
                         .setNegativeButton(R.string.cancel, null)
                         .setPositiveButton(R.string.action_delete) { _, _ ->
                             taskViewModel.deleteTask(task)
+                            toastMovedToRecycleBin()
                             editDialog.dismiss()
                         }
                     .show()

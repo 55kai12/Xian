@@ -4,6 +4,7 @@ import android.content.Context
 import com.xian.focus.data.AppDatabase
 import com.xian.focus.data.CountdownDao
 import com.xian.focus.data.FocusRepository
+import com.xian.focus.data.HabitDao
 import com.xian.focus.data.PomodoroRecordDao
 import com.xian.focus.data.SubtaskDao
 import com.xian.focus.data.TaskDao
@@ -36,11 +37,15 @@ object AppModule {
     fun provideCountdownDao(database: AppDatabase): CountdownDao = database.countdownDao()
 
     @Provides
+    fun provideHabitDao(database: AppDatabase): HabitDao = database.habitDao()
+
+    @Provides
     @Singleton
     fun provideFocusRepository(
         taskDao: TaskDao,
         pomodoroRecordDao: PomodoroRecordDao,
         subtaskDao: SubtaskDao,
-        countdownDao: CountdownDao
-    ): FocusRepository = FocusRepository(taskDao, pomodoroRecordDao, subtaskDao, countdownDao)
+        countdownDao: CountdownDao,
+        habitDao: HabitDao
+    ): FocusRepository = FocusRepository(taskDao, pomodoroRecordDao, subtaskDao, countdownDao, habitDao)
 }

@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  新建 / 编辑习惯。
+  频率三选一（每天 / 每周 N 次 / 指定星期），下面两行按选择显隐：
+  「指定星期」只在「指定星期」时出现，「每周目标」只在「每周 N 次」时出现。
+  高度全部写死或由内容撑开 —— AlertDialog 里的自定义 view 高度无界，不能用 weight。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="22dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="2dp">
+
+    <EditText
+        android:id="@+id/habitNameInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:autofillHints=""
+        android:background="@drawable/bg_edittext"
+        android:hint="@string/habit_name_hint"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:maxLength="20"
+        android:maxLines="1"
+        android:padding="12dp"
+        android:textColor="?attr/colorOnSurface"
+        android:textColorHint="?attr/colorOnSurfaceVariant"
+        android:textSize="16sp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/habit_color_label"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:id="@+id/habitColorRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/habit_freq_label"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="13sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/freqDailyButton"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/habit_freq_daily" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/freqWeeklyButton"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/habit_freq_weekly" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/freqCustomButton"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:text="@string/habit_freq_custom" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/habitWeekDayRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dayChip1"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/weekday_mon_short" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dayChip2"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/weekday_tue_short" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dayChip3"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/weekday_wed_short" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dayChip4"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/weekday_thu_short" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dayChip5"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/weekday_fri_short" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dayChip6"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/weekday_sat_short" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/dayChip7"
+            style="@style/Widget.Xian.Button.Chip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:minWidth="0dp"
+            android:paddingHorizontal="0dp"
+            android:text="@string/weekday_sun_short" />
+    </LinearLayout>
+
+    <!-- 每周目标次数（仅「每周 N 次」显示） -->
+    <LinearLayout
+        android:id="@+id/habitWeeklyRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/habit_weekly_target_label"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/weeklyMinusButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="−"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/habitWeeklyValue"
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/weeklyPlusButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <!-- 每日目标次数 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/habit_daily_target_label"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/targetMinusButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="−"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/habitTargetValue"
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/targetPlusButton"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <!-- 提醒时间：点击弹系统时间选择器 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/habit_remind_label"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/habitRemindValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_option_row"
+            android:clickable="true"
+            android:focusable="true"
+            android:minWidth="88dp"
+            android:paddingHorizontal="14dp"
+            android:paddingVertical="8dp"
+            android:gravity="center"
+            android:textColor="?attr/colorBrandContent"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

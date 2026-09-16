@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  大屏（平板 / 折叠屏展开态）内容两侧的留白。
+
+  手机上是 0dp —— 而且这个值不是写在布局里的，是给 MainActivity 读的：
+  `applyLargeScreenPadding()` 拿到 0 就直接返回，手机侧一行 padding 都不设，
+  所有布局文件（含横屏）保持原样。覆盖见 values-sw600dp（96dp）与 values-sw720dp（160dp）。
+-->
+<resources>
+    <dimen name="page_side_padding">0dp</dimen>
+</resources>

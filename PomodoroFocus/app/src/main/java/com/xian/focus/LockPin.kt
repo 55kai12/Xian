@@ -16,8 +16,12 @@ enum class PinScope { EXIT_LOCK, APP_LIMIT }
  * 这一套只管锁机退出与应用限额加时。两件事，别互相牵连。
  *
  * 存储挂在 `lock_machine_prefs`（锁机设置那一份）上，不另开 prefs 文件：
- * 清数据与备份导出都是按文件名走的，少一个文件就少一处会漏的地方；
- * 顺带这份数据不参与备份导出，密码哈希不会跟着导出文件流出去。
+ * 少一处「清数据」会漏掉的地方（见 `SettingsFragment.ALL_PREFS`）。
+ *
+ * ⚠️ **这份数据刻意不进备份**：4 位数字的 SHA-256 十秒就能爆破，备份文件流到谁手里
+ * 就等于把密码给了谁。所以 `settings.csv` 里没有它、导入端也刻意不认它
+ * （见 `DataRestore.restoreSheetSettings` 的注释）—— 换台手机密码要重设一次。
+ * 同一个 prefs 里的白名单、格言、锁机统计**是**进备份的（用户自己攒的东西，不该重来）。
  */
 object LockPin {
     private const val PREFS_NAME = "lock_machine_prefs"

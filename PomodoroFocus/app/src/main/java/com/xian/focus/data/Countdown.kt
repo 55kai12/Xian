@@ -13,5 +13,7 @@ data class Countdown(
     val createdAt: Long = System.currentTimeMillis(),
     val sortOrder: Int = 0,
     val linkedTaskId: Int = 0,
-    val note: String = ""
+    val note: String = "",
+    /** 删除时间戳，0 表示没删。>0 的行只在回收站里出现。 */
+    val deletedAt: Long = 0
 )

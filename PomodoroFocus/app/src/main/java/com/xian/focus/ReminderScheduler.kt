@@ -18,13 +18,21 @@ import android.content.Intent
  */
 object ReminderScheduler {
 
+    /**
+     * 排一条提醒。
+     *
+     * [repeatDaily] 为真时，[ReminderReceiver] 发完通知会自己算下一天并重排 ——
+     * 习惯提醒要每天响，而 AlarmManager 没有「每天重复的精确闹钟」这种原语。
+     * 重排是纯时间运算，所以接收器仍然不用碰数据库。
+     */
     fun schedule(
         context: Context,
         requestCode: Int,
         notificationId: Int,
         title: String,
         text: String,
-        triggerAt: Long
+        triggerAt: Long,
+        repeatDaily: Boolean = false
     ) {
         if (triggerAt <= System.currentTimeMillis()) {
             cancel(context, requestCode)
@@ -36,7 +44,7 @@ object ReminderScheduler {
         )
         ExactAlarms.schedule(
             context, triggerAt, showIntent,
-            alarmIntent(context, requestCode, notificationId, title, text)
+            alarmIntent(context, requestCode, notificationId, title, text, repeatDaily, triggerAt)
         )
     }
 
@@ -50,11 +58,20 @@ object ReminderScheduler {
         requestCode: Int,
         notificationId: Int,
         title: String?,
-        text: String?
+        text: String?,
+        repeatDaily: Boolean = false,
+        triggerAt: Long = 0
     ): PendingIntent {
         val intent = Intent(context, ReminderReceiver::class.java)
             .setAction(ReminderReceiver.ACTION_REMIND)
             .putExtra(ReminderReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+            .putExtra(ReminderReceiver.EXTRA_REQUEST_CODE, requestCode)
+        // 只有「每天重复」的提醒需要这两项：接收器靠它们算出下一天的时刻。
+        // cancel() 不带也能命中同一个闹钟 —— PendingIntent 的相等性只看 requestCode + action + component。
+        if (repeatDaily) {
+            intent.putExtra(ReminderReceiver.EXTRA_REPEAT_DAILY, true)
+            intent.putExtra(ReminderReceiver.EXTRA_TRIGGER_AT, triggerAt)
+        }
         if (title != null) intent.putExtra(ReminderReceiver.EXTRA_TITLE, title)
         if (text != null) intent.putExtra(ReminderReceiver.EXTRA_TEXT, text)
         return PendingIntent.getBroadcast(

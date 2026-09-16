@@ -11,7 +11,8 @@ import android.widget.TextView
  * 而用户在编辑框里看到的顺序就是他排的顺序 —— 存成无序集合，编辑一次顺序就乱一次。
  *
  * 挂在 `lock_machine_prefs`（锁机设置那一份）上，同 [LockPin]：少一个 prefs 文件，
- * 少一处清数据/漏备份的地方；这份数据同样不参与备份导出。
+ * 少一处清数据会漏的地方。**这份数据会进备份**（`settings.csv` 的「锁机格言」行）——
+ * 一条条敲出来的文案，换台手机不该重敲一遍；同一份 prefs 里的 [LockPin] 密码哈希才是刻意不导的。
  */
 object LockQuotes {
     private const val PREFS_NAME = "lock_machine_prefs"

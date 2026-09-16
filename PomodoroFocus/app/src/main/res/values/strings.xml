@@ -225,8 +225,10 @@
     <string name="pick_date">选择日期</string>
     <string name="diary_content">日记内容</string>
     <string name="data_export">数据导出</string>
-    <string name="data_export_desc">导出全部任务与专注记录为 CSV 文件</string>
+    <string name="data_export_desc">把任务、专注记录、日记、便贴与全部配图打包成一个 zip 备份</string>
     <string name="export_data">导出数据</string>
+    <string name="export_save_to_file">保存到文件</string>
+    <string name="export_share">分享给其他应用</string>
     <string name="exporting">正在导出…</string>
     <string name="export_done">导出完成</string>
     <string name="review_chart_title">近 7 天贤时趋势</string>
@@ -258,6 +260,7 @@
     <string name="restore_wallpaper">恢复默认壁纸</string>
     <string name="wallpaper_saved">壁纸已设置</string>
     <string name="wallpaper_restored">已恢复默认壁纸</string>
+    <string name="wallpaper_save_failed">壁纸设置失败，请换一张图再试</string>
     <string name="stats_today">今日</string>
     <string name="stats_week">近7天</string>
     <string name="stats_total">累计</string>
@@ -355,13 +358,13 @@
 
     <!-- 数据导入（CSV 恢复） -->
     <string name="data_import">数据导入</string>
-    <string name="data_import_desc">从导出的 CSV 备份恢复数据，同 ID 的记录会跳过</string>
+    <string name="data_import_desc">从导出的 zip 备份恢复数据，同 ID 的记录会跳过</string>
     <string name="import_data">导入数据</string>
     <string name="importing">正在导入…</string>
-    <string name="import_failed">导入失败，请确认选的是本应用导出的 CSV</string>
+    <string name="import_failed">导入失败，请确认选的是本应用导出的备份文件</string>
     <string name="import_nothing">该文件里没有可恢复的数据</string>
     <string name="import_done">已恢复 %1$d 条记录</string>
-    <string name="import_confirm_message">将从所选 CSV 恢复任务、子任务、专注记录、倒数日、复盘日记与应用限额。\n已存在的相同 ID 记录不会覆盖，日记里的图片无法还原，应用限额按包名覆盖。</string>
+    <string name="import_confirm_message">将从所选备份恢复任务、子任务、专注记录、倒数日、复盘日记、应用限额、便贴与全部配图（含壁纸）。\n已存在的相同 ID 记录不会覆盖；日记与应用限额按日期/包名覆盖。</string>
 
     <!-- ===== 每日祈福 ===== -->
     <string name="fortune_level_supreme">上上签</string>
@@ -431,7 +434,7 @@
     <string name="about_version">贤 v%1$s</string>
     <string name="about_message">贤 v%1$s\n\n中国古风专注助手\n\n功能：\n· 任务清单与番茄钟\n· 锁机专注\n· 个性化复盘与日记\n· 倒数日\n· 每日祈福</string>
     <string name="clear_data">清除所有数据</string>
-    <string name="clear_data_confirm">确定要清除所有任务、专注记录、倒数日、日记和全部设置吗？此操作不可恢复。</string>
+    <string name="clear_data_confirm">确定要清除所有任务、专注记录、倒数日、日记、便贴、应用限额、壁纸和全部设置吗？此操作不可恢复。</string>
     <string name="clear_nothing">删了个寂寞</string>
     <string name="clear_done">所有数据已清除</string>
 
@@ -560,4 +563,66 @@
     <string name="event_reminder_days_desc_fortnight">提前两周</string>
     <string name="event_reminder_days_desc_month">提前一个月</string>
     <string name="event_reminder_days_desc_days">提前 %1$d 天</string>
+
+    <!-- 回收站 -->
+    <string name="recycle_bin_title">回收站</string>
+    <string name="recycle_bin_empty">回收站是空的</string>
+    <string name="recycle_bin_hint">删除的内容会在这里保留 30 天</string>
+    <string name="recycle_bin_clear">清空</string>
+    <string name="recycle_bin_clear_confirm">确定永久删除回收站里的全部内容吗？此操作不可恢复。</string>
+    <string name="recycle_bin_restore">恢复</string>
+    <string name="recycle_bin_purge">永久删除</string>
+    <string name="recycle_bin_purge_confirm">确定永久删除「%1$s」吗？此操作不可恢复。</string>
+    <string name="recycle_bin_kind_task">任务</string>
+    <string name="recycle_bin_kind_countdown">倒数日</string>
+    <string name="recycle_bin_kind_note">便贴</string>
+    <string name="recycle_bin_item_subtitle">%1$s · 剩 %2$d 天</string>
+    <string name="recycle_bin_untitled">无标题</string>
+    <string name="recycle_bin_blank_note">空白便贴</string>
+    <string name="recycle_bin_restored">已恢复</string>
+    <string name="recycle_bin_purged">已永久删除</string>
+    <string name="recycle_bin_cleared">回收站已清空</string>
+    <string name="moved_to_recycle_bin">已移入回收站</string>
+
+    <!-- 小习惯打卡 -->
+    <string name="habit_title">小习惯</string>
+    <string name="habit_add">新建习惯</string>
+    <string name="habit_empty">还没有习惯。点右上角的 ＋ 新建一个，比如「早起」「喝水」。</string>
+    <string name="habit_name_hint">习惯名称</string>
+    <string name="habit_color_label">颜色</string>
+    <string name="habit_freq_label">频率</string>
+    <string name="habit_freq_daily">每天</string>
+    <string name="habit_freq_weekly">每周 N 次</string>
+    <string name="habit_freq_custom">指定星期</string>
+    <string name="habit_weekly_target_label">每周目标次数</string>
+    <string name="habit_daily_target_label">每日目标次数</string>
+    <string name="habit_remind_label">提醒时间</string>
+    <string name="habit_remind_off">不提醒</string>
+    <string name="habit_today_label">今天 · %1$s</string>
+    <string name="habit_streak">连续 %1$d 天</string>
+    <string name="habit_week_progress">本周 %1$d/%2$d</string>
+    <string name="habit_today_progress">已达标 %1$d/%2$d</string>
+    <string name="habit_count_format">%1$d/%2$d</string>
+    <string name="habit_rest_today">今天不用打卡</string>
+    <string name="habit_done_toast">今天的「%1$s」已经完成了</string>
+    <string name="habit_undo_title">撤销今天的打卡</string>
+    <string name="habit_undo_message">把「%1$s」今天的打卡记录清掉？</string>
+    <string name="habit_undo_done">已撤销今天的打卡</string>
+    <string name="habit_punch_hint">打卡成功 · 长按圆钮可撤销今天</string>
+    <string name="habit_name_required">给习惯起个名字</string>
+    <string name="habit_custom_empty">至少选一个星期</string>
+    <string name="habit_edit">编辑习惯</string>
+    <string name="habit_delete_message">把「%1$s」移入回收站？</string>
+    <string name="habit_saved">已保存</string>
+    <string name="habit_deleted">已移入回收站</string>
+    <string name="habit_notify_title">小习惯打卡</string>
+    <string name="habit_notify_text">该打卡了：%1$s</string>
+    <string name="recycle_bin_kind_habit">习惯</string>
+    <string name="weekday_mon_short">一</string>
+    <string name="weekday_tue_short">二</string>
+    <string name="weekday_wed_short">三</string>
+    <string name="weekday_thu_short">四</string>
+    <string name="weekday_fri_short">五</string>
+    <string name="weekday_sat_short">六</string>
+    <string name="weekday_sun_short">日</string>
 </resources>

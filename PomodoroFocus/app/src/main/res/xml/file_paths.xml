@@ -2,4 +2,6 @@
 <paths>
     <external-files-path name="exports" path="." />
     <files-path name="internal" path="." />
+    <!-- 导出分享用的临时 zip 落在 cacheDir（系统会自动回收，不像 external-files 那样攒垃圾） -->
+    <cache-path name="cache" path="." />
 </paths>

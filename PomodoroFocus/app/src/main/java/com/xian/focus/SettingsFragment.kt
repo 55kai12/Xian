@@ -11,6 +11,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
@@ -218,8 +219,11 @@ class SettingsFragment : Fragment() {
             runCatching { LockMachineScheduler.cancel(appContext) }
 
             withContext(Dispatchers.IO) {
-                // 同步 commit：确保在提示用户之前就已经真正落盘
-                ALL_PREFS.forEach { name ->
+                // 同步 commit：确保在提示用户之前就已经真正落盘。
+                // 名单取「ALL_PREFS」与「shared_prefs 目录里实际存在的文件」的并集：
+                // 以后再新增一个 SharedPreferences 忘了登记，这里也能兜住
+                //（便贴与应用限额就是这么漏掉的，两个都只活在 prefs 里）。
+                allPrefNames(appContext).forEach { name ->
                     runCatching {
                         appContext.getSharedPreferences(name, Context.MODE_PRIVATE)
                             .edit().clear().commit()
@@ -228,14 +232,36 @@ class SettingsFragment : Fragment() {
                 // 用 clearAllTables 而不是 deleteDatabase：
                 // 复用同一个已打开的连接清表，删得干净且不会留下悬空的单例
                 runCatching { database.clearAllTables() }
-                // 壁纸与导出缓存文件
-                runCatching { File(appContext.filesDir, "wallpaper.jpg").takeIf { it.exists() }?.delete() }
-                runCatching { appContext.getExternalFilesDir(null)?.listFiles()?.forEach { it.delete() } }
+                // 私有目录整体清空，而不是逐个文件点名：
+                // filesDir 下有壁纸与导入还原的图片（backup_images/），
+                // cacheDir 下有导出的备份包与导入临时文件。点名法每加一个新文件就得回来补一笔，
+                // 整体清空则天然不会漏。Room 库与 SharedPreferences 不在这两个目录下，不受影响。
+                runCatching { appContext.filesDir?.listFiles()?.forEach { it.deleteRecursively() } }
+                runCatching { appContext.cacheDir?.listFiles()?.forEach { it.deleteRecursively() } }
+                runCatching { appContext.getExternalFilesDir(null)?.listFiles()?.forEach { it.deleteRecursively() } }
             }
+
+            // 通知栏里可能还挂着「任务提醒」「锁机掉线」这些历史通知，点进去是空数据，一并撤掉
+            runCatching { NotificationManagerCompat.from(appContext).cancelAll() }
 
             Toast.makeText(requireContext(), R.string.clear_done, Toast.LENGTH_LONG).show()
             restartToFreshState()
         }
+    }
+
+    /**
+     * 真正要清空的 SharedPreferences 名单。
+     *
+     * 以 [ALL_PREFS] 为准，再并上 `shared_prefs/` 目录里实际存在的文件 —— 后者是防漏网：
+     * 新加一个 prefs 却忘了登记时，只要这台机器上创建过该文件就会被一起清掉，不必等改代码。
+     * 目录读不到（极少见的权限问题）时退回只用 [ALL_PREFS]，行为与旧版一致。
+     */
+    private fun allPrefNames(context: Context): List<String> {
+        val onDisk = runCatching {
+            File(context.applicationInfo.dataDir, "shared_prefs")
+                .listFiles()?.map { it.name.removeSuffix(".xml") }.orEmpty()
+        }.getOrDefault(emptyList())
+        return (ALL_PREFS + onDisk).distinct()
     }
 
     /**
@@ -257,18 +283,22 @@ class SettingsFragment : Fragment() {
     }
 
     private companion object {
-        /** 本应用用到的全部 SharedPreferences 文件名，清数据时必须一个都不能漏。 */
+        /** 本应用用到的全部 SharedPreferences 文件名。新加 prefs 时务必同步登记。 */
         val ALL_PREFS = listOf(
             "focus_preferences",   // 每日目标
             "timer_settings",      // 番茄钟时长 + 计时 session + 锁机开关
-            "event_settings",      // 事件设置 / 显示选项 / 节假日缓存
+            "event_settings",      // 事件设置 / 显示选项 / 倒数日提醒 / 节假日缓存
             "review_prefs",        // 每日复盘日记（文字、评分、图片）
             "app_lock_prefs",      // 应用锁 PIN
             "group_color_prefs",   // 分类配色
-            "lock_machine_prefs",  // 自定义锁机的结束时间与白名单
+            "lock_machine_prefs",  // 自定义锁机的结束时间、白名单、PIN、格言、锁机统计
             "lock_schedule_prefs", // 自定义锁机时间段
+            "lock_health_prefs",   // 锁机掉线自检的「已提醒过」标记
             "theme_prefs",         // 主题
             "wallpaper_prefs",     // 壁纸
+            "note_prefs",          // 便贴
+            "app_limit_prefs",     // 应用限额（规则 + 当日用量统计）
+            "task_skip",           // 重复任务的「本次跳过」
             "fortune_data"         // 每日祈福
         )
     }

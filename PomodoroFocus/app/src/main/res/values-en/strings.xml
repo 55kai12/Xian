@@ -221,8 +221,10 @@
     <string name="pick_date">Pick a date</string>
     <string name="diary_content">Diary</string>
     <string name="data_export">Data export</string>
-    <string name="data_export_desc">Export all tasks and focus records as CSV</string>
+    <string name="data_export_desc">Pack tasks, focus records, diary, notes and all images into one zip backup</string>
     <string name="export_data">Export data</string>
+    <string name="export_save_to_file">Save to file</string>
+    <string name="export_share">Share with another app</string>
     <string name="exporting">Exporting...</string>
     <string name="export_done">Export complete</string>
     <string name="review_chart_title">Last 7 days trend</string>
@@ -254,6 +256,7 @@
     <string name="restore_wallpaper">Restore default wallpaper</string>
     <string name="wallpaper_saved">Wallpaper set</string>
     <string name="wallpaper_restored">Default wallpaper restored</string>
+    <string name="wallpaper_save_failed">Could not set that wallpaper, please try another image</string>
     <string name="stats_today">Today</string>
     <string name="stats_week">7 days</string>
     <string name="stats_total">All time</string>
@@ -348,13 +351,13 @@
 
     <!-- Data import (CSV restore) -->
     <string name="data_import">Data import</string>
-    <string name="data_import_desc">Restore from an exported CSV backup; rows with an existing ID are skipped</string>
+    <string name="data_import_desc">Restore from an exported zip backup; rows with an existing ID are skipped</string>
     <string name="import_data">Import data</string>
     <string name="importing">Importing…</string>
-    <string name="import_failed">Import failed - make sure you picked a CSV exported by this app</string>
+    <string name="import_failed">Import failed - make sure you picked a backup exported by this app</string>
     <string name="import_nothing">No restorable data found in that file</string>
     <string name="import_done">Restored %1$d records</string>
-    <string name="import_confirm_message">Tasks, subtasks, focus records, countdowns, review diaries and app limits will be restored from the selected CSV.\nRows whose ID already exists are not overwritten, diary images cannot be restored, and app limits are overwritten by package name.</string>
+    <string name="import_confirm_message">Tasks, subtasks, focus records, countdowns, review diaries, app limits, notes and all images (including the wallpaper) will be restored from the selected backup.\nRows whose ID already exists are not overwritten; diary entries and app limits are overwritten by date/package name.</string>
 
     <!-- ===== Daily fortune ===== -->
     <string name="fortune_level_supreme">Great fortune</string>
@@ -424,7 +427,7 @@
     <string name="about_version">Xian v%1$s</string>
     <string name="about_message">Xian v%1$s\n\nA Chinese-style focus companion\n\nFeatures:\n· Task list and pomodoro timer\n· App lock for deep focus\n· Review and diary\n· Countdowns\n· Daily fortune</string>
     <string name="clear_data">Clear all data</string>
-    <string name="clear_data_confirm">Clear all tasks, focus records, countdowns, diaries and settings? This cannot be undone.</string>
+    <string name="clear_data_confirm">Clear all tasks, focus records, countdowns, diaries, notes, app limits, wallpaper and settings? This cannot be undone.</string>
     <string name="clear_nothing">Nothing to clear</string>
     <string name="clear_done">All data cleared</string>
 
@@ -553,4 +556,66 @@
     <string name="event_reminder_days_desc_fortnight">Two weeks ahead</string>
     <string name="event_reminder_days_desc_month">A month ahead</string>
     <string name="event_reminder_days_desc_days">%1$d days ahead</string>
+
+    <!-- Recycle bin -->
+    <string name="recycle_bin_title">Recycle bin</string>
+    <string name="recycle_bin_empty">The recycle bin is empty</string>
+    <string name="recycle_bin_hint">Deleted items are kept here for 30 days</string>
+    <string name="recycle_bin_clear">Empty</string>
+    <string name="recycle_bin_clear_confirm">Permanently delete everything in the recycle bin? This cannot be undone.</string>
+    <string name="recycle_bin_restore">Restore</string>
+    <string name="recycle_bin_purge">Delete forever</string>
+    <string name="recycle_bin_purge_confirm">Permanently delete \"%1$s\"? This cannot be undone.</string>
+    <string name="recycle_bin_kind_task">Task</string>
+    <string name="recycle_bin_kind_countdown">Countdown</string>
+    <string name="recycle_bin_kind_note">Note</string>
+    <string name="recycle_bin_item_subtitle">%1$s · %2$d days left</string>
+    <string name="recycle_bin_untitled">Untitled</string>
+    <string name="recycle_bin_blank_note">Blank note</string>
+    <string name="recycle_bin_restored">Restored</string>
+    <string name="recycle_bin_purged">Permanently deleted</string>
+    <string name="recycle_bin_cleared">Recycle bin emptied</string>
+    <string name="moved_to_recycle_bin">Moved to the recycle bin</string>
+
+    <!-- Habits -->
+    <string name="habit_title">Habits</string>
+    <string name="habit_add">New habit</string>
+    <string name="habit_empty">No habits yet. Tap ＋ at the top right to add one, such as reading or drinking water.</string>
+    <string name="habit_name_hint">Habit name</string>
+    <string name="habit_color_label">Color</string>
+    <string name="habit_freq_label">Frequency</string>
+    <string name="habit_freq_daily">Daily</string>
+    <string name="habit_freq_weekly">Weekly</string>
+    <string name="habit_freq_custom">Custom days</string>
+    <string name="habit_weekly_target_label">Times per week</string>
+    <string name="habit_daily_target_label">Times per day</string>
+    <string name="habit_remind_label">Reminder</string>
+    <string name="habit_remind_off">Off</string>
+    <string name="habit_today_label">Today · %1$s</string>
+    <string name="habit_streak">%1$d-day streak</string>
+    <string name="habit_week_progress">This week %1$d/%2$d</string>
+    <string name="habit_today_progress">Done %1$d/%2$d</string>
+    <string name="habit_count_format">%1$d/%2$d</string>
+    <string name="habit_rest_today">Not scheduled today</string>
+    <string name="habit_done_toast">"%1$s" is already done for today</string>
+    <string name="habit_undo_title">Undo today</string>
+    <string name="habit_undo_message">Clear the check-in for "%1$s" today?</string>
+    <string name="habit_undo_done">Today\u2019s check-in cleared</string>
+    <string name="habit_punch_hint">Checked in · long press to undo today</string>
+    <string name="habit_name_required">Give the habit a name</string>
+    <string name="habit_custom_empty">Pick at least one day</string>
+    <string name="habit_edit">Edit habit</string>
+    <string name="habit_delete_message">Move "%1$s" to the recycle bin?</string>
+    <string name="habit_saved">Saved</string>
+    <string name="habit_deleted">Moved to the recycle bin</string>
+    <string name="habit_notify_title">Habit check-in</string>
+    <string name="habit_notify_text">Time to check in: %1$s</string>
+    <string name="recycle_bin_kind_habit">Habit</string>
+    <string name="weekday_mon_short">Mon</string>
+    <string name="weekday_tue_short">Tue</string>
+    <string name="weekday_wed_short">Wed</string>
+    <string name="weekday_thu_short">Thu</string>
+    <string name="weekday_fri_short">Fri</string>
+    <string name="weekday_sat_short">Sat</string>
+    <string name="weekday_sun_short">Sun</string>
 </resources>

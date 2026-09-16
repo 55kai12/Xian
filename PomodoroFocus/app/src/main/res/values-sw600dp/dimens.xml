@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  平板 / 折叠屏展开态：内容两侧留白，避免满屏 1000dp 拉成一条。
+  手机默认 0dp（见 values/dimens.xml），所以小屏上等于没加这一层。
+-->
+<resources>
+    <dimen name="page_side_padding">96dp</dimen>
+</resources>

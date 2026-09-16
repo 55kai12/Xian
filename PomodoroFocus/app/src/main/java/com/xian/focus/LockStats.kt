@@ -21,6 +21,12 @@ object LockStats {
 
     data class Snapshot(val sessions: Int, val minutes: Int, val held: Int)
 
+    /**
+     * 备份导出用的一整份原始记录：**连月份一起读，不做「是否本月」的过滤**。
+     * 不能拿 [snapshot] 去导 —— 它只认当月，跨月一律给 0，导出来的会是空的。
+     */
+    data class Stored(val month: Int, val sessions: Int, val minutes: Int, val held: Int)
+
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -55,5 +61,30 @@ object LockStats {
             minutes = prefs.getInt(KEY_MINUTES, 0),
             held = prefs.getInt(KEY_HELD, 0)
         )
+    }
+
+    /** 备份导出：连月份一起原样读出（`month <= 0` 表示这台机器上还没记过一笔）。 */
+    fun stored(context: Context): Stored {
+        val prefs = prefs(context)
+        return Stored(
+            month = prefs.getInt(KEY_MONTH, -1),
+            sessions = prefs.getInt(KEY_SESSIONS, 0),
+            minutes = prefs.getInt(KEY_MINUTES, 0),
+            held = prefs.getInt(KEY_HELD, 0)
+        )
+    }
+
+    /**
+     * 备份导入：把导出时那份原样写回，**月份也一起写**。
+     * 导入后若已跨月，[snapshot] 照样按 0 处理 —— 旧月份的统计不会被混进当月。
+     */
+    fun restore(context: Context, stored: Stored) {
+        if (stored.month <= 0) return
+        prefs(context).edit()
+            .putInt(KEY_MONTH, stored.month)
+            .putInt(KEY_SESSIONS, stored.sessions)
+            .putInt(KEY_MINUTES, stored.minutes)
+            .putInt(KEY_HELD, stored.held)
+            .apply()
     }
 }

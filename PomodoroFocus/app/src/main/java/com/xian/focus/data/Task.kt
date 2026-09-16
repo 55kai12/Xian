@@ -17,5 +17,7 @@ data class Task(
     val imageUri: String? = null,
     val listType: String = "未分类",
     val repeatRule: String = "none",
-    val templateId: Int = 0
+    val templateId: Int = 0,
+    /** 删除时间戳，0 表示没删。>0 的行只在回收站里出现，所有正常查询都要排除。 */
+    val deletedAt: Long = 0
 )

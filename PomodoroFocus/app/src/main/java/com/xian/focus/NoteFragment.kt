@@ -270,11 +270,16 @@ class NoteFragment : Fragment() {
         return true
     }
 
-    /** 拖进垃圾桶：删掉当前这张，接着显示它后面（更新）的那张；删空了补一张新的。 */
+    /** 拖进垃圾桶：进回收站，接着显示它后面（更新）的那张；删空了补一张新的。 */
     private fun deleteCurrent() {
         val note = notes.find { it.createdAt == currentId } ?: return
         val list = NoteStore.ordered(notes)
         val index = list.indexOfFirst { it.createdAt == note.createdAt }
+        // 必须先打删除戳再存盘：下面的 save 是整份重写，而它只保留「已在回收站里」的那些，
+        // 顺序反了这张便贴就直接消失了（既不在活跃列表、也不在回收站）。
+        // 空白便贴是「新开一张」留下的占位，拖掉它本来就是不要了，没必要在回收站里留一条。
+        val trashed = note.text.isNotBlank()
+        if (trashed) NoteStore.moveToTrash(requireContext(), note.createdAt)
         notes.remove(note)
         if (notes.isEmpty()) notes += newNote()
         val neighbour = list.getOrNull(index + 1)?.takeIf { it.createdAt != note.createdAt }
@@ -282,6 +287,7 @@ class NoteFragment : Fragment() {
         currentId = neighbour?.createdAt ?: notes.maxByOrNull { it.createdAt }!!.createdAt
         NoteStore.save(requireContext(), notes)
         renderNote()
+        if (trashed) toastMovedToRecycleBin()
     }
 
     /** 点标题看全部便贴。一叠翻页适合随手写，但张数一多就得有个总览能直接跳过去。 */

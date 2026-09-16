@@ -185,6 +185,7 @@ class CountdownFragment : Fragment() {
                 setPadding(24, 0, 0, 0)
                 setOnClickListener {
                     viewModel.deleteCountdown(countdown)
+                    toastMovedToRecycleBin()
                     currentDialog?.dismiss()
                 }
             }
@@ -273,7 +274,10 @@ class CountdownFragment : Fragment() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.countdown_delete)
             .setMessage(getString(R.string.countdown_delete_confirm, countdown.title))
-            .setPositiveButton(R.string.action_delete) { _, _ -> viewModel.deleteCountdown(countdown) }
+            .setPositiveButton(R.string.action_delete) { _, _ ->
+                viewModel.deleteCountdown(countdown)
+                toastMovedToRecycleBin()
+            }
             .setNegativeButton(R.string.cancel, null)
             .show()
     }

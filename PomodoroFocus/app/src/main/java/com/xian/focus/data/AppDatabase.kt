@@ -3,8 +3,8 @@ import android.content.Context
 import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class],version=10,exportSchema=false)
-abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstract fun pomodoroRecordDao():PomodoroRecordDao; abstract fun subtaskDao():SubtaskDao; abstract fun countdownDao():CountdownDao
+@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class,Habit::class,HabitLog::class],version=12,exportSchema=false)
+abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstract fun pomodoroRecordDao():PomodoroRecordDao; abstract fun subtaskDao():SubtaskDao; abstract fun countdownDao():CountdownDao; abstract fun habitDao():HabitDao
  companion object {
   @Volatile private var instance:AppDatabase?=null
   private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -65,4 +65,22 @@ abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstr
     database.execSQL("UPDATE tasks SET isCompleted = 0 WHERE templateId = 0 AND repeatRule != 'none'")
    }
   }
-  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9,MIGRATION_9_10).build().also{instance=it} } } }
+  private val MIGRATION_10_11 = object : Migration(10, 11) {
+   override fun migrate(database: SupportSQLiteDatabase) {
+    // 回收站：删除不再真删，改在行上打一个时间戳。0 = 未删除（存量数据全部是 0）。
+    // 带默认值，所以老用户的既有任务不会因为这次升级而消失或需要重填。
+    database.execSQL("ALTER TABLE tasks ADD COLUMN deletedAt INTEGER NOT NULL DEFAULT 0")
+    database.execSQL("ALTER TABLE countdowns ADD COLUMN deletedAt INTEGER NOT NULL DEFAULT 0")
+   }
+  }
+  private val MIGRATION_11_12 = object : Migration(11, 12) {
+   override fun migrate(database: SupportSQLiteDatabase) {
+    // 小习惯打卡：两张新表（习惯 + 打卡日志）。纯新增，不动任何既有表，
+    // 所以老用户升级上来任务/倒数日/回收站里的东西一个都不会少。
+    database.execSQL("CREATE TABLE IF NOT EXISTS `habits` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `color` INTEGER NOT NULL, `freqType` TEXT NOT NULL, `weeklyTarget` INTEGER NOT NULL, `weekDaysMask` INTEGER NOT NULL, `targetPerDay` INTEGER NOT NULL, `startDate` INTEGER NOT NULL, `remindMinutes` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `deletedAt` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)")
+    // 打卡日志一天一行（count 攒次数），(habitId, day) 唯一 —— 重复打卡在数据库层就挡住。
+    database.execSQL("CREATE TABLE IF NOT EXISTS `habit_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `habitId` INTEGER NOT NULL, `day` INTEGER NOT NULL, `count` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)")
+    database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_habit_logs_habitId_day` ON `habit_logs` (`habitId`, `day`)")
+   }
+  }
+  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9,MIGRATION_9_10,MIGRATION_10_11,MIGRATION_11_12).build().also{instance=it} } } }

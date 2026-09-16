@@ -26,11 +26,15 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.haibin.calendarview.CalendarView
 import com.jaredrummler.materialspinner.MaterialSpinner
+import com.xian.focus.data.FocusRepository
 import com.xian.focus.data.Task
 import com.xian.focus.databinding.FragmentTasksBinding
 import com.xian.focus.service.FocusTimerService
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -44,6 +48,10 @@ class TasksFragment : Fragment() {
     internal val taskViewModel: TaskViewModel by activityViewModels()
     private val timerViewModel: TimerViewModel by activityViewModels()
     private val statsViewModel: StatsViewModel by activityViewModels()
+
+    /** 只为了抽屉里「回收站」那行小字要的条数。 */
+    @Inject
+    lateinit var repository: FocusRepository
 
     private lateinit var taskAdapter: TaskAdapter
     private var weekStartMillis = 0L
@@ -226,6 +234,8 @@ class TasksFragment : Fragment() {
             loadWeekTrend()
             renderCurrentList()
             updateAppLimitSummary()
+            updateRecycleBinSummary()
+            updateHabitSummary()
         }
     }
 
@@ -236,6 +246,55 @@ class TasksFragment : Fragment() {
             ""
         } else {
             getString(R.string.app_limit_drawer_summary, summary.usedMinutes)
+        }
+    }
+
+    /**
+     * 抽屉里「回收站」右边那行小字：里面有几条。
+     *
+     * 任务按「重复系列」算一条 —— 删一次重复任务会往回收站里放几十行快照，
+     * 按行数显示等于天天看到个三位数，反而看不出删了几样东西。
+     */
+    private fun updateRecycleBinSummary() {
+        val appContext = requireContext().applicationContext
+        viewLifecycleOwner.lifecycleScope.launch {
+            val count = withContext(Dispatchers.IO) {
+                val series = repository.getTrashedTasks()
+                    .map { if (it.templateId != 0) it.templateId else it.id }
+                    .distinct()
+                    .size
+                series + repository.getTrashedCountdowns().size + NoteStore.loadTrash(appContext).size
+            }
+            val view = _binding ?: return@launch
+            view.drawerRecycleBinSummary.text = if (count == 0) "" else count.toString()
+        }
+    }
+
+    /**
+     * 抽屉里「小习惯」右边的小字：今天达标了几个 / 今天该打卡的总数。
+     *
+     * 一个习惯都没有时留空 —— 显示「0/0」等于告诉用户这里有个空功能。
+     * 达标判定问 [HabitStreak]，与打卡页同一口径，免得抽屉说 2/5、页面说 3/5。
+     */
+    private fun updateHabitSummary() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val now = System.currentTimeMillis()
+            val today = HabitStreak.startOfDay(now)
+            val summary = withContext(Dispatchers.IO) {
+                val scheduled = repository.getHabits().filter { it.coversDay(today) }
+                if (scheduled.isEmpty()) {
+                    null
+                } else {
+                    val done = scheduled.count { habit ->
+                        HabitStreak.status(habit, repository.getHabitLogs(habit.id), now).done
+                    }
+                    done to scheduled.size
+                }
+            }
+            val view = _binding ?: return@launch
+            view.drawerHabitSummary.text = summary
+                ?.let { (done, total) -> getString(R.string.habit_count_format, done, total) }
+                .orEmpty()
         }
     }
 
@@ -416,6 +475,32 @@ class TasksFragment : Fragment() {
                 .addToBackStack(null)
                 .commit()
         }
+        binding.drawerHabitItem.setOnClickListener {
+            binding.tasksDrawerLayout.closeDrawer(androidx.core.view.GravityCompat.START)
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
+                .replace(R.id.fragmentContainer, HabitFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+        binding.drawerRecycleBinItem.setOnClickListener {
+            binding.tasksDrawerLayout.closeDrawer(androidx.core.view.GravityCompat.START)
+            parentFragmentManager.beginTransaction()
+                .setCustomAnimations(
+                    R.anim.frag_enter_from_right,
+                    R.anim.frag_exit,
+                    R.anim.frag_enter_from_left,
+                    R.anim.frag_exit
+                )
+                .replace(R.id.fragmentContainer, RecycleBinFragment())
+                .addToBackStack(null)
+                .commit()
+        }
     }
 
     private fun showFortuneDialog() {
@@ -578,6 +663,7 @@ class TasksFragment : Fragment() {
     private fun deleteTaskWithConfirm(task: Task) {
         if (task.repeatRule == TaskViewModel.REPEAT_NONE && task.templateId == 0) {
             taskViewModel.deleteTask(task)
+            toastMovedToRecycleBin()
         } else {
             showRepeatDeleteDialog(task)
         }
@@ -642,8 +728,14 @@ class TasksFragment : Fragment() {
                             renderCurrentList()
                         }
                     }
-                    1 -> taskViewModel.deleteTaskSeries(templateId)
-                    2 -> taskViewModel.deleteTaskSeriesKeepCompleted(templateId)
+                    1 -> {
+                        taskViewModel.deleteTaskSeries(templateId)
+                        toastMovedToRecycleBin()
+                    }
+                    2 -> {
+                        taskViewModel.deleteTaskSeriesKeepCompleted(templateId)
+                        toastMovedToRecycleBin()
+                    }
                     else -> Unit
                 }
             }

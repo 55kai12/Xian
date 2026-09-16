@@ -49,8 +49,10 @@ class TaskViewModel @Inject constructor(
      * 只靠「保存任务时排闹钟」的话，升级前就存在的任务、以及从倒数日那边建的任务
      * 永远不会被提醒 —— 又是一次静默失效。
      * 幂等：requestCode 就是任务 id，重复排等于原地覆盖。
+     *
+     * 回收站还原任务之后也要敲一下（删的时候闹钟被撤了，还原得挂回去）。
      */
-    private fun rescheduleReminders() = viewModelScope.launch {
+    fun rescheduleReminders() = viewModelScope.launch {
         runCatching { repository.getAllTasks() }.getOrNull()?.forEach(::syncReminder)
     }
 

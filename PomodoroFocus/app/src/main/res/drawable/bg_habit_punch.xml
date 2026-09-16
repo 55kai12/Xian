@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  习惯打卡的圆钮（未达成）：空心圆 + 主题色描边。
+  达成后由代码换成 bg_habit_punch_done。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+
+    <solid android:color="@android:color/transparent" />
+
+    <stroke
+        android:width="1.5dp"
+        android:color="?attr/colorBrandContent" />
+</shape>
