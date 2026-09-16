@@ -12,7 +12,6 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import android.widget.TextView
 import android.view.Gravity
-import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -503,78 +502,216 @@ class TasksFragment : Fragment() {
         }
     }
 
+    /**
+     * 每日一签。
+     *
+     * 抽签结果用「年 + 日序」当随机种子 —— 同一天反复打开拿到同一支签（这是「今日运势」，
+     * 不是老虎机，能无限重抽就失去意义了），跨天则完全不同。
+     * 旧实现是 `DAY_OF_YEAR % 5`：5 天一个硬循环，而且所有人同一天抽到同一支。
+     */
     private fun showFortuneDialog() {
         val context = requireContext()
-        val dialogDensity = resources.displayMetrics.density
-        fun dp(v: Int) = (v * dialogDensity).toInt()
-        val fortunes = listOf(
-            R.string.fortune_level_supreme,
-            R.string.fortune_level_high,
-            R.string.fortune_level_mid,
-            R.string.fortune_level_calm,
-            R.string.fortune_level_small
-        )
-        val interpretations = listOf(
-            R.string.fortune_msg_supreme,
-            R.string.fortune_msg_high,
-            R.string.fortune_msg_mid,
-            R.string.fortune_msg_calm,
-            R.string.fortune_msg_small
-        )
-        val index = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR) % fortunes.size
-        val fortuneName = getString(fortunes[index])
-        val interpretation = getString(interpretations[index])
-        val root = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(dp(24), dp(16), dp(24), dp(12)) }
-        val circleSize = dp(120)
+        val density = resources.displayMetrics.density
+        fun dp(v: Int) = (v * density).toInt()
         val brandSurface = context.themedColor(R.attr.colorBrandSurface, R.color.theme_qinglv_primary)
         val brandContent = context.themedColor(R.attr.colorBrandContent, R.color.theme_qinglv_primary_content)
-        val drawButton = TextView(context).apply {
-            text = getString(R.string.fortune_stick); gravity = Gravity.CENTER; textSize = 26f
-            setTextColor(ContextCompat.getColor(context, R.color.on_primary))
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(brandSurface) }
-            layoutParams = LinearLayout.LayoutParams(circleSize, circleSize); elevation = 8f
+        val accent = context.themedColor(R.attr.colorBrandAccent, R.color.theme_qinglv_accent)
+        val onPrimary = ContextCompat.getColor(context, R.color.on_primary)
+        val textPrimary = ContextCompat.getColor(context, R.color.text_primary)
+        val textSecondary = ContextCompat.getColor(context, R.color.text_secondary)
+
+        val rnd = kotlin.random.Random(
+            Calendar.getInstance().run { get(Calendar.YEAR) * 1000 + get(Calendar.DAY_OF_YEAR) }
+        )
+        // 抽 n 个不重复词条。没用 shuffled：数组版的 shuffled(Random) 在这套 stdlib 上解析不出来；
+        // 重抽只用 nextInt，coerce 是为了防以后把 n 调得比池子大时死循环
+        fun pick(pool: Array<String>, n: Int): List<String> {
+            val ids = LinkedHashSet<Int>()
+            while (ids.size < n.coerceAtMost(pool.size)) ids += rnd.nextInt(pool.size)
+            return ids.map { pool[it] }
         }
-        val result = TextView(context).apply {
-            gravity = Gravity.CENTER; textSize = 20f; setTextColor(brandContent); visibility = View.GONE
+        val levelNames = arrayOf(
+            R.string.fortune_level_supreme, R.string.fortune_level_high, R.string.fortune_level_mid,
+            R.string.fortune_level_calm, R.string.fortune_level_small
+        )
+        val levelMsgs = arrayOf(
+            R.array.fortune_msg_supreme, R.array.fortune_msg_high, R.array.fortune_msg_mid,
+            R.array.fortune_msg_calm, R.array.fortune_msg_small
+        )
+        // 加权抽等级（上上 8 / 上吉 17 / 中吉 30 / 平安 30 / 小吉 15），再在该级文案池里随机取一条
+        val weights = intArrayOf(8, 17, 30, 30, 15)
+        var roll = rnd.nextInt(weights.sum())
+        var level = 0
+        while (level < weights.size - 1 && roll >= weights[level]) {
+            roll -= weights[level]
+            level++
         }
-        val explanation = TextView(context).apply {
-            gravity = Gravity.CENTER; textSize = 14f
-            setTextColor(ContextCompat.getColor(context, R.color.text_secondary))
+        val fortuneName = getString(levelNames[level])
+        val messages = resources.getStringArray(levelMsgs[level])
+        val message = messages[rnd.nextInt(messages.size)]
+        val yi = pick(resources.getStringArray(R.array.fortune_yi_pool), 3)
+        val ji = pick(resources.getStringArray(R.array.fortune_ji_pool), 2)
+
+        val prefs = context.getSharedPreferences("fortune_data", 0)
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+        val root = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(dp(24), dp(18), dp(24), dp(16))
+        }
+        // 金色小字抬头
+        root.addView(TextView(context).apply {
+            text = getString(R.string.fortune_title)
+            textSize = 12f
+            letterSpacing = 0.5f
+            setTextColor(accent)
+        })
+        // 签牌：主题色圆牌 + 金环 + 投影
+        val stick = TextView(context).apply {
+            text = getString(R.string.fortune_stick)
+            gravity = Gravity.CENTER
+            textSize = 34f
+            setTextColor(onPrimary)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(brandSurface)
+                setStroke(dp(3), accent)
+            }
+            layoutParams = LinearLayout.LayoutParams(dp(136), dp(136)).apply { topMargin = dp(16) }
+            elevation = dp(10).toFloat()
+        }
+        val levelView = TextView(context).apply {
+            gravity = Gravity.CENTER
+            textSize = 24f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            setTextColor(brandContent)
             visibility = View.GONE
         }
-        val action = com.google.android.material.button.MaterialButton(context).apply { text = getString(R.string.fortune_draw); isAllCaps = false; layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(16) } }
-        root.addView(drawButton)
-        root.addView(result, LinearLayout.LayoutParams(-1, dp(48)).apply { topMargin = dp(12) })
-        root.addView(explanation, LinearLayout.LayoutParams(-1, dp(64)).apply { topMargin = dp(4) })
+        val rule = View(context).apply {
+            background = GradientDrawable().apply { setColor(accent); cornerRadius = dp(1).toFloat() }
+            visibility = View.GONE
+        }
+        val messageView = TextView(context).apply {
+            gravity = Gravity.CENTER
+            textSize = 15f
+            setTextColor(textPrimary)
+            setLineSpacing(dp(6).toFloat(), 1f)
+            visibility = View.GONE
+        }
+        // 宜 / 忌：圆角色标 + 词条。标签用自适应宽度，英文 "Good for" 塞不进固定圆点
+        fun adviceRow(label: String, content: String, chipColor: Int) = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(TextView(context).apply {
+                text = label
+                textSize = 12f
+                setTextColor(onPrimary)
+                setPadding(dp(9), dp(3), dp(9), dp(3))
+                background = GradientDrawable().apply {
+                    cornerRadius = dp(12).toFloat()
+                    setColor(chipColor)
+                }
+            })
+            addView(TextView(context).apply {
+                text = content
+                textSize = 14f
+                setTextColor(textSecondary)
+                layoutParams = LinearLayout.LayoutParams(-2, -2).apply { leftMargin = dp(10) }
+            })
+        }
+        val adviceBox = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = View.GONE
+            addView(
+                adviceRow(getString(R.string.fortune_yi), yi.joinToString(" · "), brandSurface),
+                LinearLayout.LayoutParams(-1, -2)
+            )
+            addView(
+                adviceRow(
+                    getString(R.string.fortune_ji),
+                    ji.joinToString(" · "),
+                    ContextCompat.getColor(context, R.color.danger)
+                ),
+                LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) }
+            )
+        }
+        val action = com.google.android.material.button.MaterialButton(context).apply {
+            text = getString(R.string.fortune_draw)
+            isAllCaps = false
+            layoutParams = LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(20) }
+        }
+        root.addView(stick)
+        root.addView(levelView, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
+        root.addView(rule, LinearLayout.LayoutParams(dp(56), dp(2)).apply { topMargin = dp(12) })
+        root.addView(messageView, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
+        root.addView(adviceBox, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(16) })
         root.addView(action)
-        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(context).setTitle(R.string.fortune_title).setView(root).create()
+        val dialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(context).setView(root).create()
+
+        fun showLevel() {
+            levelView.text = fortuneName
+            levelView.visibility = View.VISIBLE
+            rule.visibility = View.VISIBLE
+        }
+        fun showMessage() {
+            messageView.text = message
+            messageView.visibility = View.VISIBLE
+            adviceBox.visibility = View.VISIBLE
+        }
         var state = 0
+        // 今天已经抽过：按日期播种本来也抽不出别的结果，这里只把「已祈福」如实显示出来，
+        // 顺带堵掉反复点「祈福」把累计次数刷上去
+        if (prefs.getString("date", "") == today) {
+            state = 2
+            stick.text = fortuneName
+            stick.textSize = 18f
+            showLevel()
+            showMessage()
+            action.text = getString(R.string.fortune_blessed)
+            action.isEnabled = false
+        }
         action.setOnClickListener {
             when (state) {
                 0 -> {
-                    state = 1; action.isEnabled = false
-                    drawButton.animate().rotationYBy(720f).scaleX(0.8f).scaleY(0.8f).setDuration(900).setInterpolator(AccelerateDecelerateInterpolator()).withEndAction {
-                        drawButton.text = getString(R.string.fortune_stick_revealed, fortuneName)
-                        drawButton.textSize = 17f
-                        drawButton.animate().rotationYBy(720f).scaleX(1f).scaleY(1f).setDuration(600).withEndAction {
-                            result.text = fortuneName
-                            result.visibility = View.VISIBLE
-                            action.text = getString(R.string.fortune_interpret)
-                            action.isEnabled = true
-                        }.start()
-                    }.start()
+                    state = 1
+                    action.isEnabled = false
+                    // 摇签：左右小幅摆几下，再整支翻面揭晓
+                    val shake = floatArrayOf(-7f, 7f, -5f, 5f, 0f)
+                    var step = 0
+                    fun shakeNext() {
+                        if (step < shake.size) {
+                            stick.animate().rotation(shake[step++]).setDuration(70)
+                                .withEndAction { shakeNext() }.start()
+                        } else {
+                            stick.animate().rotationY(180f).setDuration(300).withEndAction {
+                                stick.text = fortuneName
+                                stick.textSize = 18f
+                                stick.animate().rotationY(360f).setDuration(260).withEndAction {
+                                    stick.rotationY = 0f
+                                    showLevel()
+                                    action.text = getString(R.string.fortune_interpret)
+                                    action.isEnabled = true
+                                }.start()
+                            }.start()
+                        }
+                    }
+                    shakeNext()
                 }
                 1 -> {
                     state = 2
-                    explanation.text = interpretation
-                    explanation.visibility = View.VISIBLE
+                    showMessage()
                     action.text = getString(R.string.fortune_bless)
                 }
                 else -> {
-                    val prefs = context.getSharedPreferences("fortune_data", 0)
-                    val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                    prefs.edit().putString("date", today).putString("fortune", fortuneName).putString("meaning", interpretation).putInt("bless_count", prefs.getInt("bless_count", 0) + 1).apply()
-                    action.text = getString(R.string.fortune_blessed); action.isEnabled = false
+                    prefs.edit()
+                        .putString("date", today)
+                        .putString("fortune", fortuneName)
+                        .putString("meaning", message)
+                        .putInt("bless_count", prefs.getInt("bless_count", 0) + 1)
+                        .apply()
+                    action.text = getString(R.string.fortune_blessed)
+                    action.isEnabled = false
                     Toast.makeText(context, R.string.fortune_bless_done, Toast.LENGTH_SHORT).show()
                 }
             }

@@ -365,18 +365,75 @@
     <string name="fortune_level_mid">Fair fortune</string>
     <string name="fortune_level_calm">Peaceful fortune</string>
     <string name="fortune_level_small">Small fortune</string>
-    <string name="fortune_msg_supreme">Your mind is clear today - good for hard problems. Focus will pay off.</string>
-    <string name="fortune_msg_high">Go with the flow today. Following your plan tends to bring unexpected help.</string>
-    <string name="fortune_msg_mid">Steady progress today. Small gains add up - keep going and you will see the difference.</string>
-    <string name="fortune_msg_calm">A day to slow down and hold what you have. Finish what is right in front of you.</string>
-    <string name="fortune_msg_small">A few bumps today. Adjust your pace and start again - things will improve.</string>
+    <string name="fortune_yi">Good for</string>
+    <string name="fortune_ji">Avoid</string>
+    <!-- Interpretation pools: 5 per level, picked at random with (year + day-of-year) as the seed -->
+    <string-array name="fortune_msg_supreme">
+        <item>Clear mind, open road. A good day for the hard problem - focus on one thing and it answers.</item>
+        <item>Clouds part, the moon shows. What you start today becomes a step on a long stretch ahead.</item>
+        <item>Hand and mind in accord - twice the result for half the effort. Start today, not tomorrow.</item>
+        <item>A day to ride the wind. Even one small step forward opens up the whole board.</item>
+        <item>The lamp is lit, the page is clear. Most of what you set out to do today gets done.</item>
+    </string-array>
+    <string-array name="fortune_msg_high">
+        <item>Go with the flow today. Following your plan tends to bring unexpected help.</item>
+        <item>A good wind to sail on. No need to force it today - keep the rhythm and you go far.</item>
+        <item>Company on the road, answers to your questions. A day to ask for help instead of carrying it alone.</item>
+        <item>The water finds its channel. Effort you planted earlier shows its first sprout today.</item>
+        <item>Things are turning. Take the one that flows well and go deep, rather than firing on all fronts.</item>
+    </string-array>
+    <string-array name="fortune_msg_mid">
+        <item>Steady progress today. Small gains add up - keep going and you will see the difference.</item>
+        <item>Not fast, not slow - that is the way today. Slower and steadier lands more solidly.</item>
+        <item>A small pond still holds clear light. The gain today is not in volume - it is in not breaking the chain.</item>
+        <item>Today, keep to the ordinary. Finishing what is already in your hands is the best progress.</item>
+        <item>The current runs under the surface. Do not rush to check results - keep the feel first.</item>
+    </string-array>
+    <string-array name="fortune_msg_calm">
+        <item>A day to slow down and hold what you have. Finish what is right in front of you.</item>
+        <item>An uneventful day is a good day. No need to push today - holding steady is the skill.</item>
+        <item>Calm water - rest your spirit. Good for tidying, reviewing, and an early night.</item>
+        <item>Do a little less today. Blank space is not waste; it is strength saved for tomorrow.</item>
+        <item>Keep to the middle and stay at ease. Avoid contests and rushing today, and the day still pays.</item>
+    </string-array>
+    <string-array name="fortune_msg_small">
+        <item>A few bumps today. Adjust your pace and start again - things will improve.</item>
+        <item>Light rain does not stop a traveller. Hitting a wall is normal today - take another road.</item>
+        <item>Interruptions are likely today - lock your apps. Keep the noise outside the door and the work gets done.</item>
+        <item>A restless mind makes messy work. Today, do five minutes first, then talk about persistence.</item>
+        <item>Small things trip you, big things are fine. Do not demand perfection today - finishing is the win.</item>
+    </string-array>
+    <!-- Good-for / avoid pools: 3 good, 2 avoid per draw -->
+    <string-array name="fortune_yi_pool">
+        <item>Focus</item>
+        <item>Review</item>
+        <item>Early night</item>
+        <item>Reading</item>
+        <item>A walk</item>
+        <item>Sitting quietly</item>
+        <item>Tidying</item>
+        <item>Asking for help</item>
+        <item>Exercise</item>
+        <item>Looking far</item>
+    </string-array>
+    <string-array name="fortune_ji_pool">
+        <item>Delaying</item>
+        <item>Staying up late</item>
+        <item>Multitasking</item>
+        <item>Impatience</item>
+        <item>Comparing</item>
+        <item>Idle wishing</item>
+        <item>Pushing through</item>
+        <item>Doomscrolling</item>
+        <item>Taking on too much</item>
+        <item>Sitting all day</item>
+    </string-array>
     <string name="fortune_draw">Draw a stick</string>
     <string name="fortune_interpret">Read the meaning</string>
     <string name="fortune_bless">Make a wish</string>
     <string name="fortune_blessed">Wished</string>
     <string name="fortune_bless_done">Wish recorded - may today go well</string>
     <string name="fortune_stick">Draw</string>
-    <string name="fortune_stick_revealed">Draw\n%1$s</string>
     <string name="fortune_none">No fortune yet</string>
     <string name="fortune_empty">No fortune record yet.</string>
     <string name="fortune_summary">Wished %1$d times · latest: %2$s</string>

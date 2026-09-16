@@ -372,18 +372,75 @@
     <string name="fortune_level_mid">中吉签</string>
     <string name="fortune_level_calm">平安签</string>
     <string name="fortune_level_small">小吉签</string>
-    <string name="fortune_msg_supreme">今日思路清晰，适合攻克难题，专注会带来好收获。</string>
-    <string name="fortune_msg_high">今日顺势而为，按计划推进，容易得到意外助力。</string>
-    <string name="fortune_msg_mid">今日稳中有进，积少成多，坚持就会看见变化。</string>
-    <string name="fortune_msg_calm">今日宜静心守成，放慢脚步，先把眼前事情做好。</string>
-    <string name="fortune_msg_small">今日略有波折，调整节奏再出发，结果会逐渐变好。</string>
+    <string name="fortune_yi">宜</string>
+    <string name="fortune_ji">忌</string>
+    <!-- 解签文案池：每级 5 条，用「年 + 日序」当种子随机取一条 -->
+    <string-array name="fortune_msg_supreme">
+        <item>今日思路清朗，万事可期。适合啃硬骨头，专注一处，必有回响。</item>
+        <item>云开见月，所谋皆顺。今天开的头，会成为往后很长一段路的台阶。</item>
+        <item>心手相应，事半功倍。想做的事今日就动手，迟一日便少一分锐气。</item>
+        <item>大吉之日，宜乘风。哪怕只推进一小步，也是整盘棋的活眼。</item>
+        <item>灯下无闲事，笔下自分明。今日定下的目标，大多能如约完成。</item>
+    </string-array>
+    <string-array name="fortune_msg_high">
+        <item>今日顺势而为，按计划推进，容易得到意外助力。</item>
+        <item>好风凭借力。今日不必硬拼，跟着节奏走，反而走得远。</item>
+        <item>同行有人，问道有答。今天适合开口求助，别一个人扛。</item>
+        <item>水到渠成之日。此前埋下的功夫，今天会露出一点苗头。</item>
+        <item>事有起色，宜乘胜。把顺手的那件事做透，胜过多线开火。</item>
+    </string-array>
+    <string-array name="fortune_msg_mid">
+        <item>今日稳中有进，积少成多，坚持就会看见变化。</item>
+        <item>不疾不徐，恰是今日之道。慢一点，稳一点，反而落得实。</item>
+        <item>半亩方塘，亦有清光。今日的收获不在多，在于没有断。</item>
+        <item>今日宜守常。照旧做完手上这件事，就是最好的进展。</item>
+        <item>潜流暗长，未见其形。别急着验证结果，先把手感留住。</item>
+    </string-array>
+    <string-array name="fortune_msg_calm">
+        <item>今日宜静心守成，放慢脚步，先把眼前事情做好。</item>
+        <item>无事亦是好日。今日不必求进，守得住就是本事。</item>
+        <item>风平浪静，宜养精神。今日适合整理、复盘、早睡。</item>
+        <item>今日不妨少做一点。留白不是荒废，是给明天留力气。</item>
+        <item>守中得安。今日避开争抢与赶工，安安稳稳过完自有收获。</item>
+    </string-array>
+    <string-array name="fortune_msg_small">
+        <item>今日略有波折，调整节奏再出发，结果会逐渐变好。</item>
+        <item>微雨不碍行路人。今日遇阻属常事，换条路便是。</item>
+        <item>今日易被打断，宜锁机。把干扰挡在门外，事就成了。</item>
+        <item>心浮则事乱。今日先做五分钟，再谈坚持。</item>
+        <item>小事绊脚，大事无碍。今日不必苛求完美，做完即为胜。</item>
+    </string-array>
+    <!-- 宜 / 忌 词条池：每次随机取 3 宜、2 忌 -->
+    <string-array name="fortune_yi_pool">
+        <item>专注</item>
+        <item>复盘</item>
+        <item>早睡</item>
+        <item>读书</item>
+        <item>散步</item>
+        <item>静坐</item>
+        <item>整理</item>
+        <item>求教</item>
+        <item>运动</item>
+        <item>远眺</item>
+    </string-array>
+    <string-array name="fortune_ji_pool">
+        <item>拖延</item>
+        <item>熬夜</item>
+        <item>多线</item>
+        <item>急躁</item>
+        <item>攀比</item>
+        <item>空想</item>
+        <item>硬撑</item>
+        <item>刷屏</item>
+        <item>贪多</item>
+        <item>久坐</item>
+    </string-array>
     <string name="fortune_draw">开始抽签</string>
     <string name="fortune_interpret">解签</string>
     <string name="fortune_bless">祈福</string>
     <string name="fortune_blessed">已祈福</string>
     <string name="fortune_bless_done">祈福成功，愿今日顺遂</string>
     <string name="fortune_stick">签</string>
-    <string name="fortune_stick_revealed">签\n%1$s</string>
     <string name="fortune_none">尚未祈福</string>
     <string name="fortune_empty">还没有每日祈福记录。</string>
     <string name="fortune_summary">累计祈福 %1$d 次 · 最近：%2$s</string>
