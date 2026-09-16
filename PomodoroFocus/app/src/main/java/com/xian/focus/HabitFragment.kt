@@ -63,10 +63,10 @@ class HabitFragment : Fragment() {
         binding.habitRecyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.habitRecyclerView.adapter = adapter
 
-        binding.todayDateText.text = getString(
-            R.string.habit_today_label,
-            SimpleDateFormat("M月d日 EEE", Locale.getDefault()).format(Date())
-        )
+        val dateLabel = SimpleDateFormat(
+            getString(R.string.habit_date_format), Locale.getDefault()
+        ).format(Date())
+        binding.todayDateText.text = getString(R.string.habit_today_label, dateLabel)
 
         binding.backButton.setOnClickListener { parentFragmentManager.popBackStack() }
         binding.addHabitButton.setOnClickListener { showEditDialog(null) }

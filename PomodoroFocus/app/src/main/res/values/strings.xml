@@ -660,6 +660,7 @@
     <string name="habit_remind_label">提醒时间</string>
     <string name="habit_remind_off">不提醒</string>
     <string name="habit_today_label">今天 · %1$s</string>
+    <string name="habit_date_format">M月d日 EEE</string>
     <string name="habit_streak">连续 %1$d 天</string>
     <string name="habit_week_progress">本周 %1$d/%2$d</string>
     <string name="habit_today_progress">已达标 %1$d/%2$d</string>
