@@ -49,6 +49,13 @@
     <color name="card_surface">#F0E8D6</color>
     <color name="card_surface_alt">#F0EBE0</color>
     <color name="pale_grey">#F5F5F5</color>
+    <!-- 灵感便贴：纸面三件套。card_background 是纸面、note_edge 是压在下面的那两张纸、
+         note_rule 是横格线。都取暖灰（跟画布同族）而不是中性灰，免得白纸压在一张暖色画布上发冷；
+         note_fold 是折角的背面（比纸面暗一档才看得出是折起来的）。 -->
+    <color name="note_edge">#ECE6D6</color>
+    <color name="note_rule">#E9E3D4</color>
+    <color name="note_fold">#F1ECE1</color>
+    <color name="note_fold_shadow">#DDD5C3</color>
     <color name="nav_divider">#D8CDB8</color>
     <color name="muted_grey">#DDDDDD</color>
     <color name="completed_grey">#9E9E9E</color>

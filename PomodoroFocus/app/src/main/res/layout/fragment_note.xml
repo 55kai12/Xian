@@ -6,6 +6,7 @@
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?attr/colorSurface"
@@ -30,20 +31,38 @@
             app:srcCompat="@drawable/ic_note_back"
             app:tint="?attr/colorBrandContent" />
 
-        <TextView
-            android:id="@+id/noteTitle"
+        <!-- 标题和下面的「时间 · 字数」一起可点：那一行小字只有 11sp，单独让它可点太难点中 -->
+        <LinearLayout
+            android:id="@+id/noteTitleBlock"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:background="?attr/selectableItemBackground"
             android:clickable="true"
             android:focusable="true"
-            android:paddingHorizontal="10dp"
-            android:paddingVertical="4dp"
-            android:text="@string/note_title"
-            android:textColor="?attr/colorBrandContent"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="4dp">
+
+            <TextView
+                android:id="@+id/noteTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/note_title"
+                android:textColor="?attr/colorBrandContent"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/noteMeta"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="1dp"
+                android:textColor="@color/text_tertiary"
+                android:textSize="11sp"
+                tools:ignore="SmallSp" />
+        </LinearLayout>
 
         <ImageButton
             android:id="@+id/noteStarButton"
@@ -53,8 +72,8 @@
             android:layout_marginEnd="10dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/note_star"
-            android:padding="9dp"
-            app:srcCompat="@android:drawable/btn_star_big_off" />
+            android:padding="8dp"
+            app:srcCompat="@drawable/ic_note_star_outline" />
     </FrameLayout>
 
     <TextView
@@ -91,7 +110,9 @@
                 app:cardCornerRadius="14dp"
                 app:cardElevation="2dp">
 
-                <EditText
+                <!-- 用 NoteEditText 是为了画横格线；换回普通 EditText 时把类名改回去即可，
+                     padding/gravity/行距 由它自己按 Layout 基线推算格线位置，没有额外属性要同步 -->
+                <com.xian.focus.NoteEditText
                     android:id="@+id/noteInput"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
@@ -105,6 +126,14 @@
                     android:textColor="@color/ink_text"
                     android:textColorHint="@color/text_tertiary"
                     android:textSize="17sp" />
+
+                <!-- 右下角的折角，纯装饰、不吃事件 -->
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_gravity="bottom|end"
+                    android:importantForAccessibility="no"
+                    app:srcCompat="@drawable/ic_note_fold" />
             </com.google.android.material.card.MaterialCardView>
 
             <View

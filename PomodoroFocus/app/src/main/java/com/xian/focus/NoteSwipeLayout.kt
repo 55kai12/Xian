@@ -116,6 +116,8 @@ class NoteSwipeLayout @JvmOverloads constructor(
         val s = 1f - p * 0.05f
         sheetView.scaleX = s
         sheetView.scaleY = s
+        // 抽纸的手感：顺着拖动方向歪一点，越拖越歪
+        sheetView.rotation = (if (dy >= 0f) 1f else -1f) * p * 3.5f
     }
 
     /** 松手：过了阈值就翻过去（滑出 → 换内容 → 从另一侧滑回），否则弹回原位。 */
@@ -141,7 +143,8 @@ class NoteSwipeLayout @JvmOverloads constructor(
             fromY = sheetView.translationY, toY = exit,
             fromAlpha = sheetView.alpha, toAlpha = 0f,
             fromScale = sheetView.scaleX, toScale = 0.94f,
-            duration = 160, interp = AccelerateInterpolator()
+            duration = 160, interp = AccelerateInterpolator(),
+            toRotation = if (step < 0) -6f else 6f
         ) {
             val flipped = onFlip?.invoke(step) ?: false
             // 到头了就把同一张从原方向滑回来，翻过去了就从对面进来
@@ -169,6 +172,7 @@ class NoteSwipeLayout @JvmOverloads constructor(
         sheetView.alpha = 1f
         sheetView.scaleX = 1f
         sheetView.scaleY = 1f
+        sheetView.rotation = 0f
 
         val trash = trashView
         trash.animate().cancel()
@@ -233,6 +237,7 @@ class NoteSwipeLayout @JvmOverloads constructor(
         val startX = sheetView.translationX
         val startY = sheetView.translationY
         val startScale = sheetView.scaleX
+        val startRotation = sheetView.rotation
         sheetAnim?.cancel()
         sheetAnim = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = 260
@@ -245,6 +250,7 @@ class NoteSwipeLayout @JvmOverloads constructor(
                 sheetView.scaleX = s
                 sheetView.scaleY = s
                 sheetView.alpha = 1f
+                sheetView.rotation = startRotation * (1f - f)
             }
             start()
         }
@@ -307,6 +313,9 @@ class NoteSwipeLayout @JvmOverloads constructor(
         toScale: Float,
         duration: Long,
         interp: Interpolator,
+        /** 默认「从当前角度收回正的」，只有翻出去那一路要显式给目标角度 */
+        fromRotation: Float = sheetView.rotation,
+        toRotation: Float = 0f,
         onEnd: (() -> Unit)? = null
     ) {
         sheetAnim?.cancel()
@@ -320,6 +329,7 @@ class NoteSwipeLayout @JvmOverloads constructor(
                 val s = fromScale + (toScale - fromScale) * f
                 sheetView.scaleX = s
                 sheetView.scaleY = s
+                sheetView.rotation = fromRotation + (toRotation - fromRotation) * f
             }
             addListener(object : AnimatorListenerAdapter() {
                 private var cancelled = false

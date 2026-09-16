@@ -538,6 +538,9 @@
     <!-- Inspiration notes -->
     <string name="note_title">Inspiration notes</string>
     <string name="note_visibility_hint">New notes are visible only to you</string>
+    <string name="note_meta">%1$s · %2$d chars</string>
+    <string name="note_time_today">Today %1$s</string>
+    <string name="note_time_yesterday">Yesterday %1$s</string>
     <string name="note_placeholder">Ideas, rants, wishes…</string>
     <string name="note_star">Star</string>
     <string name="note_prev">Previous note</string>

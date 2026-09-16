@@ -545,6 +545,10 @@
     <!-- 灵感便贴 -->
     <string name="note_title">灵感便贴</string>
     <string name="note_visibility_hint">新增便贴仅自己可见</string>
+    <!-- 标题下面那行小字：写下时间 · 字数。时间在当天/昨天用口语说法，更早才写日期 -->
+    <string name="note_meta">%1$s · %2$d 字</string>
+    <string name="note_time_today">今天 %1$s</string>
+    <string name="note_time_yesterday">昨天 %1$s</string>
     <string name="note_placeholder">灵感，吐槽，愿望 …</string>
     <string name="note_star">标星</string>
     <string name="note_prev">上一张便贴</string>

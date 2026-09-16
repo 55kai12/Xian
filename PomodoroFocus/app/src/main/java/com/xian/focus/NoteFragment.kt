@@ -15,6 +15,11 @@ import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.xian.focus.databinding.FragmentNoteBinding
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlin.math.abs
 
 /**
@@ -64,7 +69,7 @@ class NoteFragment : Fragment() {
         }
         binding.root.post { squareCard() }
         binding.noteBackButton.setOnClickListener { parentFragmentManager.popBackStack() }
-        binding.noteTitle.setOnClickListener { showNoteList() }
+        binding.noteTitleBlock.setOnClickListener { showNoteList() }
         binding.noteStarButton.setOnClickListener { toggleStar() }
         setupGestures()
         binding.noteInput.addTextChangedListener(object : TextWatcher {
@@ -74,6 +79,8 @@ class NoteFragment : Fragment() {
                 if (rendering) return
                 notes.find { it.createdAt == currentId }?.text = s?.toString().orEmpty()
                 NoteStore.save(requireContext(), notes)
+                // 字数要跟着敲字实时涨，但没必要为此重画整张便贴
+                updateMeta()
             }
         })
 
@@ -239,7 +246,7 @@ class NoteFragment : Fragment() {
         rendering = false
         val starred = ContextCompat.getDrawable(
             requireContext(),
-            if (note.starred) android.R.drawable.btn_star_big_on else android.R.drawable.btn_star_big_off
+            if (note.starred) R.drawable.ic_note_star_filled else R.drawable.ic_note_star_outline
         )
         val tint = if (note.starred) {
             requireContext().themedColor(R.attr.colorBrandAccent, R.color.theme_qinglv_accent)
@@ -248,6 +255,27 @@ class NoteFragment : Fragment() {
         }
         starred?.mutate()?.setTint(tint)
         binding.noteStarButton.setImageDrawable(starred)
+        updateMeta()
+    }
+
+    /** 标题下面那行：「时间 · 字数」。翻页、删除、标星、敲字之后都要跟着变。 */
+    private fun updateMeta() {
+        val note = notes.find { it.createdAt == currentId } ?: return
+        binding.noteMeta.text = getString(
+            R.string.note_meta, friendlyTime(note.createdAt), note.text.trim().length
+        )
+    }
+
+    /** 当天/昨天用口语说法，更早交给系统格式化（自动跟语言走，不用为每种语言配一套图案）。 */
+    private fun friendlyTime(millis: Long): String {
+        val dayKey = SimpleDateFormat("yyyyMMdd", Locale.US)
+        val clock = SimpleDateFormat("HH:mm", Locale.US).format(Date(millis))
+        return when (dayKey.format(Date(millis))) {
+            dayKey.format(Date()) -> getString(R.string.note_time_today, clock)
+            dayKey.format(Date(Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -1) }.timeInMillis)) ->
+                getString(R.string.note_time_yesterday, clock)
+            else -> DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT).format(Date(millis))
+        }
     }
 
     /** -1 看更早的一张，+1 看更新的一张。返回 false 表示已经到头、该把纸弹回来。 */
@@ -314,6 +342,15 @@ class NoteFragment : Fragment() {
         note.starred = !note.starred
         renderNote()
         NoteStore.save(requireContext(), notes)
+        // 点下去弹一下：实心/描边两态切换本身很静，手势上没有反馈会显得没点着
+        binding.noteStarButton.animate().cancel()
+        binding.noteStarButton.scaleX = 1f
+        binding.noteStarButton.scaleY = 1f
+        binding.noteStarButton.animate().scaleX(1.3f).scaleY(1.3f).setDuration(110)
+            .withEndAction {
+                binding.noteStarButton.animate().scaleX(1f).scaleY(1f).setDuration(150).start()
+            }
+            .start()
     }
 
     private fun commitCurrent() {

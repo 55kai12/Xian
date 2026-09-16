@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  便签纸右下角的折角。叠在卡片最上层，尺寸 24dp。
+  折痕是从 (24,6) 到 (6,24) 那条斜线：线外（靠右下角的那块）是被翻起来的背面，
+  所以填 note_fold；再沿折痕描一道更深的细线当厚度。卡片本身 14dp 圆角会把尖角切掉，
+  正好得到一个圆润的折角。
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="@color/note_fold"
+        android:pathData="M24,24 L24,6 L6,24 Z" />
+    <path
+        android:pathData="M24,6 L6,24"
+        android:strokeColor="@color/note_fold_shadow"
+        android:strokeWidth="1" />
+</vector>

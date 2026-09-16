@@ -51,6 +51,12 @@
     <color name="card_surface">#2A2822</color>
     <color name="card_surface_alt">#2A2822</color>
     <color name="pale_grey">#2A2A28</color>
+    <!-- 便贴纸面三件套（夜间）：纸面 card_background = #22211E。
+         昼间纸边/格线都比纸面暗，夜间反过来略亮 —— 夜里的「下面那张纸」只能靠比纸面亮一点才看得出来。 -->
+    <color name="note_edge">#2C2A25</color>
+    <color name="note_rule">#35322C</color>
+    <color name="note_fold">#2E2C27</color>
+    <color name="note_fold_shadow">#1A1916</color>
     <color name="nav_divider">#3A3730</color>
     <color name="muted_grey">#3A3833</color>
     <color name="completed_grey">#706B62</color>
