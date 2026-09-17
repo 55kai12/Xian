@@ -92,6 +92,10 @@ class LockMachineService : LifecycleService() {
         LockMachineController.stop(this)
         LockMachineOverlayController.hide(this, force = true)
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        // 收尾提示：走的是同一个 NONE 频道，所以**看不到**（v2.0.78 起与锁机期间那条一起收起来了）。
+        // 保留它是让「锁机结束」这件事在实现上仍有一个明确落点 —— 锁机层消失本身就是给
+        // 用户的信号。将来若要让它单独可见，**另开一个可见频道**，别把这个频道的重要性
+        // 改回去（那会连带把锁机期间那条也放出来）。
         manager.notify(
             NOTIFICATION_ID,
             NotificationCompat.Builder(this, CHANNEL_ID)
@@ -126,20 +130,37 @@ class LockMachineService : LifecycleService() {
             .build()
     }
 
+    /**
+     * 频道重要性 NONE：这条通知**完全不显示**（状态栏无图标、下拉里也没有），
+     * 与 [GuardService] 的守护频道同一套做法。
+     *
+     * 前台服务必须有通知是系统的硬性要求，但没人规定它必须看得见。锁机时用户要的是
+     * 「屏幕被占住」，而通知栏里挂一条「锁机中：剩余 12:00」既没用、又反过来在提醒
+     * 「还有条路能出去」（那上面还带个「停止锁机」按钮）。收起来之后 `startForeground`
+     * 照常成立、服务照样是前台优先级，只是没人看得见它。
+     *
+     * ⚠️ 重要性创建后**改不了**（用户自己改的还优先于代码），所以换只能换 ID 重建 ——
+     * 旧频道顺手删掉，免得在「设置 → 通知」里留一条僵尸。
+     * ⚠️ Android 13+ 会自己往通知栏放一条系统的「后台运行的应用」汇总，以及快捷设置里的
+     * 「正在运行的应用」入口。那是系统发的，**应用侧删不掉** —— 严格意义上的完全隐身
+     * 在系统层面做不到，这里能做到的是「贤自己不发可见通知、状态栏无图标」。
+     */
     private fun createChannel() {
         val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        if (manager.getNotificationChannel(CHANNEL_ID) == null) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                getString(R.string.custom_lock),
-                NotificationManager.IMPORTANCE_LOW
-            )
-            manager.createNotificationChannel(channel)
-        }
+        runCatching { manager.deleteNotificationChannel(LEGACY_CHANNEL_ID) }
+        if (manager.getNotificationChannel(CHANNEL_ID) != null) return
+        val channel = NotificationChannel(
+            CHANNEL_ID,
+            getString(R.string.lock_channel_name),
+            NotificationManager.IMPORTANCE_NONE
+        )
+        manager.createNotificationChannel(channel)
     }
 
     companion object {
-        private const val CHANNEL_ID = "lock_machine_channel"
+        /** 带版本后缀：通知频道的重要性创建后不可改，想换成「完全不显示」只能换 ID 重建。 */
+        private const val CHANNEL_ID = "lock_machine_channel_v2"
+        private const val LEGACY_CHANNEL_ID = "lock_machine_channel"
         private const val NOTIFICATION_ID = 2001
         private const val NOTIFICATION_REFRESH_MILLIS = 30_000L
 

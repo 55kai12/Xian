@@ -4,10 +4,14 @@ import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.provider.Settings
+import android.text.InputFilter
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -193,16 +197,28 @@ class AppLimitFragment : Fragment() {
             R.string.app_limit_picker_title
         ) { selected ->
             val added = selected - current
+            val removed = current - selected
+            val finish = {
+                refresh()
+                if (added.isNotEmpty()) {
+                    Toast.makeText(
+                        context,
+                        getString(R.string.app_limit_added_toast, added.size, DEFAULT_LIMIT_MINUTES),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+            // 给应用加限额是**收紧**，直接生效；
+            // 取消勾选 = 取消限额，是**放宽** —— 与列表弹窗里选「不限制」走同一套三道闸。
+            // 只拦弹窗那条路的话，这里取消一个勾就等于绕开了提醒 / 冷静期 / 密码。
             added.forEach { AppLimitStore.setLimit(context, it, DEFAULT_LIMIT_MINUTES) }
-            // 在选择器里取消勾选 = 取消该应用的限额
-            (current - selected).forEach { AppLimitStore.setLimit(context, it, 0) }
-            refresh()
-            if (added.isNotEmpty()) {
-                Toast.makeText(
-                    context,
-                    getString(R.string.app_limit_added_toast, added.size, DEFAULT_LIMIT_MINUTES),
-                    Toast.LENGTH_LONG
-                ).show()
+            if (removed.isEmpty()) {
+                finish()
+            } else {
+                confirmRemove(removed.toList()) {
+                    removed.forEach { AppLimitStore.setLimit(context, it, 0) }
+                    finish()
+                }
             }
         }
     }
@@ -215,25 +231,128 @@ class AppLimitFragment : Fragment() {
             .setTitle(getString(R.string.app_limit_dialog_title, row.label))
             .setItems(labels.toTypedArray()) { _, which ->
                 val minutes = if (which < presets.size) presets[which] else 0
-                // 调到不高于今天已用的量 = 保存即锁死，先说清楚再改
-                if (minutes > 0 && minutes <= row.usedMinutes) {
-                    confirmShrink(row, minutes)
-                } else {
-                    applyLimit(row, minutes)
-                }
+                confirmAdjust(row, minutes)
             }
             .show()
     }
 
-    private fun confirmShrink(row: Row, minutes: Int) {
+    /**
+     * 调节时长的三道闸，入口一：列表弹窗里改额度。
+     * 把后果说明白（已用照算、改低了立刻锁死、取消限制不归零），确认后进冷静期。
+     * 这道取代了旧的「改低二次确认」—— 提醒文案里已经包含同样的信息。
+     */
+    private fun confirmAdjust(row: Row, minutes: Int) {
+        val newLimitText =
+            if (minutes > 0) getString(R.string.app_limit_minutes_format, minutes)
+            else getString(R.string.app_limit_unlimited)
+        val body = if (minutes > 0) {
+            getString(R.string.app_limit_adjust_message, row.label, newLimitText, row.usedMinutes)
+        } else {
+            getString(R.string.app_limit_adjust_unlimited_message, row.label, row.usedMinutes)
+        } + adjustNoteTail()
+        runAdjustGate(body) { applyLimit(row, minutes) }
+    }
+
+    /** 入口二：选择器里取消勾选（= 取消限额）。同样是放宽，同样过闸。 */
+    private fun confirmRemove(packages: List<String>, onApply: () -> Unit) {
+        val pm = requireContext().packageManager
+        val names = packages.joinToString(getString(R.string.app_limit_remove_separator)) { name ->
+            runCatching { pm.getApplicationInfo(name, 0) }
+                .getOrNull()?.let { pm.getApplicationLabel(it).toString() } ?: name
+        }
+        runAdjustGate(getString(R.string.app_limit_remove_message, names) + adjustNoteTail(), onApply)
+    }
+
+    /** 提醒文案的尾巴：冷静期 + 密码。密码那段只在开关真的开着时才写，免得说了做不到。 */
+    private fun adjustNoteTail(): String = getString(R.string.app_limit_adjust_note) +
+        if (LockPin.isRequired(requireContext(), PinScope.APP_LIMIT)) {
+            getString(R.string.app_limit_adjust_note_pin)
+        } else {
+            ""
+        }
+
+    /**
+     * 三道闸的骨架，两个入口共用：提醒 → 30 秒冷静期 → 密码。顺序照抄退出锁机
+     * （冷静期拦冲动，密码拦「我自己」），调用方只管最后拿到 onApply。
+     */
+    private fun runAdjustGate(body: String, onApply: () -> Unit) {
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.app_limit_shrink_title)
-            .setMessage(
-                getString(R.string.app_limit_shrink_message, row.label, row.usedMinutes, minutes)
-            )
-            .setPositiveButton(android.R.string.ok) { _, _ -> applyLimit(row, minutes) }
+            .setTitle(R.string.app_limit_adjust_title)
+            .setMessage(body)
+            .setPositiveButton(R.string.app_limit_adjust_proceed) { _, _ ->
+                startCooldown(onApply)
+            }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    /**
+     * 第二道：**30 秒冷静期**。倒计时没走完「确认调整」保持禁用 —— 与退出锁机的
+     * 冷静期同一套思路：拦的是「一时冲动改口子」，真想清楚了不差这半分钟。
+     */
+    private fun startCooldown(onApply: () -> Unit) {
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.app_limit_cooldown_title)
+            .setMessage(getString(R.string.app_limit_cooldown_message, ADJUST_COOLDOWN_SECONDS))
+            .setPositiveButton(R.string.app_limit_cooldown_confirm, null)
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+        val confirm = dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+        confirm.isEnabled = false
+        viewLifecycleOwner.lifecycleScope.launch {
+            var remainSeconds = ADJUST_COOLDOWN_SECONDS
+            while (remainSeconds > 0 && dialog.isShowing) {
+                dialog.setMessage(getString(R.string.app_limit_cooldown_message, remainSeconds))
+                delay(1_000L)
+                remainSeconds--
+            }
+            if (!dialog.isShowing) return@launch
+            dialog.setMessage(getString(R.string.app_limit_cooldown_ready))
+            confirm.isEnabled = true
+        }
+        confirm.setOnClickListener {
+            dialog.dismiss()
+            verifyThenApply(onApply)
+        }
+    }
+
+    /** 第三道：**密码**。开了「应用限额需要密码」就先验 PIN，与加时共用同一套开关。 */
+    private fun verifyThenApply(onApply: () -> Unit) {
+        if (LockPin.isRequired(requireContext(), PinScope.APP_LIMIT)) {
+            showPinDialog(onApply)
+        } else {
+            onApply()
+        }
+    }
+
+    private fun showPinDialog(onPass: () -> Unit) {
+        val context = requireContext()
+        val density = context.resources.displayMetrics.density
+        val input = EditText(context).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(InputFilter.LengthFilter(LockPin.PIN_LENGTH))
+            hint = getString(R.string.app_limit_pin_dialog_hint)
+        }
+        val wrap = FrameLayout(context).apply {
+            val pad = (22 * density).toInt()
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        val dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.app_limit_pin_dialog_title)
+            .setView(wrap)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            if (LockPin.check(context, input.text.toString())) {
+                dialog.dismiss()
+                onPass()
+            } else {
+                input.error = getString(R.string.app_limit_pin_dialog_error)
+                input.setText("")
+            }
+        }
     }
 
     private fun applyLimit(row: Row, minutes: Int) {
@@ -264,6 +383,9 @@ class AppLimitFragment : Fragment() {
 
     companion object {
         private const val DEFAULT_LIMIT_MINUTES = 30
+
+        /** 调节时长的冷静期：与退出锁机同款思路，倒计时走完确认键才可用。 */
+        private const val ADJUST_COOLDOWN_SECONDS = 30
 
         /** 页面停留时的刷新节奏：够快能看出「在涨」，又不至于频繁重绑列表。 */
         private const val LIVE_REFRESH_MILLIS = 3_000L

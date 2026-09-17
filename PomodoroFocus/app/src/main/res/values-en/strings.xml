@@ -141,8 +141,21 @@
     <string name="app_limit_duration_hours">%1$d h %2$d min</string>
     <string name="app_limit_bonus_button">Add %1$d min (%2$d left this month)</string>
     <string name="app_limit_bonus_empty">No bonus time left this month</string>
-    <string name="app_limit_shrink_title">This will lock it immediately</string>
-    <string name="app_limit_shrink_message">%1$s has already been used %2$d min today. Setting it to %3$d min will lock it right away. Continue?</string>
+    <string name="app_limit_adjust_title">Before you adjust</string>
+    <string name="app_limit_adjust_message">The daily limit for "%1$s" will change to %2$s.\n\nToday\'s %3$d min of usage still counts and won\'t reset; if the new limit is lower, it locks immediately after confirming.</string>
+    <string name="app_limit_adjust_unlimited_message">The daily limit for "%1$s" will be removed (unlimited).\n\nToday\'s %2$d min of usage is kept: re-adding a limit later today still counts it, it will not reset.</string>
+    <string name="app_limit_adjust_proceed">Continue</string>
+    <string name="app_limit_remove_separator">, </string>
+    <string name="app_limit_remove_message">The daily limit will be removed for: %1$s.\n\nToday\'s usage is kept: re-adding a limit later today still counts it, it will not reset.</string>
+    <string name="app_limit_adjust_note">\n\nAfter tapping Continue you must wait a 30-second cooldown</string>
+    <string name="app_limit_adjust_note_pin"> and enter the PIN before the change takes effect.</string>
+    <string name="app_limit_cooldown_title">Cooldown</string>
+    <string name="app_limit_cooldown_message">Please wait %1$d s before confirming.</string>
+    <string name="app_limit_cooldown_ready">Cooldown finished. You can confirm now.</string>
+    <string name="app_limit_cooldown_confirm">Confirm change</string>
+    <string name="app_limit_pin_dialog_title">Password required</string>
+    <string name="app_limit_pin_dialog_hint">4-digit PIN</string>
+    <string name="app_limit_pin_dialog_error">Wrong PIN, try again</string>
     <string name="app_limit_drawer_summary">Used %1$d min</string>
     <string name="whitelist_format">%1$d allowed apps selected</string>
     <string name="start_lock_machine">Start lock</string>
@@ -564,7 +577,7 @@
     <string name="lock_settings_pin_desc">One 4-digit PIN, used for whichever places you turn on below. If you forget it, the lock can only end on its own.</string>
     <string name="lock_settings_pin_exit_title">Require PIN to exit the lock</string>
     <string name="lock_settings_pin_app_limit_title">Require PIN for app limits</string>
-    <string name="lock_settings_pin_app_limit_desc">After the daily quota runs out, bonus time needs the PIN</string>
+    <string name="lock_settings_pin_app_limit_desc">Bonus time, changing or removing a limit all need the PIN</string>
     <string name="lock_settings_pin_change">Change PIN</string>
     <string name="app_limit_pin_title">Enter PIN</string>
     <string name="app_limit_pin_body">Quota used up. Enter your 4-digit PIN to get bonus time.</string>
@@ -594,6 +607,7 @@
     <string name="guard_notification_title">Xian is guarding</string>
     <string name="guard_notification_text">App limits and scheduled lock stay on, even after you swipe the app away</string>
     <string name="guard_channel_name">Background guard</string>
+    <string name="lock_channel_name">Lock guard</string>
 
     <!-- ===== UI polish ===== -->
     <string name="lock_status_label">Lock status</string>

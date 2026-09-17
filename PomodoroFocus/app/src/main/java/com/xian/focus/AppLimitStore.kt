@@ -68,9 +68,10 @@ object AppLimitStore {
         rollover(prefs)
         val editor = prefs.edit()
         if (minutes <= 0) {
+            // 只删 limit:，used: / bonus: 留着 —— 当天用量是「今天已经玩了多久」这个事实，
+            // 不随限制的开关消失；先选无限制再设回来，已用照算（次日 rollover 自然清零）。
+            // 把 used: 一起删掉就是个口子：无限制 ↔ 限额来回切，今天就永远锁不住了。
             editor.remove(LIMIT_PREFIX + packageName)
-                .remove(USED_PREFIX + packageName)
-                .remove(BONUS_PREFIX + packageName)
         } else {
             editor.putInt(LIMIT_PREFIX + packageName, minutes)
         }

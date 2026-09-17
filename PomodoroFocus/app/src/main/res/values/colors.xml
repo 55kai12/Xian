@@ -46,7 +46,7 @@
 
     <!-- ========== 卡片与背景 ========== -->
     <color name="card_background">#FFFFFF</color>
-    <color name="card_surface">#F0E8D6</color>
+    <color name="card_surface">#F6EFE3</color>
     <color name="card_surface_alt">#F0EBE0</color>
     <color name="pale_grey">#F5F5F5</color>
     <!-- 灵感便贴：纸面三件套。card_background 是纸面、note_edge 是压在下面的那两张纸、
@@ -124,5 +124,5 @@
     <color name="paper_background">@color/theme_qinglv_surface</color>
     <color name="divider">#E0D6C2</color>
     <color name="task_selected_background">@color/category_tag_bg</color>
-    <color name="icon_background">#EFE3C8</color>
+    <color name="icon_background">#F6EFE3</color>
 </resources>

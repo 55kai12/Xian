@@ -141,8 +141,21 @@
     <string name="app_limit_duration_hours">%1$d 小时 %2$d 分</string>
     <string name="app_limit_bonus_button">加 %1$d 分钟（本月还剩 %2$d 次）</string>
     <string name="app_limit_bonus_empty">本月加时次数已用完</string>
-    <string name="app_limit_shrink_title">会立刻锁定</string>
-    <string name="app_limit_shrink_message">「%1$s」今天已经用了 %2$d 分钟，改成 %3$d 分钟后会马上锁上。确定吗？</string>
+    <string name="app_limit_adjust_title">调整前提醒</string>
+    <string name="app_limit_adjust_message">「%1$s」的每日限额将改为 %2$s。\n\n今天已用的 %3$d 分钟照算，不会归零；若新额度低于已用，确认后立即锁定。</string>
+    <string name="app_limit_adjust_unlimited_message">将取消「%1$s」的每日限额，改为不限制。\n\n今天已用的 %2$d 分钟会保留：今天之内再设回来时照算，不会归零。</string>
+    <string name="app_limit_adjust_proceed">继续</string>
+    <string name="app_limit_remove_separator">、</string>
+    <string name="app_limit_remove_message">将取消以下应用的限额：%1$s。\n\n今天已用的时间会保留：今天之内再设回来时照算，不会归零。</string>
+    <string name="app_limit_adjust_note">\n\n点「继续」后需等待 30 秒冷静期</string>
+    <string name="app_limit_adjust_note_pin">，并输入密码，确认后才生效。</string>
+    <string name="app_limit_cooldown_title">冷静期</string>
+    <string name="app_limit_cooldown_message">确认调整前请等待 %1$d 秒。</string>
+    <string name="app_limit_cooldown_ready">冷静期结束，可以确认了。</string>
+    <string name="app_limit_cooldown_confirm">确认调整</string>
+    <string name="app_limit_pin_dialog_title">需要密码</string>
+    <string name="app_limit_pin_dialog_hint">4 位数字密码</string>
+    <string name="app_limit_pin_dialog_error">密码不对，再试试</string>
     <string name="app_limit_drawer_summary">已用 %1$d 分钟</string>
     <string name="whitelist_format">已选择 %1$d 个白名单应用</string>
     <string name="start_lock_machine">开始锁机</string>
@@ -568,7 +581,7 @@
     <string name="lock_settings_pin_desc">一套 4 位数字密码，可选择只用在下面其中一处。忘了密码就只能等锁机到点自动结束。</string>
     <string name="lock_settings_pin_exit_title">退出锁机时需要密码</string>
     <string name="lock_settings_pin_app_limit_title">应用限额需要密码</string>
-    <string name="lock_settings_pin_app_limit_desc">额度用完后，点「加时」前要输密码</string>
+    <string name="lock_settings_pin_app_limit_desc">额度用完后加时、调整或取消限额前都要输密码</string>
     <string name="lock_settings_pin_change">修改密码</string>
     <string name="app_limit_pin_title">输入密码</string>
     <string name="app_limit_pin_body">额度已用完，输入 4 位数字密码才能加时</string>
@@ -598,6 +611,7 @@
     <string name="guard_notification_title">贤正在守护</string>
     <string name="guard_notification_text">应用限额与定时锁机生效中 · 划掉后台也不停</string>
     <string name="guard_channel_name">后台守护</string>
+    <string name="lock_channel_name">锁机守护</string>
 
     <!-- ===== 界面细化 ===== -->
     <string name="lock_status_label">锁机状态</string>
