@@ -13,9 +13,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <LinearLayout
+    <!--
+      外面套一层 ScrollView，专治横屏（矮屏）：这层竖排的固定部分加起来约 570dp，
+      而手机横屏只有 ~360dp —— 多出来的「回贤 / 清后台 / 长按退出」全被挤到屏幕外，
+      又不带滚动，用户就卡在一个出不去的死页上。
+      fillViewport 让它在竖屏下仍被撑满：weight=1 的白名单区照常分配剩余空间，
+      拿到的排版与套这层之前逐像素相同；只有内容真的装不下时才可滚。
+    -->
+    <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:background="?attr/colorBrandSurface"
         android:gravity="center_horizontal"
         android:orientation="vertical"
@@ -214,6 +227,7 @@
             app:strokeColor="@color/overlay_outline"
             app:strokeWidth="1dp" />
     </LinearLayout>
+    </ScrollView>
 
     <!-- 退出冷静期弹窗：遮罩吃掉所有触摸，30 秒倒计时走完前「确认退出」不可点 -->
     <FrameLayout

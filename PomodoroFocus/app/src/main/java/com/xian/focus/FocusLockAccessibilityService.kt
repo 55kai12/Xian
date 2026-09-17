@@ -10,6 +10,7 @@ import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityWindowInfo
+import java.lang.ref.WeakReference
 
 class FocusLockAccessibilityService : AccessibilityService() {
 
@@ -53,6 +54,8 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        // 登记自己，让锁机层能借去查窗口栈（弱引用，服务销毁后自然失效）
+        instance = WeakReference(this)
         // 覆盖安装 APK 之后，系统仍按**旧的**服务配置派发事件，「读窗口内容」这项能力
         // 要用户把无障碍开关关掉再打开一次才会重新生效 —— 用户看不见这个差别，
         // 只会觉得「更新完就不记录了」。这里在运行时把 flag 补上
@@ -83,6 +86,7 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         handler.removeCallbacks(limitTicker)
+        instance = null
         super.onDestroy()
     }
 
@@ -303,5 +307,18 @@ class FocusLockAccessibilityService : AccessibilityService() {
             "com.miui.upslide",
             "com.samsung.android.upslide"
         )
+
+        /** 活着的无障碍服务实例；窗口栈查询要借它（弱引用，服务销毁后自然失效）。 */
+        private var instance: WeakReference<FocusLockAccessibilityService>? = null
+
+        /**
+         * 借无障碍服务的窗口栈查一次真实前台应用；服务不在或查不到返回 null。
+         *
+         * 这是**免权限**的前台感知源：只读无障碍自己拿到的窗口列表（TYPE_APPLICATION 且活跃），
+         * 不碰「使用情况访问」。锁机层盖屏前的最后否决走这里 —— 手机没授 usage 权限时，
+         * 「系统使用记录」这条兜底路是断的，否决就永远不会发生，误锁照旧。
+         */
+        fun foregroundFromWindowStack(): String? =
+            instance?.get()?.runCatching { queryForegroundPackage() }?.getOrNull()
     }
 }

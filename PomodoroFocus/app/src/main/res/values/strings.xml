@@ -611,6 +611,7 @@
     <string name="about_tagline">中国古风专注助手</string>
     <string name="about_authors_label">作者</string>
     <string name="about_authors">ShoweR · Yocai咏材 · 55kai</string>
+    <string name="about_github">GitHub · 55kai12/Xian</string>
     <string name="about_features_label">功能</string>
     <string name="about_features">任务清单与番茄钟 · 锁机专注 · 复盘日记 · 倒数日 · 每日祈福</string>
     <string name="about_authors_card">作者：ShoweR · Yocai咏材 · 55kai</string>

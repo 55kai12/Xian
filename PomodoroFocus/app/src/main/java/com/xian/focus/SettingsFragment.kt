@@ -3,6 +3,7 @@ package com.xian.focus
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -182,6 +183,13 @@ class SettingsFragment : Fragment() {
         val view = layoutInflater.inflate(R.layout.dialog_about, null, false)
         view.findViewById<TextView>(R.id.aboutDialogVersion).text =
             getString(R.string.about_version, versionName)
+        // 项目仓库链接：点了就开浏览器。runCatching 兜住没装浏览器的机型
+        // （ActivityNotFoundException），链接打不开也不能让关于弹窗崩掉。
+        view.findViewById<TextView>(R.id.aboutGithubLink).setOnClickListener {
+            runCatching {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL)))
+            }
+        }
         AlertDialog.Builder(requireContext())
             .setTitle(R.string.about_title)
             .setView(view)
@@ -283,6 +291,9 @@ class SettingsFragment : Fragment() {
     }
 
     private companion object {
+        /** 项目仓库主页；关于弹窗的 GitHub 链接指向这里。 */
+        const val GITHUB_URL = "https://github.com/55kai12/Xian"
+
         /** 本应用用到的全部 SharedPreferences 文件名。新加 prefs 时务必同步登记。 */
         val ALL_PREFS = listOf(
             "focus_preferences",   // 每日目标

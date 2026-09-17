@@ -607,6 +607,7 @@
     <string name="about_tagline">A Chinese-style focus assistant</string>
     <string name="about_authors_label">Authors</string>
     <string name="about_authors">ShoweR · Yocai咏材 · 55kai</string>
+    <string name="about_github">GitHub · 55kai12/Xian</string>
     <string name="about_features_label">Features</string>
     <string name="about_features">Tasks &amp; pomodoro · Lock-in focus · Review diary · Countdown · Daily blessing</string>
     <string name="about_authors_card">By ShoweR · Yocai咏材 · 55kai</string>

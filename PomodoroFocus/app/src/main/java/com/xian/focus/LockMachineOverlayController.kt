@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.PixelFormat
@@ -97,6 +98,15 @@ object LockMachineOverlayController {
         }
     }
 
+    /** 清后台的结果反馈展示这么久，之后按钮文字还原。 */
+    private const val CLEAR_FEEDBACK_MILLIS = 2_000L
+
+    /** 清后台的 2 秒反馈到期：把按钮文字换回原标签（层已经没了就什么都不做）。 */
+    private val restoreClearButtonLabel = Runnable {
+        overlayView?.findViewById<Button>(R.id.clearBackgroundButton)
+            ?.setText(R.string.clear_background_apps)
+    }
+
     /** 当前时间 + 本月剩余退出额度，跟倒计时一起每秒刷新。 */
     private fun updateClockText(context: Context, view: View) {
         val calendar = Calendar.getInstance()
@@ -186,6 +196,35 @@ object LockMachineOverlayController {
             )
             return
         }
+        // 走到这里说明「不在白名单」已经持续够久了，但**触发它的那个包名本身未必可信**。
+        //
+        // 除用户真实的切换之外的另一种可能是：某个一闪而过、抢了一下焦点的系统层报了它的包名。
+        // 手势过渡层已经在 SYSTEM_UI_PACKAGES 里忽略过一批（vivo upslide），但**包名黑名单补不完**
+        // —— 横屏下又会冒出新的（旋转相关的系统层、厂商游戏助手之类），而且这类层出现时
+        // 用户往往压根没离开白名单应用。表现就是「我明明在用白名单里的应用，横屏就被盖了」。
+        //
+        // 所以真盖之前再问一次**免疫源**：它只看真正的应用窗口，上面那类浮层在它眼里
+        // 根本不存在，而用户真正切走的应用会立刻成为活跃的应用窗口。
+        // 只要它说现在的前台在放行名单里，就按「没离开」处理。
+        //
+        // 两个源按可靠性排：
+        // ① 无障碍窗口栈 —— 免权限，只认 TYPE_APPLICATION 的活跃窗口，浮层天然免疫；
+        //    但它依赖无障碍服务活着，服务被 ROM 清掉时拿不到（返回 null，不否决）。
+        // ② 系统使用记录 —— 只记 Activity 的 RESUMED，同样免疫浮层，也不依赖服务；
+        //    但要「使用情况访问」权限，用户没授时永远拿不到。
+        // 两路都 null ⇒ 不否决，行为与改动前完全一致（漏锁比误锁…这里反过来了：
+        // 误锁的代价是被堵在锁机页，漏盖的代价最多晚一两秒，所以宁可多问一层）。
+        val resumed = FocusLockAccessibilityService.foregroundFromWindowStack()
+            ?: runCatching { UsageForeground.lastResumed(applicationContext) }.getOrNull()
+        if (resumed != null && LockMachineController.isAllowed(applicationContext, resumed)) {
+            // [诊断]
+            Log.d("XianLock", "eval fg=$foreground -> 否决盖屏（免疫源=$resumed 在放行名单里）")
+            pendingLeaveSince = 0L
+            // 万一这一层已经因为同一个假前台盖上去了，也得撤掉 —— 否则它会一直挂着出不来
+            // （没盖着时 hide 自己会立刻返回，不用先判 isShowing）
+            hide(applicationContext, force = true)
+            return
+        }
         // [诊断]
         Log.d("XianLock", "eval fg=$foreground -> SHOW (overlay was ${isShowing()})")
         show(applicationContext)
@@ -241,6 +280,19 @@ object LockMachineOverlayController {
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.TOP or Gravity.START
+        // 锁机层永远按竖屏呈现，横屏也不例外。
+        //
+        // 这层的版式是竖排、固定高度堆叠的（标题 → 时钟 → 文案 → 白名单 → 三个按钮），
+        // 竖屏下正好一屏放下；横屏可用高度只剩三分之一，内容从「白名单」往下全部溢出到
+        // 屏幕之外 —— 实测横屏时整层只剩 4 行文字可见，「回贤 / 清后台 / 长按退出」三个按钮
+        // 一个都 dump 不到（在 y > 屏幕高度 处）。而浮窗不是 ScrollView，用户滑也滑不动，
+        // 表现就是「横屏被锁住之后，退不出去」。
+        //
+        // 给窗口而不是给 Activity 指定方向：WMS 计算屏幕方向时会优先采用非 Activity 窗口
+        // 的 screenOrientation（getOrientationFromWindowsLocked），所以这一行会让锁机期间
+        // 整块屏幕回到竖屏，锁机页按它本来的竖排版式铺满 —— 用户要的就是「锁机是竖屏的」。
+        // 层移除后这个请求随之消失，屏幕方向回到由前台应用决定。
+        params.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         // 退出密码面板会带出输入法：让窗口重排，别把卡片挡在键盘后面
         params.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
         view.findViewById<Button>(R.id.exitLockButton).setOnClickListener {
@@ -269,6 +321,13 @@ object LockMachineOverlayController {
                 applicationContext.getString(R.string.cleared_background_apps, count),
                 Toast.LENGTH_SHORT
             ).show()
+            // 结果反馈必须画在锁机层自己身上：锁机时贤没有任何前台 Activity，
+            // 是后台应用 —— vivo 这类 ROM 会静默丢弃后台 Toast，用户点完什么都
+            // 看不到，还以为没清。把按钮文字临时换成结果，2 秒后还原。
+            (it as Button).text =
+                applicationContext.getString(R.string.cleared_background_apps, count)
+            handler.removeCallbacks(restoreClearButtonLabel)
+            handler.postDelayed(restoreClearButtonLabel, CLEAR_FEEDBACK_MILLIS)
         }
         // 长按退出 → 先过 30 秒冷静期弹窗；冷静期满且本月额度没用完才真的退
         view.findViewById<Button>(R.id.exitLockButton).setOnLongClickListener {
@@ -324,6 +383,7 @@ object LockMachineOverlayController {
         // 这层没了，列表也跟着没了：下次新建必须重建，别被旧指纹判成「没变」
         whitelistSignature = -1
         handler.removeCallbacks(tickRunnable)
+        handler.removeCallbacks(restoreClearButtonLabel)
         val applicationContext = context.applicationContext
         val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         try {

@@ -71,6 +71,18 @@
         android:textSize="14sp"
         android:textStyle="bold" />
 
+    <!-- 项目仓库链接：强调色表意「可点」，点击由 SettingsFragment 负责打开浏览器 -->
+    <TextView
+        android:id="@+id/aboutGithubLink"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:paddingHorizontal="12dp"
+        android:paddingVertical="6dp"
+        android:text="@string/about_github"
+        android:textColor="?attr/colorBrandContent"
+        android:textSize="13sp" />
+
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
