@@ -9,7 +9,7 @@
 >
 > 原创设计。无广告、不联网、不索取相机/存储/定位权限，数据全部留在本机。
 
-**当前版本** `v2.0.66`（versionCode 266） · **最低系统** Android 8.0（API 26） · **目标系统** Android 15（API 35）
+**当前版本** `v2.0.73`（versionCode 273） · **最低系统** Android 8.0（API 26） · **目标系统** Android 15（API 35）
 
 📦 **[下载最新版 APK](https://github.com/55kai12/Xian/releases/latest)** —— 已 v1 + v2 双重签名，国产 ROM 安装器可直接校验。
 
@@ -122,8 +122,9 @@ cd PomodoroFocus
    ```
    缺失时 Release 包会以未签名方式产出。
 
-3. **`gradle.properties`** 里目前硬编码了本机代理（`<本机地址>:<端口>`）与 JDK 绝对路径
-   （`org.gradle.java.home`）。换机器请删掉这两处，否则 Gradle 会因连不上代理或找不到 JDK 而失败。
+3. **`gradle.properties`** 只保留跨机器通用的构建开关；本机专属项（代理地址、JDK 绝对路径）
+   一律写到**仓库外的** `~/.gradle/gradle.properties`，不入库。换机器请在该文件里自行补上
+   `systemProp.http(s).proxyHost/Port` 与 `org.gradle.java.home`。
 
 4. 依赖已缓存时可加 `--offline` 跳过联网检查。
 
