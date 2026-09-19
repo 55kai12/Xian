@@ -415,6 +415,11 @@ object DataBackup {
             whitelist.joinToString(ITEM_SEPARATOR),
             if (whitelist.isEmpty()) "（空）" else whitelist.joinToString("、") { appLabel(context, it) }
         )
+        sheet.row(
+            "锁机自定义时长(分钟)",
+            LockMachineController.customMinutes(context),
+            "上次敲过的自定义锁机分钟数；0 表示还没用过"
+        )
 
         val quotes = LockQuotes.list(context)
         sheet.row(

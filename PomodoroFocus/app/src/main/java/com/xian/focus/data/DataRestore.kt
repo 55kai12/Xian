@@ -553,6 +553,11 @@ object DataRestore {
                     }
                 }
 
+                "锁机自定义时长(分钟)" -> value.trim().toIntOrNull()?.takeIf { it > 0 }?.let {
+                    LockMachineController.saveCustomMinutes(context, it)
+                    count++
+                }
+
                 "锁机格言" -> {
                     LockQuotes.save(context, value)
                     count++

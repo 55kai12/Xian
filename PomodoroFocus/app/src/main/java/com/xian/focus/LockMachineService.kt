@@ -2,7 +2,6 @@ package com.xian.focus
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -113,22 +112,22 @@ class LockMachineService : LifecycleService() {
         manager.notify(NOTIFICATION_ID, buildNotification())
     }
 
-    private fun buildNotification(): android.app.Notification {
-        val stopIntent = Intent(this, LockMachineService::class.java).setAction(ACTION_STOP)
-        val stopPendingIntent = PendingIntent.getService(
-            this,
-            0,
-            stopIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+    /**
+     * 锁机期间那条前台通知。
+     *
+     * ⚠️ **不要再往里加「停止锁机」这类 action**（v2.0.79 删过一次）。
+     * 它挂在一个 `IMPORTANCE_NONE` 频道上（见 [createChannel]），正常情况下用户根本看不到；
+     * 但只要有哪个 ROM 把它显示出来，那颗按钮就是**一条绕过全部锁机机制的后门** ——
+     * 点一下直接退出，退出额度、冷静期、密码一概不用走。
+     * 退出锁机只保留应用内的三条路：覆盖层长按 / 应用内「停止锁机」/ 设置页关掉定时锁机。
+     */
+    private fun buildNotification(): android.app.Notification =
+        NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
             .setContentTitle(getString(R.string.lock_machine_notification))
             .setContentText(getString(R.string.lock_machine_running, LockMachineController.remainingText(this)))
             .setOngoing(true)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, getString(R.string.stop_lock_machine), stopPendingIntent)
             .build()
-    }
 
     /**
      * 频道重要性 NONE：这条通知**完全不显示**（状态栏无图标、下拉里也没有），

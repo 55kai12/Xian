@@ -31,6 +31,17 @@ class AppGridAdapter(
     fun selectedPackages(): Set<String> =
         apps.filterIndexed { index, _ -> checked[index] }.map { it.packageName }.toSet()
 
+    /**
+     * 外部把选中态改成给定集合。
+     *
+     * 专给「闸门没放行」用：白名单二级页是点一下立刻落盘，被 [WhitelistGate] 拦下时
+     * 得把这一下退回去 —— 否则界面上看着勾上了、其实没存，比直接不改更糟。
+     */
+    fun setSelection(packages: Set<String>) {
+        apps.forEachIndexed { index, app -> checked[index] = packages.contains(app.packageName) }
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
         ItemAppGridBinding.inflate(LayoutInflater.from(parent.context), parent, false)
     )

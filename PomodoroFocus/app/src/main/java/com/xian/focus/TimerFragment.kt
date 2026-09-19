@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -342,6 +343,15 @@ class TimerFragment : Fragment() {
         if (!requestLockPermissions()) return
         val dialogBinding = DialogCustomLockBinding.inflate(layoutInflater)
         dialogBinding.duration30.isChecked = true
+        // 这个弹窗没有「自定义」圆点，时长直接取输入框的值，所以只需要预填 + 边打边记。
+        // 记忆与锁机页共用同一份（LockMachineController.customMinutes）。
+        dialogBinding.customDurationInput.doAfterTextChanged {
+            it?.toString()?.toIntOrNull()
+                ?.let { minutes -> LockMachineController.saveCustomMinutes(requireContext(), minutes) }
+        }
+        LockMachineController.customMinutes(requireContext()).takeIf { it > 0 }?.let {
+            dialogBinding.customDurationInput.setText(it.toString())
+        }
         val selectedWhitelist = LockMachineController.whitelist(requireContext()).toMutableSet()
         fun updateWhitelistButton() {
             dialogBinding.whitelistButton.text =
@@ -349,12 +359,24 @@ class TimerFragment : Fragment() {
         }
         updateWhitelistButton()
         dialogBinding.whitelistButton.setOnClickListener {
+            val context = requireContext()
+            // 锁机进行中白名单根本改不了，别让用户白挑一场
+            if (WhitelistGate.isLocked(context)) {
+                WhitelistGate.notifyLocked(context)
+                return@setOnClickListener
+            }
             showAppPicker(selectedWhitelist) { updated ->
-                selectedWhitelist.clear()
-                selectedWhitelist.addAll(updated)
-                // 白名单是独立设置：选完立刻落盘，别等「开始锁机」那一步
-                LockMachineController.saveWhitelist(requireContext(), selectedWhitelist)
-                updateWhitelistButton()
+                WhitelistGate.run(
+                    context,
+                    viewLifecycleOwner.lifecycleScope,
+                    onApply = {
+                        selectedWhitelist.clear()
+                        selectedWhitelist.addAll(updated)
+                        // 白名单是独立设置：选完立刻落盘，别等「开始锁机」那一步
+                        LockMachineController.saveWhitelist(context, selectedWhitelist)
+                        updateWhitelistButton()
+                    }
+                )
             }
         }
         val isActive = LockMachineController.isActive(requireContext())

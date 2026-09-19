@@ -47,8 +47,12 @@ object LockMachineOverlayController {
      * 可手指一滑回去、手势取消，用户压根没离开。凭这一瞬间的包名就整屏盖上来，
      * 用户看到的就是「轻轻一划就被锁住」。所以先等一小会儿再确认一次；
      * 中间只要回到了白名单应用，就当作什么都没发生。
+     *
+     * 2026-09-19 由 1 秒收紧到 300ms：一秒的等待在真机上表现为「切出去之后还看得见
+     * 那个应用的界面」，锁机的存在感太弱。300ms 仍长于手势预览的报点间隔，够吃掉
+     * 「划一半又滑回去」，但人眼已经跟得上「一离开就盖住」。
      */
-    private const val LEAVE_CONFIRM_MILLIS = 1_000L
+    private const val LEAVE_CONFIRM_MILLIS = 300L
 
     /**
      * 落在桌面上先宽限这么久。
@@ -73,6 +77,9 @@ object LockMachineOverlayController {
                 hide(context, force = true)
                 return
             }
+            // 锁机期间不许下拉通知栏：主驱动是无障碍的窗口事件，这里每秒兜一次底 ——
+            // 面板停住之后可能不再产生新事件，光靠事件会漏（函数自带节流，不会连按返回）。
+            FocusLockAccessibilityService.collapseShadeIfNeeded()
             // 每秒对一次「现在到底该不该盖」。
             //
             // 主驱动是无障碍的窗口事件，但服务被系统重启或 ROM 清掉之后事件就断了；
@@ -182,10 +189,14 @@ object LockMachineOverlayController {
         // 「手势返回滑到一半又滑回去」那种一瞬就报出别的包名的情况，在这里就被吃掉了。
         val now = System.currentTimeMillis()
         if (pendingLeaveSince == 0L) pendingLeaveSince = now
-        val grace = if (foreground != null && isHome(applicationContext, foreground)) {
-            HOME_GRACE_MILLIS
-        } else {
-            LEAVE_CONFIRM_MILLIS
+        val grace = when {
+            foreground != null && isHome(applicationContext, foreground) -> HOME_GRACE_MILLIS
+            // 系统设置**零宽限**：它是锁机唯一真正的出口 —— 关「显示在其他应用上层」权限、
+            // 关应用通知，两下就能把锁机拆了。普通应用给 0.3 秒是防手势误判，设置不需要防
+            // （用户不可能「滑到一半又滑回去」还正好停在设置上），所以点进去的瞬间就压住。
+            foreground != null &&
+                LockMachineController.isSystemSettings(applicationContext, foreground) -> 0L
+            else -> LEAVE_CONFIRM_MILLIS
         }
         if (now - pendingLeaveSince < grace) {
             // [诊断]
@@ -315,17 +326,13 @@ object LockMachineOverlayController {
         }
         // 锁机期间一键清后台：把第三方应用全踢掉（贤自己和系统应用不动）。
         view.findViewById<Button>(R.id.clearBackgroundButton).setOnClickListener {
-            val count = clearBackgroundApps(applicationContext)
-            Toast.makeText(
-                applicationContext,
-                applicationContext.getString(R.string.cleared_background_apps, count),
-                Toast.LENGTH_SHORT
-            ).show()
+            clearBackgroundApps(applicationContext)
+            val feedback = applicationContext.getString(R.string.cleared_background_apps)
+            Toast.makeText(applicationContext, feedback, Toast.LENGTH_SHORT).show()
             // 结果反馈必须画在锁机层自己身上：锁机时贤没有任何前台 Activity，
             // 是后台应用 —— vivo 这类 ROM 会静默丢弃后台 Toast，用户点完什么都
             // 看不到，还以为没清。把按钮文字临时换成结果，2 秒后还原。
-            (it as Button).text =
-                applicationContext.getString(R.string.cleared_background_apps, count)
+            (it as Button).text = feedback
             handler.removeCallbacks(restoreClearButtonLabel)
             handler.postDelayed(restoreClearButtonLabel, CLEAR_FEEDBACK_MILLIS)
         }
@@ -404,18 +411,24 @@ object LockMachineOverlayController {
      *  · 贤自己 —— 锁机层挂在本应用的前台服务上，把自己杀掉锁机就断了；
      *  · 系统应用 —— 清掉 systemui 会连状态栏和手势一起搞坏，桌面进程也在其中。
      */
-    private fun clearBackgroundApps(context: Context): Int {
+    /**
+     * 锁机期间一键清后台：把第三方应用整个踢一遍（贤自己和系统应用不动）。
+     *
+     * **刻意不返回数量** —— `killBackgroundProcesses` 不回传任何结果，而"后台到底有几个应用"
+     * 在 Android 上也问不到：`getRunningAppProcesses()` 从 5.1 起只返回调用者自己的进程，
+     * 使用记录要 `PACKAGE_USAGE_STATS` 权限，`/proc` 读不到别的 uid。
+     * 早先这里返回的是**遍历过的应用个数**（≈ 用户装了多少个三方应用），跟真正清掉几个毫无关系 ——
+     * 后台只有几个也会报「已清理 100 多个」。宁可只说"已清理"，不报一个编出来的数。
+     */
+    private fun clearBackgroundApps(context: Context) {
         val activityManager =
-            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return 0
+            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager ?: return
         val self = context.packageName
-        var count = 0
         for (app in context.packageManager.getInstalledApplications(0)) {
             if (app.packageName == self) continue
             if (app.flags and ApplicationInfo.FLAG_SYSTEM != 0) continue
             activityManager.killBackgroundProcesses(app.packageName)
-            count++
         }
-        return count
     }
 
     private fun showExitConfirm(view: View) {

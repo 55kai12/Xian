@@ -80,7 +80,21 @@ class LockFragment : Fragment() {
         // 输入了分钟数就默认选中自定义 —— 填了数字却忘了点圆点、结果按 30 分钟锁上，
         // 那才是真的坑。想改回预设，点一下上面四个圈就行。
         binding.customDurationInput.doAfterTextChanged {
-            if (!it.isNullOrEmpty()) binding.durationCustom.isChecked = true
+            if (it.isNullOrEmpty()) return@doAfterTextChanged
+            binding.durationCustom.isChecked = true
+            // 边打边记：下次进来直接带出上次的数字，不用重敲
+            it.toString().toIntOrNull()
+                ?.let { minutes -> LockMachineController.saveCustomMinutes(requireContext(), minutes) }
+        }
+        // 带出上次用过的自定义分钟数。圆点必须放到**下一帧**再同步：
+        // 实测把 `isChecked = true` 直接跟在 setText 后面，重启进程后圆点仍是未选中
+        // （值和圆点都空），于是变成「框里写着 45、实际按 30 分钟锁」—— 比不预填更坑。
+        LockMachineController.customMinutes(requireContext()).takeIf { it > 0 }?.let { minutes ->
+            binding.customDurationInput.setText(minutes.toString())
+            binding.root.post {
+                binding.durationCustom.isChecked = true
+                binding.durationRadioGroup.clearCheck()
+            }
         }
         binding.addSlotButton.setOnClickListener { addSlot() }
         binding.saveScheduleButton.setOnClickListener { saveSchedule() }
@@ -395,18 +409,32 @@ class LockFragment : Fragment() {
     }
 
     private fun showAppPicker() {
+        val context = requireContext()
+        // 锁机进行中白名单根本改不了，别让用户白挑一场
+        if (WhitelistGate.isLocked(context)) {
+            WhitelistGate.notifyLocked(context)
+            return
+        }
         WhitelistAppPicker.show(
-            requireContext(),
+            context,
             viewLifecycleOwner.lifecycleScope,
             selectedWhitelist
         ) { updated ->
-            selectedWhitelist.clear()
-            selectedWhitelist.addAll(updated)
-            // 选完立刻落盘。白名单是设置项，不能等到「开始锁机」才存 ——
-            // 否则只保存定时时段、或者切个页面重建视图，这次选择就白选了。
-            LockMachineController.saveWhitelist(requireContext(), selectedWhitelist)
-            updateWhitelistButton()
-            refreshOverlayIfShowing()
+            // 闸门架在落盘这一刻：选择器是异步开的，用户可能挑到锁机都开始了才按保存。
+            // 拦下时 selectedWhitelist 一动不动，界面上的数量也就还是落盘那份。
+            WhitelistGate.run(
+                context,
+                viewLifecycleOwner.lifecycleScope,
+                onApply = {
+                    selectedWhitelist.clear()
+                    selectedWhitelist.addAll(updated)
+                    // 选完立刻落盘。白名单是设置项，不能等到「开始锁机」才存 ——
+                    // 否则只保存定时时段、或者切个页面重建视图，这次选择就白选了。
+                    LockMachineController.saveWhitelist(context, selectedWhitelist)
+                    updateWhitelistButton()
+                    refreshOverlayIfShowing()
+                }
+            )
         }
     }
 

@@ -112,6 +112,15 @@
     <string name="whitelist_apps">Allowed apps</string>
     <string name="whitelist_selected_count">%1$d selected</string>
 
+    <!-- Whitelist gate: locked while focusing + cooldown before a scheduled lock -->
+    <string name="whitelist_locked_title">Allowed apps locked</string>
+    <string name="whitelist_locked_message">The lock is running, so the allowed apps cannot be changed right now.\n\nXian itself is always allowed, which is why you can still open it and change settings while locked — if the list were editable at will, adding an app you want to use would end this lock early. Change it once the lock is over.</string>
+    <string name="whitelist_cooldown_title">Cooldown</string>
+    <string name="whitelist_cooldown_message">The next scheduled lock starts in %1$d min.\n\nChanging the allowed apps now means opening a door for yourself right before the lock begins. Take a breath first.</string>
+    <string name="whitelist_cooldown_counting">The next scheduled lock starts in %1$d min.\n\nCooldown: %2$d s left</string>
+    <string name="whitelist_cooldown_ready">The next scheduled lock starts in %1$d min.\n\nCooldown finished — confirm only if you mean it.</string>
+    <string name="whitelist_cooldown_confirm">Confirm change</string>
+
     <!-- App limits -->
     <string name="app_limit_title">App limits</string>
     <string name="app_limit_add">Add app</string>
@@ -208,7 +217,7 @@
     <string name="lock_page_notice">The lock needs the overlay and accessibility permissions. Once enabled, switching to any app or the home screen outside the allowed list shows the lock overlay; long-press the exit button on the overlay to end the lock. On some phones you also need to allow autostart and background running.</string>
     <string name="back_to_app">Back to the app</string>
     <string name="clear_background_apps">Clear background apps</string>
-    <string name="cleared_background_apps">Cleared %1$d background apps</string>
+    <string name="cleared_background_apps">Background apps cleared</string>
     <string name="boot_restore_lock">Restore lock after reboot</string>
     <string name="tab_review">Review</string>
     <string name="tab_profile">Me</string>

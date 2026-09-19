@@ -16,11 +16,15 @@ import kotlinx.coroutines.launch
  * 应用按图标网格铺开：一行一个应用的条太占地方，4 列一屏能扫二十来个。
  * 点一下即选中，**立刻落盘** —— 白名单是独立设置，不依附于任何一次锁机，
  * 跟底栏锁机页、番茄钟自定义锁机弹窗、锁机层用的是同一份存储（LockMachineController）。
+ * 落盘前统一过一遍 [WhitelistGate]：锁机进行中不给改，定时锁机开始前一小时要先过冷静期。
  */
 class WhitelistFragment : Fragment() {
 
     private var _binding: FragmentWhitelistBinding? = null
     private val binding get() = _binding!!
+
+    /** 闸门拦下时要把这一下勾退回去，所以留个引用。 */
+    private var gridAdapter: AppGridAdapter? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,15 +49,31 @@ class WhitelistFragment : Fragment() {
             val target = _binding ?: return@launch
             val adapter = AppGridAdapter(
                 apps,
-                LockMachineController.whitelist(requireContext())
-            ) { picked ->
-                LockMachineController.saveWhitelist(requireContext(), picked)
-                updateCount(picked.size)
-            }
+                LockMachineController.whitelist(requireContext()),
+                ::onPicked
+            )
+            gridAdapter = adapter
             target.whitelistLoading.visibility = View.GONE
             target.whitelistGrid.adapter = adapter
             target.whitelistGrid.visibility = View.VISIBLE
         }
+    }
+
+    /**
+     * 网格是「点一下立刻落盘」，闸门也就架在这一下上 —— 拦下就把勾退回去，
+     * 留着「看着选中、其实没存」的假状态比直接不改更让人困惑。
+     */
+    private fun onPicked(picked: Set<String>) {
+        val context = requireContext()
+        WhitelistGate.run(
+            context,
+            viewLifecycleOwner.lifecycleScope,
+            onApply = {
+                LockMachineController.saveWhitelist(context, picked)
+                updateCount(picked.size)
+            },
+            onReject = { gridAdapter?.setSelection(LockMachineController.whitelist(context)) }
+        )
     }
 
     private fun updateCount(count: Int) {

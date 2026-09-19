@@ -112,6 +112,15 @@
     <string name="whitelist_apps">白名单应用</string>
     <string name="whitelist_selected_count">已选 %1$d 个</string>
 
+    <!-- 改白名单的闸门（WhitelistGate）：锁机中锁死 + 定时锁机开始前一小时的冷静期 -->
+    <string name="whitelist_locked_title">白名单已锁定</string>
+    <string name="whitelist_locked_message">锁机正在进行中，期间不能修改白名单。\n\n贤本身永远在白名单里，所以锁机时你还能打开它改设置 —— 要是白名单随手能改，把想用的应用勾上就等于提前结束了这次锁机。等这次锁机结束再改。</string>
+    <string name="whitelist_cooldown_title">冷静期</string>
+    <string name="whitelist_cooldown_message">距离下一次定时锁机开始还有 %1$d 分钟。\n\n这个时候改白名单，等于在锁机开始前给自己开个口子。先冷静一下再改。</string>
+    <string name="whitelist_cooldown_counting">距离下一次定时锁机开始还有 %1$d 分钟。\n\n冷静期：还剩 %2$d 秒</string>
+    <string name="whitelist_cooldown_ready">距离下一次定时锁机开始还有 %1$d 分钟。\n\n冷静期结束，想清楚了再确认。</string>
+    <string name="whitelist_cooldown_confirm">确认修改</string>
+
     <!-- 应用限额 -->
     <string name="app_limit_title">应用限额</string>
     <string name="app_limit_add">添加应用</string>
@@ -208,7 +217,7 @@
     <string name="lock_page_notice">锁机需要悬浮窗和无障碍权限。开启后，除白名单应用外，切到其他应用或桌面都会显示锁机覆盖层；长按覆盖层上的退出按钮可结束锁机。部分手机还需在系统设置里允许本应用自启动和后台运行。</string>
     <string name="back_to_app">回到本应用</string>
     <string name="clear_background_apps">清空后台应用</string>
-    <string name="cleared_background_apps">已清理 %1$d 个后台应用</string>
+    <string name="cleared_background_apps">已清理后台应用</string>
     <string name="boot_restore_lock">重启后恢复锁机</string>
     <string name="tab_review">复盘</string>
     <string name="tab_profile">我的</string>

@@ -3,6 +3,7 @@ package com.xian.focus
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.content.Intent
+import android.graphics.Rect
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
@@ -43,6 +44,9 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
     /** 上次主动查窗口栈的时刻，避免每秒都去翻一遍。 */
     private var lastWindowQueryAt = 0L
+
+    /** 上次收起通知面板的时刻；给 [collapseNotificationShade] 节流，别拖一下就按十次返回。 */
+    private var lastShadeCollapseAt = 0L
 
     private val limitTicker = object : Runnable {
         override fun run() {
@@ -91,9 +95,21 @@ class FocusLockAccessibilityService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        if (event?.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
-        val packageName = event.packageName?.toString() ?: return
+        val eventType = event?.eventType ?: return
+        // 除「窗口状态变化」外还要收「窗口层级变化」：下拉通知面板在部分 ROM 上只是把状态栏
+        // 窗口撑大（或换个层级），并不新建窗口，也就没有 WINDOW_STATE_CHANGED 可等。
+        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
+        ) {
+            return
+        }
         val context = applicationContext
+        // 锁机期间不许下拉通知栏：面板一露头就替用户按一次返回，把它收回去（函数自带节流）。
+        // 这是**事后**拦截 —— 悬浮窗（TYPE_APPLICATION_OVERLAY）在系统状态栏面前没有任何
+        // 优先级，没有 root 就拦不住「下拉」这个动作本身，只能做到「露头即收、点不了」。
+        if (LockMachineController.isActive(context)) collapseNotificationShade()
+        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        val packageName = event.packageName?.toString() ?: return
 
         // [诊断] 抓「左滑返回那一下，系统报的前台包名是什么」。
         Log.d(
@@ -259,6 +275,53 @@ class FocusLockAccessibilityService : AccessibilityService() {
             ?.takeIf { it.isNotBlank() && it !in SYSTEM_UI_PACKAGES }
     }.getOrNull()
 
+    /**
+     * 锁机期间把下拉出来的通知面板收回去。
+     *
+     * 判据两条：**是 systemui 的 TYPE_SYSTEM 窗口**（不是应用窗口、不是输入法）
+     * + **它铺开了**（高度超过屏幕四分之一 —— 状态栏本身只有一两百像素）。
+     * 只看包名不行：状态栏窗口是**一直存在**的，会把「下拉」和「只是状态栏在刷新」
+     * 混为一谈，然后不停替用户按返回。只看高度也不行：个别 ROM 折叠时也报满屏 ——
+     * 两条一起看才够稳。
+     *
+     * ⚠️ v2.0.83 删掉了原来的第三条判据「它拿着焦点」（`window.isFocused`）——
+     * 那是想错了一件事：**锁机层自己是 `TYPE_APPLICATION_OVERLAY` 且可获焦**，
+     * 用户下拉时焦点并不会转给面板（真机 `dumpsys window` 实证：面板 `mHasSurface=true`
+     * 展开着，`mCurrentFocus` 仍是 `com.xian.focus type=2038`）。于是那条判据永远为 false，
+     * 函数每次都直接返回 —— v2.0.80 ~ 2.0.82 的「禁下拉」根本一次都没生效过。
+     *
+     * 满足就 `GLOBAL_ACTION_BACK`：面板展开时这条只收起面板，不会退掉底下的应用。
+     * 万一判错（面板其实没展开），代价是多按一次返回、回到桌面 —— 而锁机层会立刻重新盖上，
+     * 比漏拦轻得多（漏拦意味着用户能进通知栏点「设置」把锁机拆了）。
+     */
+    private fun collapseNotificationShade() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastShadeCollapseAt < SHADE_COLLAPSE_INTERVAL_MILLIS) return
+        val expanded = runCatching {
+            val screenHeight = resources.displayMetrics.heightPixels
+            windows.orEmpty().any { window ->
+                if (window.type != AccessibilityWindowInfo.TYPE_SYSTEM) return@any false
+                // 节点的 bounds 只能写进传进去的 Rect —— AccessibilityNodeInfo 没有无参 getter
+                val bounds = Rect()
+                val root = window.root
+                if (root != null) {
+                    // 拿得到节点就顺带核包名：同 ROM 里过路的系统面板不止通知栏
+                    // （vivo 的侧滑返回层 com.vivo.upslide 也是 TYPE_SYSTEM），别认错人。
+                    val pkg = root.packageName?.toString()
+                    if (!pkg.isNullOrBlank() && !pkg.contains("systemui")) return@any false
+                    root.getBoundsInScreen(bounds)
+                } else {
+                    // 拿不到节点就退到窗口自己的 bounds —— 同一块屏，量出来的高度一样。
+                    window.getBoundsInScreen(bounds)
+                }
+                bounds.height() * 4 > screenHeight
+            }
+        }.getOrElse { false }
+        if (!expanded) return
+        lastShadeCollapseAt = now
+        performGlobalAction(GLOBAL_ACTION_BACK)
+    }
+
     /** 本进程的悬浮层（限额层或锁机层）是不是正显示着 —— 它们抢焦点时的包名都是本应用。 */
     private fun selfOverlayShowing(): Boolean =
         AppLimitOverlayController.isShowing() || LockMachineOverlayController.isShowing()
@@ -276,6 +339,9 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
         /** 主动查窗口的最小间隔 —— 别每秒都去翻窗口栈。 */
         private const val WINDOW_QUERY_INTERVAL_MILLIS = 5_000L
+
+        /** 收起通知面板的最小间隔：用户按住往下拖时事件是连发的，别一下按出一串返回。 */
+        private const val SHADE_COLLAPSE_INTERVAL_MILLIS = 800L
 
         /**
          * 「闪一下的系统层」包名 —— 它们拿到焦点窗口只说明系统 UI 露出来了，
@@ -320,5 +386,15 @@ class FocusLockAccessibilityService : AccessibilityService() {
          */
         fun foregroundFromWindowStack(): String? =
             instance?.get()?.runCatching { queryForegroundPackage() }?.getOrNull()
+
+        /**
+         * 供锁机层每秒的自检兜底调用（见 `LockMachineOverlayController.tickRunnable`）。
+         *
+         * 主驱动是上面的窗口事件，但面板停住之后可能不再产生新事件，光靠事件会漏一次。
+         * 服务不在（无障碍没开 / 被 ROM 清掉）时什么都不做，不影响别的判定。
+         */
+        fun collapseShadeIfNeeded() {
+            instance?.get()?.runCatching { collapseNotificationShade() }
+        }
     }
 }
