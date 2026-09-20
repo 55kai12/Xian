@@ -3,7 +3,7 @@ import android.content.Context
 import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class,Habit::class,HabitLog::class],version=12,exportSchema=false)
+@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class,Habit::class,HabitLog::class],version=13,exportSchema=false)
 abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstract fun pomodoroRecordDao():PomodoroRecordDao; abstract fun subtaskDao():SubtaskDao; abstract fun countdownDao():CountdownDao; abstract fun habitDao():HabitDao
  companion object {
   @Volatile private var instance:AppDatabase?=null
@@ -83,4 +83,15 @@ abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstr
     database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_habit_logs_habitId_day` ON `habit_logs` (`habitId`, `day`)")
    }
   }
-  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9,MIGRATION_9_10,MIGRATION_10_11,MIGRATION_11_12).build().also{instance=it} } } }
+  private val MIGRATION_12_13 = object : Migration(12, 13) {
+   override fun migrate(database: SupportSQLiteDatabase) {
+    // 倒数日支持农历：记「农历月/日」而不是把某一年的公历日期写死。
+    // 四列都带默认值，存量条目一律落回公历（calendarType = 0），行为与升级前一模一样；
+    // lunarMonth/lunarDay 默认 1 只是让公历条目的这两个字段有个合法值，不参与任何判定。
+    database.execSQL("ALTER TABLE countdowns ADD COLUMN calendarType INTEGER NOT NULL DEFAULT 0")
+    database.execSQL("ALTER TABLE countdowns ADD COLUMN lunarMonth INTEGER NOT NULL DEFAULT 1")
+    database.execSQL("ALTER TABLE countdowns ADD COLUMN lunarDay INTEGER NOT NULL DEFAULT 1")
+    database.execSQL("ALTER TABLE countdowns ADD COLUMN lunarLeap INTEGER NOT NULL DEFAULT 0")
+   }
+  }
+  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9,MIGRATION_9_10,MIGRATION_10_11,MIGRATION_11_12,MIGRATION_12_13).build().also{instance=it} } } }

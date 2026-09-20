@@ -5,9 +5,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.text.InputFilter
+import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -18,6 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.xian.focus.databinding.FragmentLockBinding
 import com.xian.focus.databinding.ItemLockSlotBinding
 import dagger.hilt.android.AndroidEntryPoint
@@ -358,28 +363,98 @@ class LockFragment : Fragment() {
             toast(getString(R.string.slot_empty_hint))
             return
         }
-        LockMachineScheduler.schedule(context, slotDraft.toList())
-        val started = LockMachineScheduler.resumeIfInScheduledWindow(context)
-        updateScheduledInfo()
-        updateUi()
-        when {
-            started != null -> toast(getString(R.string.schedule_locked_now))
-            else -> {
-                val next = LockMachineScheduler.nextStartAt(context)
-                    ?: (System.currentTimeMillis() + 60_000L)
-                toast(getString(R.string.schedule_saved_next, TimeLabels.relative(context, next)))
+        // 锁机进行中要改时段，先过密码。这跟「锁机时不能改白名单」是同一条道理：
+        // 定时时段是锁机**唯一**的依据，随手能删就等于这次锁机随手能结束 ——
+        // 而且这是最隐蔽的一条（没有「退出锁机」按钮，用户以为自己只是在改设置）。
+        // ⚠️ 过了密码也**不扣**退出额度：改设置 ≠ 退出这次锁机。
+        guardScheduleEdit {
+            LockMachineScheduler.schedule(context, slotDraft.toList())
+            val started = LockMachineScheduler.resumeIfInScheduledWindow(context)
+            updateScheduledInfo()
+            updateUi()
+            when {
+                started != null -> toast(getString(R.string.schedule_locked_now))
+                else -> {
+                    val next = LockMachineScheduler.nextStartAt(context)
+                        ?: (System.currentTimeMillis() + 60_000L)
+                    toast(getString(R.string.schedule_saved_next, TimeLabels.relative(context, next)))
+                }
             }
+            // 存完顺手把「闹钟和提醒」要过来 —— 定时锁机要准点，而这条权限 Android 14 起默认不给。
+            // 放在保存之后：先把用户的事办完，再问他要权限，顺序反了就成了拦路收费。
+            ExactAlarms.requestIfNeeded(context)
         }
-        // 存完顺手把「闹钟和提醒」要过来 —— 定时锁机要准点，而这条权限 Android 14 起默认不给。
-        // 放在保存之后：先把用户的事办完，再问他要权限，顺序反了就成了拦路收费。
-        ExactAlarms.requestIfNeeded(context)
     }
 
     private fun cancelSchedule() {
-        LockMachineScheduler.cancel(requireContext())
-        slotDraft.clear()
-        sortAndRender()
-        toast(getString(R.string.cancel_schedule))
+        guardScheduleEdit {
+            LockMachineScheduler.cancel(requireContext())
+            slotDraft.clear()
+            sortAndRender()
+            toast(getString(R.string.cancel_schedule))
+        }
+    }
+
+    /**
+     * 改定时时段前的那道闸。**锁机进行中**才拦：要密码，不扣额度。
+     *
+     * 没锁机时不打扰 —— 平时改时段是正常设置行为，这个功能不是用来防用户改设置的，
+     * 只防「锁机正跑着、把锁机依据抽走」。
+     */
+    private fun guardScheduleEdit(onApply: () -> Unit) {
+        val context = requireContext()
+        if (!LockMachineController.isActive(context)) {
+            onApply()
+            return
+        }
+        if (LockPin.isRequired(context, PinScope.EXIT_LOCK)) {
+            showSchedulePinDialog(onApply)
+        } else {
+            // 没设密码就只剩说明一句 —— 拦不住，但至少让用户知道自己在干什么
+            MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.schedule_locked_title)
+                .setMessage(R.string.schedule_locked_message)
+                .setPositiveButton(R.string.schedule_locked_confirm) { _, _ -> onApply() }
+                .setNegativeButton(R.string.cancel, null)
+                .show()
+        }
+    }
+
+    /**
+     * 锁机进行中改时段用的密码框。
+     *
+     * 与 [AppLimitFragment.showPinDialog] 同一套外观，刻意不共用 [LockPinPanel]：
+     * 那块面板靠 `<include>` 内嵌进悬浮层，在 Activity 里 `findViewById` 找不到，
+     * 会走「面板没内嵌就当没这功能」的分支直接放行 —— 那样比现在没有闸还糟。
+     */
+    private fun showSchedulePinDialog(onPass: () -> Unit) {
+        val context = requireContext()
+        val density = context.resources.displayMetrics.density
+        val input = EditText(context).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER
+            filters = arrayOf(InputFilter.LengthFilter(LockPin.PIN_LENGTH))
+            hint = getString(R.string.exit_pin_hint)
+        }
+        val wrap = FrameLayout(context).apply {
+            val pad = (22 * density).toInt()
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        val dialog = MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.schedule_pin_title)
+            .setView(wrap)
+            .setPositiveButton(android.R.string.ok, null)
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            if (LockPin.check(context, input.text.toString())) {
+                dialog.dismiss()
+                onPass()
+            } else {
+                input.error = getString(R.string.exit_pin_wrong)
+                input.setText("")
+            }
+        }
     }
 
     private fun updateScheduledInfo() {

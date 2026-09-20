@@ -116,6 +116,15 @@
     <color name="flip_card_divider">#38000000</color>
     <color name="flip_card_text">#FFFFFF</color>
 
+    <!-- ========== 昨日未完成横幅 ==========
+         墨色卡片压在白底列表上，与「宣纸底 + 深色字」刻意反过来。
+         不跟主题色走：它是「提示」，不属于任何一个内容板块，四套主题下都该是同一个样子。
+         描边用古铜金，跟全站 accent 同一支。 -->
+    <color name="yesterday_banner_bg">#F22B2B2B</color>
+    <color name="yesterday_banner_outline">#66C9A961</color>
+    <color name="yesterday_banner_text">#F2FFFFFF</color>
+    <color name="yesterday_banner_action">#C9A961</color>
+
     <!-- ========== 旧名兼容 ========== -->
     <color name="primary">@color/theme_qinglv_primary</color>
     <color name="primary_dark">@color/theme_qinglv_primary_variant</color>

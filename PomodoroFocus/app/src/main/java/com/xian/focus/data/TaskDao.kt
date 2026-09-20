@@ -47,6 +47,16 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE templateId=:templateId AND dueDate=:dueDate AND isCompleted=1 AND deletedAt = 0 LIMIT 1")
     suspend fun getCompletedSnapshot(templateId: Int, dueDate: Long): Task?
 
+    /**
+     * 某模板在某天的**任意**快照（含未完成的）。
+     *
+     * 用于「移到今天」：重复任务的实例是模板虚拟带出的，要让它真的落到某一天，
+     * 唯一做法是写一条那天的快照 —— 而写之前必须先看看那天有没有（避免重复建）。
+     * 与 [getCompletedSnapshot] 的区别只在于不限定 `isCompleted`。
+     */
+    @Query("SELECT * FROM tasks WHERE templateId=:templateId AND dueDate=:dueDate AND deletedAt = 0 LIMIT 1")
+    suspend fun getSnapshotOn(templateId: Int, dueDate: Long): Task?
+
     @Query("DELETE FROM tasks WHERE templateId=:templateId AND dueDate=:dueDate AND isCompleted=1 AND deletedAt = 0")
     suspend fun deleteCompletedSnapshot(templateId: Int, dueDate: Long)
 

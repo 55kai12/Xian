@@ -261,8 +261,16 @@ object DataBackup {
 
     /** countdowns.csv。排序值不导出 —— 行序本身就是排序，导入时按行序重新编号即可。 */
     private fun countdownsSheet(countdowns: List<Countdown>): String {
-        val sheet = Sheet("标题", "目标日期", "每年重复", "备注", "颜色", "创建时间", "关联任务编号", "编号")
+        // 农历那四列**追加在表尾**，不插到「每年重复」后面：导入端是按列位置读的，
+        // 插在中间会让 v2.0.86 及更早导出的备份整列错位（「备注」被当成「历法」）。
+        // 押尾之后旧备份只是少了这四列，parseSheetCountdown 走默认值，公历条目行为不变。
+        val sheet = Sheet(
+            "标题", "目标日期", "每年重复", "备注", "颜色", "创建时间", "关联任务编号", "编号",
+            "历法", "农历月", "农历日", "闰月"
+        )
         countdowns.forEach { c ->
+            // 公历条目的农历三格留空：填 0 或 1 都只是内部默认值，写进给用户看的表反而费解
+            val lunar = c.calendarType == CountdownCalendar.LUNAR
             sheet.row(
                 c.title,
                 date(c.targetDate),
@@ -271,7 +279,11 @@ object DataBackup {
                 colorText(c.color),
                 dateTime(c.createdAt),
                 c.linkedTaskId,
-                c.id
+                c.id,
+                calendarText(c.calendarType),
+                if (lunar) c.lunarMonth else "",
+                if (lunar) c.lunarDay else "",
+                if (lunar) yesNo(c.lunarLeap) else ""
             )
         }
         return sheet.toString()
@@ -523,6 +535,9 @@ object DataBackup {
 
     private fun yesNo(yes: Boolean): String = if (yes) "是" else "否"
 
+    private fun calendarText(calendarType: Int): String =
+        if (calendarType == CountdownCalendar.LUNAR) "农历" else "公历"
+
     /** 设置表里的开关。与 [yesNo] 分开：那张表读的是「是不是」，这张读的是「开没开」。 */
     private fun onOff(on: Boolean): String = if (on) "开" else "关"
 
@@ -650,6 +665,8 @@ object DataBackup {
 
         表里的日期写成 2026-09-16 这样，优先级写的是「高 / 中 / 低」，
         倒数日的颜色写的是「墨绿 / 古铜金」这类名字 —— 都是给人看的。
+        倒数日表末尾的「历法」写「公历」或「农历」；写农历时后面三列
+        （农历月、农历日、闰月）才有意义，农历那一列写的就是「八月十五」里的月和日。
         习惯表里的频率写的是「每天 / 每周 / 指定星期」，指定星期那一格写成
         「周一、周三、周五」；提醒时间写成 08:00，不提醒就留空。
 

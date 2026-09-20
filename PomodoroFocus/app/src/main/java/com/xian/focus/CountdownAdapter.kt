@@ -7,6 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.xian.focus.data.Countdown
+import com.xian.focus.data.CountdownCalendar
 import com.xian.focus.databinding.ItemCountdownBinding
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -46,8 +47,24 @@ class CountdownAdapter(
             binding.countdownNoteText.visibility = android.view.View.GONE
 
             val effectiveDate = viewModel.getEffectiveTargetDate(countdown)
-            binding.countdownDateText.text = dateFormat.format(Date(effectiveDate)) +
-                    if (countdown.repeatYearly) context.getString(R.string.countdown_yearly_suffix) else ""
+            // 农历条目：把「八月十五」和它今年的公历落点一起给出来 ——
+            // 只有公历用户认不出这是哪个农历日子，只有农历又不知道还剩几天。
+            // 不追加「· 每年」后缀：农历自带年复一年的含义，再加就显得啰嗦。
+            binding.countdownDateText.text = if (countdown.calendarType == CountdownCalendar.LUNAR) {
+                context.getString(
+                    R.string.countdown_date_lunar_full,
+                    LunarCalendar.format(
+                        context,
+                        countdown.lunarMonth,
+                        countdown.lunarDay,
+                        countdown.lunarLeap
+                    ),
+                    dateFormat.format(Date(effectiveDate))
+                )
+            } else {
+                dateFormat.format(Date(effectiveDate)) +
+                        if (countdown.repeatYearly) context.getString(R.string.countdown_yearly_suffix) else ""
+            }
 
             val days = viewModel.getDaysRemaining(countdown)
             if (days >= 0) {

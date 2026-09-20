@@ -2,11 +2,14 @@
 
 import android.app.DatePickerDialog
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.NumberPicker
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
@@ -18,6 +21,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.xian.focus.data.Countdown
+import com.xian.focus.data.CountdownCalendar
 import com.xian.focus.databinding.FragmentCountdownBinding
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -39,6 +43,14 @@ class CountdownFragment : Fragment() {
     private var selectedTargetDate: Long = 0L
     private var selectedColor: Int = 0xFF3B5B4E.toInt()
     private var currentDialog: android.app.Dialog? = null
+
+    /** 弹窗里当前选的是哪种历法。 */
+    private var selectedCalendar: Int = CountdownCalendar.SOLAR
+
+    /** 弹窗里暂存的农历月/日/闰月，仅 [selectedCalendar] = 农历时有意义。 */
+    private var selectedLunarMonth: Int = 1
+    private var selectedLunarDay: Int = 1
+    private var selectedLunarLeap: Boolean = false
 
     private val presetColors = listOf(
         0xFF3B5B4E.toInt(), // 墨绿
@@ -107,6 +119,19 @@ class CountdownFragment : Fragment() {
                 cal.timeInMillis
             }
         selectedColor = countdown?.color ?: 0xFF3B5B4E.toInt()
+        selectedCalendar = countdown?.calendarType ?: CountdownCalendar.SOLAR
+        // 农历初值：编辑既有农历条目就沿用它的月日；其余情况（新建、公历条目、从公历切过来）
+        // 一律由当时的公历日期现场换算，省得两套状态各自维护、切来切去对不上号。
+        if (selectedCalendar == CountdownCalendar.LUNAR) {
+            selectedLunarMonth = countdown?.lunarMonth ?: 1
+            selectedLunarDay = countdown?.lunarDay ?: 1
+            selectedLunarLeap = countdown?.lunarLeap == true
+        } else {
+            val lunar = LunarCalendar.solarToLunar(selectedTargetDate)
+            selectedLunarMonth = lunar.month
+            selectedLunarDay = lunar.day
+            selectedLunarLeap = lunar.leap
+        }
 
         val dialogView = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
@@ -127,37 +152,36 @@ class CountdownFragment : Fragment() {
         }
         dialogView.addView(noteInput)
 
-        fun targetDateLabel(): String =
-            getString(R.string.countdown_target_date, dateFormat.format(Date(selectedTargetDate)))
+        // ---- 历法：公历 / 农历 ----
+        val solarText = TextView(requireContext()).apply {
+            text = getString(R.string.countdown_calendar_solar)
+            textSize = 14f
+            setPadding(0, 24, 40, 0)
+        }
+        val lunarText = TextView(requireContext()).apply {
+            text = getString(R.string.countdown_calendar_lunar)
+            textSize = 14f
+            setPadding(0, 24, 0, 0)
+        }
+        val calendarRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            addView(solarText)
+            addView(lunarText)
+        }
+        dialogView.addView(calendarRow)
 
         val dateButton = TextView(requireContext()).apply {
-            text = targetDateLabel()
             textSize = 14f
             setPadding(0, 32, 0, 0)
             setTextColor(requireContext().themedColor(R.attr.colorBrandContent, R.color.theme_qinglv_primary_content))
-            setOnClickListener {
-                val cal = Calendar.getInstance().apply { timeInMillis = selectedTargetDate }
-                DatePickerDialog(
-                    requireContext(),
-                    { _, year, month, day ->
-                        selectedTargetDate = Calendar.getInstance().apply {
-                            set(year, month, day, 0, 0, 0)
-                            set(Calendar.MILLISECOND, 0)
-                        }.timeInMillis
-                        text = targetDateLabel()
-                    },
-                    cal.get(Calendar.YEAR),
-                    cal.get(Calendar.MONTH),
-                    cal.get(Calendar.DAY_OF_MONTH)
-                ).show()
-            }
         }
         dialogView.addView(dateButton)
 
         // 每年重复 + 删除（水平排列）
         val repeatRow = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
+            gravity = Gravity.CENTER_VERTICAL
             setPadding(0, 24, 0, 0)
         }
         // 用布尔量记状态，而不是去判断文案里有没有「✓」—— 文案是要翻译的，靠它做逻辑一翻就废。
@@ -192,6 +216,88 @@ class CountdownFragment : Fragment() {
             repeatRow.addView(deleteButton)
         }
         dialogView.addView(repeatRow)
+
+        // ---- 日期文案与历法切换 ----
+
+        /** 农历条目在「下一次」的公历落点。提醒、关联任务、列表都走同一个换算口径。 */
+        fun lunarSolarDate(): Long =
+            LunarCalendar.nextOccurrence(selectedLunarMonth, selectedLunarDay, selectedLunarLeap)
+
+        fun dateText(): String = if (selectedCalendar == CountdownCalendar.LUNAR) {
+            getString(
+                R.string.countdown_date_lunar_full,
+                LunarCalendar.format(
+                    requireContext(),
+                    selectedLunarMonth,
+                    selectedLunarDay,
+                    selectedLunarLeap
+                ),
+                dateFormat.format(Date(lunarSolarDate()))
+            )
+        } else {
+            dateFormat.format(Date(selectedTargetDate))
+        }
+
+        fun targetDateLabel(): String = getString(R.string.countdown_target_date, dateText())
+
+        fun refreshCalendarRow() {
+            val isLunar = selectedCalendar == CountdownCalendar.LUNAR
+            val selectedColorValue =
+                requireContext().themedColor(R.attr.colorBrandAccent, R.color.theme_qinglv_primary_content)
+            val normalColor = ContextCompat.getColor(requireContext(), R.color.text_secondary)
+            solarText.setTextColor(if (isLunar) normalColor else selectedColorValue)
+            lunarText.setTextColor(if (isLunar) selectedColorValue else normalColor)
+            // 农历条目恒定按年重复（「每年的八月十五」），开关没有第二种合法状态，索性不显示。
+            // 删除按钮跟它同一行，不能整行藏掉。
+            repeatText.visibility = if (isLunar) View.GONE else View.VISIBLE
+            dateButton.text = targetDateLabel()
+        }
+
+        solarText.setOnClickListener {
+            // 从农历切回来：把当前的公历落点接过来当起点，日期不会跳回打开弹窗那一刻的值
+            if (selectedCalendar != CountdownCalendar.SOLAR) {
+                selectedTargetDate = lunarSolarDate()
+            }
+            selectedCalendar = CountdownCalendar.SOLAR
+            refreshCalendarRow()
+        }
+        lunarText.setOnClickListener {
+            // 切到农历：按当前公历日期重新换算，免得拿到的是打开弹窗那一刻的旧值
+            if (selectedCalendar != CountdownCalendar.LUNAR) {
+                val lunar = LunarCalendar.solarToLunar(selectedTargetDate)
+                selectedLunarMonth = lunar.month
+                selectedLunarDay = lunar.day
+                selectedLunarLeap = lunar.leap
+            }
+            selectedCalendar = CountdownCalendar.LUNAR
+            refreshCalendarRow()
+        }
+
+        dateButton.setOnClickListener {
+            if (selectedCalendar == CountdownCalendar.LUNAR) {
+                showLunarPicker { month, day, leap ->
+                    selectedLunarMonth = month
+                    selectedLunarDay = day
+                    selectedLunarLeap = leap
+                    dateButton.text = targetDateLabel()
+                }
+            } else {
+                val cal = Calendar.getInstance().apply { timeInMillis = selectedTargetDate }
+                DatePickerDialog(
+                    requireContext(),
+                    { _, year, month, day ->
+                        selectedTargetDate = Calendar.getInstance().apply {
+                            set(year, month, day, 0, 0, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+                        dateButton.text = targetDateLabel()
+                    },
+                    cal.get(Calendar.YEAR),
+                    cal.get(Calendar.MONTH),
+                    cal.get(Calendar.DAY_OF_MONTH)
+                ).show()
+            }
+        }
 
         // 颜色选择
         val colorLabel = TextView(requireContext()).apply {
@@ -229,6 +335,8 @@ class CountdownFragment : Fragment() {
         }
         dialogView.addView(colorRow)
 
+        refreshCalendarRow()
+
         currentDialog = MaterialAlertDialogBuilder(requireContext())
             .setTitle(getString(if (countdown == null) R.string.countdown_add else R.string.countdown_edit))
             .setView(dialogView)
@@ -239,12 +347,21 @@ class CountdownFragment : Fragment() {
                     return@setPositiveButton
                 }
                 val repeatYearly = repeatChecked
+                val isLunar = selectedCalendar == CountdownCalendar.LUNAR
+                // 农历条目存下的 targetDate 只是「下一次的公历落点」，给提醒和关联任务一个具体时刻；
+                // 真正的目标日每次都由 effectiveTargetDate 按农历现算，所以它明年不会过期。
+                val savedTargetDate = if (isLunar) lunarSolarDate() else selectedTargetDate
                 if (countdown == null) {
                     viewModel.addCountdown(
                         Countdown(
                             title = title,
-                            targetDate = selectedTargetDate,
-                            repeatYearly = repeatYearly,
+                            targetDate = savedTargetDate,
+                            // 农历恒定按年重复，这里直接定死；CountdownViewModel 落库前还会再归一化一次
+                            repeatYearly = isLunar || repeatYearly,
+                            calendarType = selectedCalendar,
+                            lunarMonth = selectedLunarMonth,
+                            lunarDay = selectedLunarDay,
+                            lunarLeap = selectedLunarLeap,
                             color = selectedColor,
                             sortOrder = System.currentTimeMillis().toInt(),
                             note = noteInput.text.toString().trim()
@@ -254,8 +371,13 @@ class CountdownFragment : Fragment() {
                     viewModel.updateCountdown(
                         countdown.copy(
                             title = title,
-                            targetDate = if (repeatYearly) countdown.targetDate else selectedTargetDate,
-                            repeatYearly = repeatYearly,
+                            targetDate = if (isLunar) savedTargetDate
+                            else if (repeatYearly) countdown.targetDate else selectedTargetDate,
+                            repeatYearly = isLunar || repeatYearly,
+                            calendarType = selectedCalendar,
+                            lunarMonth = selectedLunarMonth,
+                            lunarDay = selectedLunarDay,
+                            lunarLeap = selectedLunarLeap,
                             color = selectedColor,
                             note = noteInput.text.toString().trim()
                         )
@@ -265,6 +387,66 @@ class CountdownFragment : Fragment() {
                 if (CountdownReminderScheduler.isEnabled(requireContext())) {
                     ExactAlarms.requestIfNeeded(requireContext())
                 }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /**
+     * 农历日期选择器：月（正月…腊月）+ 日（初一…三十）+ 闰月勾选。
+     *
+     * 日号一律给到三十，不按当年实际天数收窄 —— 闰月和平月的天数逐年不同，
+     * 收窄就得先知道用户要哪一年，而这个弹窗刻意不问年份（农历条目只记月日）。
+     * 碰上没有三十的月份，落库时由 LunarCalendar 压到月末。
+     */
+    private fun showLunarPicker(onPicked: (month: Int, day: Int, leap: Boolean) -> Unit) {
+        val context = requireContext()
+        val months = LunarCalendar.monthNames(context)
+        val days = LunarCalendar.dayNames(context)
+        val columnWidth = (resources.displayMetrics.widthPixels * 0.3f).toInt()
+
+        val monthPicker = NumberPicker(context).apply {
+            minValue = 1
+            maxValue = months.size
+            value = selectedLunarMonth.coerceIn(1, months.size)
+            displayedValues = months
+            wrapSelectorWheel = false
+        }
+        val dayPicker = NumberPicker(context).apply {
+            minValue = 1
+            maxValue = days.size
+            value = selectedLunarDay.coerceIn(1, days.size)
+            displayedValues = days
+            wrapSelectorWheel = false
+        }
+        val pickerRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            addView(monthPicker, LinearLayout.LayoutParams(columnWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
+            addView(dayPicker, LinearLayout.LayoutParams(columnWidth, LinearLayout.LayoutParams.WRAP_CONTENT))
+        }
+        val leapBox = CheckBox(context).apply {
+            text = getString(R.string.countdown_lunar_leap)
+            isChecked = selectedLunarLeap
+        }
+        val hint = TextView(context).apply {
+            text = getString(R.string.countdown_lunar_leap_note)
+            textSize = 12f
+            setTextColor(ContextCompat.getColor(context, R.color.text_tertiary))
+        }
+        val container = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(24, 16, 24, 8)
+            addView(pickerRow)
+            addView(leapBox)
+            addView(hint)
+        }
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.countdown_lunar_pick_title)
+            .setView(container)
+            .setPositiveButton(R.string.save) { _, _ ->
+                onPicked(monthPicker.value, dayPicker.value, leapBox.isChecked)
             }
             .setNegativeButton(R.string.cancel, null)
             .show()

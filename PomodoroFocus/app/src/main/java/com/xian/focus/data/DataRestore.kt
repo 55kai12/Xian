@@ -327,18 +327,24 @@ object DataRestore {
         )
     }
 
-    /** countdowns.csv：标题,目标日期,每年重复,备注,颜色,创建时间,关联任务编号,编号 */
+    /** countdowns.csv：标题,目标日期,每年重复,备注,颜色,创建时间,关联任务编号,编号,历法,农历月,农历日,闰月 */
     private fun parseSheetCountdown(row: List<String>, index: Int): Countdown? {
         if (row.size < 8) return null
         val id = row[7].trim().toIntOrNull() ?: return null
         val title = row[0]
         if (title.isBlank()) return null
         val targetDate = parseSheetDay(row[1]) ?: return null
+        // 农历那四列是 v2.0.87 追加在表尾的，旧备份没有。缺列一律落回公历 ——
+        // 不能靠「这几格看着像不像农历」去猜，猜错就是整行读歪、静默写坏库。
         return Countdown(
             id = id,
             title = title,
             targetDate = targetDate,
             repeatYearly = yesOf(row[2]),
+            calendarType = calendarOf(row.getOrNull(8).orEmpty()),
+            lunarMonth = (row.getOrNull(9)?.trim()?.toIntOrNull() ?: 1).coerceIn(1, 12),
+            lunarDay = (row.getOrNull(10)?.trim()?.toIntOrNull() ?: 1).coerceIn(1, 30),
+            lunarLeap = yesOf(row.getOrNull(11).orEmpty()),
             note = row[3],
             color = colorOf(row[4]),
             createdAt = parseSheetTime(row[5]) ?: System.currentTimeMillis(),
@@ -346,6 +352,20 @@ object DataRestore {
             // 文件里没有排序列，用行序还原（导出就是按排序查出来的）
             sortOrder = index
         )
+    }
+
+    /**
+     * 「历法」列：认「农历」和 `lunar` 两种写法，其余（含旧备份缺列时的空串）都算公历。
+     * 公历是默认值，认不出来时往回退比回退成农历安全 —— 农历条目会按农历重算目标日，
+     * 一条本意是公历的记录被误读成农历，日期就再也对不上了。
+     */
+    private fun calendarOf(text: String): Int {
+        val value = text.trim()
+        return if (value == "农历" || value.equals("lunar", ignoreCase = true)) {
+            CountdownCalendar.LUNAR
+        } else {
+            CountdownCalendar.SOLAR
+        }
     }
 
     /**

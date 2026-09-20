@@ -82,6 +82,15 @@
     <string name="empty_pending">No pending tasks. Tap below to add one.</string>
     <string name="empty_completed">No completed tasks yet</string>
 
+    <!-- Yesterday's unfinished banner: shown once on the first open of the day -->
+    <string name="yesterday_banner_format">Yesterday you had %1$d unfinished event(s)</string>
+    <string name="yesterday_move_all">Move all to today</string>
+    <string name="yesterday_details">View details</string>
+    <string name="yesterday_dismiss_today">Don\'t remind today</string>
+    <string name="yesterday_moved_format">Moved %1$d event(s) to today</string>
+    <string name="yesterday_details_title">Yesterday\'s unfinished</string>
+    <string name="yesterday_details_empty">Nothing left unfinished yesterday</string>
+
     <string name="accessibility_description">Used for focus lock: detects when you leave Xian and shows a full-screen lock overlay. It never reads or stores any input.</string>
     <string name="overlay_permission_title">Display over other apps needed</string>
     <string name="overlay_permission_message">The lock needs to show a full-screen overlay above other apps. Please allow "Display over other apps" in settings.</string>
@@ -274,6 +283,10 @@
     <string name="schedule_next_format">Next lock: %1$s</string>
     <string name="schedule_saved_next">Saved. Next lock: %1$s</string>
     <string name="schedule_locked_now">You are inside a lock window — the lock has started now</string>
+    <string name="schedule_locked_title">Lock is running</string>
+    <string name="schedule_locked_message">The lock is running. Changing the lock windows now would pull the ground out from under it, so here is a heads-up first.\n\nThe change will apply once you confirm — and it does **not** use up your exit quota. Changing a setting is not exiting the lock.</string>
+    <string name="schedule_locked_confirm">Confirm change</string>
+    <string name="schedule_pin_title">Enter PIN</string>
     <string name="lock_end_at_format">Ends around %1$s</string>
     <string name="time_today_format">today %1$s</string>
     <string name="time_tomorrow_format">tomorrow %1$s</string>
@@ -531,6 +544,60 @@
     <string name="countdown_days_past">days ago</string>
     <string name="countdown_yearly_suffix"> · Yearly</string>
     <string name="countdown_date_format">MMM d, yyyy</string>
+    <string name="countdown_calendar_solar">Solar</string>
+    <string name="countdown_calendar_lunar">Lunar</string>
+    <string name="countdown_date_lunar_full">%1$s · %2$s</string>
+    <string name="countdown_lunar_pick_title">Pick a lunar date</string>
+    <string name="countdown_lunar_leap">Leap month</string>
+    <string name="countdown_lunar_leap_note">If that leap month does not exist that year, the ordinary month is used</string>
+    <string name="lunar_date_format">%1$s, %2$s</string>
+    <string name="lunar_leap_prefix">Leap\u0020</string>
+    <string-array name="lunar_months">
+        <item>Month 1</item>
+        <item>Month 2</item>
+        <item>Month 3</item>
+        <item>Month 4</item>
+        <item>Month 5</item>
+        <item>Month 6</item>
+        <item>Month 7</item>
+        <item>Month 8</item>
+        <item>Month 9</item>
+        <item>Month 10</item>
+        <item>Month 11</item>
+        <item>Month 12</item>
+    </string-array>
+    <string-array name="lunar_days">
+        <item>Day 1</item>
+        <item>Day 2</item>
+        <item>Day 3</item>
+        <item>Day 4</item>
+        <item>Day 5</item>
+        <item>Day 6</item>
+        <item>Day 7</item>
+        <item>Day 8</item>
+        <item>Day 9</item>
+        <item>Day 10</item>
+        <item>Day 11</item>
+        <item>Day 12</item>
+        <item>Day 13</item>
+        <item>Day 14</item>
+        <item>Day 15</item>
+        <item>Day 16</item>
+        <item>Day 17</item>
+        <item>Day 18</item>
+        <item>Day 19</item>
+        <item>Day 20</item>
+        <item>Day 21</item>
+        <item>Day 22</item>
+        <item>Day 23</item>
+        <item>Day 24</item>
+        <item>Day 25</item>
+        <item>Day 26</item>
+        <item>Day 27</item>
+        <item>Day 28</item>
+        <item>Day 29</item>
+        <item>Day 30</item>
+    </string-array>
 
     <!-- ===== Event settings ===== -->
     <string name="event_sort_title">Sort events by</string>

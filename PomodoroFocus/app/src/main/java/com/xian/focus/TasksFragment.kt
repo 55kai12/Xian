@@ -235,7 +235,97 @@ class TasksFragment : Fragment() {
             updateAppLimitSummary()
             updateRecycleBinSummary()
             updateHabitSummary()
+            maybeShowYesterdayBanner()
         }
+    }
+
+    // ---------- 昨日未完成横幅 ----------
+
+    /**
+     * 昨天有没做完的事就弹一次横幅（每天最多一次，见 [YesterdayBannerState]）。
+     *
+     * 数据源复用 [buildOccurrencesForDay] —— 它对任意一天都算得出「那天看得见的未完成项」，
+     * 连重复任务的虚拟实例、「仅删除这一天」的跳过都一并处理了。
+     * ⚠️ 别自己另写一套过滤：统计口径与清单口径一旦分家就会各说各话（历史上栽过）。
+     *
+     * 只在**今天**的视图下弹：用户翻到别的日期时弹「昨天」的提醒会很错乱。
+     */
+    private fun maybeShowYesterdayBanner() {
+        val context = requireContext()
+        // ⚠️ include 带 id 时 viewBinding 生成的是包装类 ViewYesterdayBannerBinding，
+        // 不是 View —— 根上取 visibility 必须走 .root。
+        val banner = binding.yesterdayBanner.root
+        val today = startOfDay(System.currentTimeMillis())
+        if (selectedDate != today || !YesterdayBannerState.shouldShow(context)) {
+            banner.visibility = View.GONE
+            return
+        }
+        val yesterday = yesterdayBannerTasks()
+        if (yesterday.isEmpty()) {
+            banner.visibility = View.GONE
+            return
+        }
+        binding.yesterdayBanner.yesterdayBannerText.text =
+            getString(R.string.yesterday_banner_format, yesterday.size)
+        banner.visibility = View.VISIBLE
+        YesterdayBannerState.markShown(context)
+    }
+
+    /**
+     * 昨天「看得见但没完成」的任务。
+     *
+     * ⚠️ 必须排除**今天之后**才到期的重复实例 —— `buildOccurrencesForDay` 对过去某一天
+     * 只会带出那一天本来该有的实例，所以这里不需要额外过滤日期；但**普通任务里
+     * `dueDate == null` 的会被归到「今天」**（见那个函数里的注释），传昨天时它们不会出现，
+     * 正是我们要的。
+     */
+    private fun yesterdayBannerTasks(): List<Task> {
+        val day = startOfDay(System.currentTimeMillis() - DAY_MILLIS)
+        return buildOccurrencesForDay(taskViewModel.pendingTasks.value, day)
+            .filter { !it.isCompleted }
+    }
+
+    /** 「全部移到今天」：把昨天那些未完成的改到今天。 */
+    private fun moveYesterdayToToday(tasks: List<Task>) {
+        val today = startOfDay(System.currentTimeMillis())
+        viewLifecycleOwner.lifecycleScope.launch {
+            // 重复任务不能简单改日期（模板是规则、不是某一天的事），
+            // 具体怎么挪由 TaskViewModel.moveTasksToDay 一处收口。
+            val moved = taskViewModel.moveTasksToDay(tasks, today)
+            val view = _binding ?: return@launch
+            view.yesterdayBanner.root.visibility = View.GONE
+            renderCurrentList()
+            loadWeekTrend()
+            Toast.makeText(requireContext(), getString(R.string.yesterday_moved_format, moved), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /** 「查看详情」：列出昨天未完成的那几条，点一条跳到昨天那天。 */
+    private fun showYesterdayDetails(tasks: List<Task>) {
+        val labels = tasks.map { it.title }.toTypedArray()
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.yesterday_details_title)
+            .setItems(labels) { _, which ->
+                // 跳到昨天，让用户在原位置处理那一条
+                val day = startOfDay(System.currentTimeMillis() - DAY_MILLIS)
+                selectedDate = day
+                weekStartMillis = weekStartOf(day)
+                scrollCalendarToWeekStart()
+                binding.weekCalendarStrip.setWeek(weekStartMillis, day)
+                binding.yesterdayBanner.root.visibility = View.GONE
+                loadWeekTrend()
+                renderCurrentList()
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    /** 任意一天所在那一周的周一 0 点，与周历条的对齐方式保持一致。 */
+    private fun weekStartOf(day: Long): Long {
+        val calendar = Calendar.getInstance().apply { timeInMillis = day }
+        // Calendar.MONDAY = 2，一周从周一起（与「小习惯」的口径一致）
+        val shift = (calendar.get(Calendar.DAY_OF_WEEK) + 5) % 7
+        return day - shift * DAY_MILLIS
     }
 
     /** 抽屉里「应用限额」右边那行小字：今天累计用了多久。没设限额就空着。 */
@@ -433,6 +523,28 @@ class TasksFragment : Fragment() {
         })
 
         binding.addTaskButton.setOnClickListener { showAddTaskDialog() }
+        // 昨日未完成横幅的三个动作。列表每次渲染后都会重算「昨天还剩几条」，
+        // 所以这里只管动作本身，不在这里判可见性。
+        binding.yesterdayBanner.yesterdayMoveAll.setOnClickListener {
+            val pending = yesterdayBannerTasks()
+            if (pending.isEmpty()) {
+                binding.yesterdayBanner.root.visibility = View.GONE
+            } else {
+                moveYesterdayToToday(pending)
+            }
+        }
+        binding.yesterdayBanner.yesterdayDetails.setOnClickListener {
+            val pending = yesterdayBannerTasks()
+            if (pending.isEmpty()) {
+                Toast.makeText(requireContext(), R.string.yesterday_details_empty, Toast.LENGTH_SHORT).show()
+            } else {
+                showYesterdayDetails(pending)
+            }
+        }
+        binding.yesterdayBanner.yesterdayDismiss.setOnClickListener {
+            YesterdayBannerState.muteToday(requireContext())
+            binding.yesterdayBanner.root.visibility = View.GONE
+        }
         binding.fortuneButton.setOnClickListener { showFortuneDialog() }
         binding.menuButton.setOnClickListener { binding.tasksDrawerLayout.openDrawer(androidx.core.view.GravityCompat.START) }
         binding.drawerCountdownItem.setOnClickListener {

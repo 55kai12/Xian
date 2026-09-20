@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  「昨天有 N 个事件尚未达成」横幅。
+
+  挂在任务列表上方，当天首次打开贤时出现（见 TasksFragment.maybeShowYesterdayBanner）。
+  三个动作：全部移到今天 / 查看详情 / 今日不再提醒 —— 与用户给的参考图一致。
+
+  按钮用 TextView 而不是 Button：古风定稿里没有 Material 按钮的样式位，
+  方框边框 + 描边自绘，与「查看详情」那种次要动作的观感一致。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginTop="8dp"
+    android:background="@drawable/bg_yesterday_banner"
+    android:orientation="vertical"
+    android:paddingHorizontal="14dp"
+    android:paddingVertical="12dp"
+    android:visibility="gone"
+    android:elevation="4dp">
+
+    <TextView
+        android:id="@+id/yesterdayBannerText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@color/yesterday_banner_text"
+        android:textSize="14sp"
+        android:text="@string/yesterday_banner_format" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/yesterdayMoveAll"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_yesterday_action_primary"
+            android:gravity="center"
+            android:text="@string/yesterday_move_all"
+            android:textColor="@color/yesterday_banner_bg"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/yesterdayDetails"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_yesterday_action_outline"
+            android:gravity="center"
+            android:text="@string/yesterday_details"
+            android:textColor="@color/yesterday_banner_action"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/yesterdayDismiss"
+            android:layout_width="0dp"
+            android:layout_height="34dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:background="@drawable/bg_yesterday_action_outline"
+            android:gravity="center"
+            android:text="@string/yesterday_dismiss_today"
+            android:textColor="@color/yesterday_banner_action"
+            android:textSize="13sp" />
+    </LinearLayout>
+</LinearLayout>

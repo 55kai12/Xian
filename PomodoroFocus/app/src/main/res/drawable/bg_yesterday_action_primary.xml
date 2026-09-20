@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 横幅上的主操作（「全部移到今天」）：古铜金实底 + 墨色字，一眼是主推的那一个。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/yesterday_banner_action" />
+    <corners android:radius="8dp" />
+</shape>

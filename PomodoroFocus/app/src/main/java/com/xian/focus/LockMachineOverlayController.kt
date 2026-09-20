@@ -33,6 +33,14 @@ object LockMachineOverlayController {
     private var lastHideAt = 0L
     private const val DEBOUNCE_MILLIS = 350L
 
+    /**
+     * 最近一次拿到的 Context。
+     *
+     * 层被收起时 `overlayView` 是 null，而 tick 还得靠 Context 去问「锁机还在不在、屏幕可用没」——
+     * 没有它就只能在层消失时把 tick 断了，那样息屏期间让开的层**永远盖不回来**。
+     */
+    private var lastContext: Context? = null
+
     /** 退出冷静期截止时刻；0 表示弹窗没开着。 */
     private var cooldownEndsAt = 0L
 
@@ -71,38 +79,68 @@ object LockMachineOverlayController {
 
     private val tickRunnable = object : Runnable {
         override fun run() {
-            val view = overlayView ?: return
-            val context = view.context.applicationContext
-            if (!LockMachineController.isActive(context)) {
+            try {
+                tick()
+            } finally {
+                // ⚠️ 续排必须放 finally：息屏让开、切进白名单让开这些分支都会提前 return，
+                // 而 tick 一旦断掉就再没人检查「现在该不该盖」—— 表现是「锁机莫名失效」。
+                // 停只停一种情况：锁机已结束（tick() 里判断后不续），见下面的 keepTicking。
+                if (keepTicking) handler.postDelayed(this, 1_000L)
+            }
+        }
+    }
+
+    /** tick 是否继续自续。锁机结束、进程要收工时置 false。 */
+    private var keepTicking = false
+
+    private fun tick() {
+        // 层可能是 null（息屏让开时收的），所以停不停**不能看层在不在**，
+        // 只能看锁机还在不在 —— 锁屏期间无障碍事件也不会来，tick 是唯一能把层盖回来的。
+        val view = overlayView
+        val context = (view?.context ?: lastContext)?.applicationContext
+        if (context == null || !LockMachineController.isActive(context)) {
+            keepTicking = false
+            if (view != null && context != null) hide(context, force = true)
+            return
+        }
+        if (view == null) {
+            // 层不在（多半是息屏/锁屏让开时收的）。屏幕回到可用状态就重新盖 ——
+            // 仍走 evaluate，否则用户正用着白名单应用也会被盖。
+            if (!ForegroundApp.screenUnavailable(context)) {
+                evaluate(context, ForegroundApp.resolve(context))
+            }
+            return
+        }
+        // 锁屏 / 息屏：层必须让开（它画得在锁屏之上，不让开就是「输不了手机密码」）。
+        // 排在下面那道退出流程闸门**之前** —— 它更优先。
+        if (ForegroundApp.screenUnavailable(context)) {
+            hide(context, force = true)
+            return
+        }
+        // 锁机期间不许下拉通知栏：主驱动是无障碍的窗口事件，这里每秒兜一次底 ——
+        // 面板停住之后可能不再产生新事件，光靠事件会漏（函数自带节流，不会连按返回）。
+        FocusLockAccessibilityService.collapseShadeIfNeeded()
+        // 每秒对一次「现在到底该不该盖」。
+        //
+        // 主驱动是无障碍的窗口事件，但服务被系统重启或 ROM 清掉之后事件就断了；
+        // 断了的表现是：用户切进白名单应用，这层既不知道、也没人让它让开，就那么死死盖着 ——
+        // 用户看到的就是「明明在白名单里，还是被卡在锁机页面」。所以这里自己看一眼前台是谁，
+        // 数据源在无障碍不可用时会退到系统使用记录，不依赖任何服务活着。
+        //
+        // 退出流程进行中不让开：冷静期弹窗 / 密码面板开着时用户正在跟这层交互，
+        // 输入法一弹出来前台就变成输入法，而输入法属于永远放行的系统组件 ——
+        // 少了这道闸，用户刚长按完「退出锁机」，整层就直接没了。
+        if (cooldownEndsAt <= 0L) {
+            val foreground = ForegroundApp.resolve(context)
+            if (foreground != null && LockMachineController.isAllowed(context, foreground)) {
                 hide(context, force = true)
                 return
             }
-            // 锁机期间不许下拉通知栏：主驱动是无障碍的窗口事件，这里每秒兜一次底 ——
-            // 面板停住之后可能不再产生新事件，光靠事件会漏（函数自带节流，不会连按返回）。
-            FocusLockAccessibilityService.collapseShadeIfNeeded()
-            // 每秒对一次「现在到底该不该盖」。
-            //
-            // 主驱动是无障碍的窗口事件，但服务被系统重启或 ROM 清掉之后事件就断了；
-            // 断了的表现是：用户切进白名单应用，这层既不知道、也没人让它让开，就那么死死盖着 ——
-            // 用户看到的就是「明明在白名单里，还是被卡在锁机页面」。所以这里自己看一眼前台是谁，
-            // 数据源在无障碍不可用时会退到系统使用记录，不依赖任何服务活着。
-            //
-            // 退出流程进行中不让开：冷静期弹窗 / 密码面板开着时用户正在跟这层交互，
-            // 输入法一弹出来前台就变成输入法，而输入法属于永远放行的系统组件 ——
-            // 少了这道闸，用户刚长按完「退出锁机」，整层就直接没了。
-            if (cooldownEndsAt <= 0L) {
-                val foreground = ForegroundApp.resolve(context)
-                if (foreground != null && LockMachineController.isAllowed(context, foreground)) {
-                    hide(context, force = true)
-                    return
-                }
-            }
-            view.findViewById<FlipClockView>(R.id.remainingText)
-                .setDisplay(LockMachineController.remainingText(context))
-            updateClockText(context, view)
-            updateCooldownText(view)
-            handler.postDelayed(this, 1_000L)
         }
+        view.findViewById<FlipClockView>(R.id.remainingText)
+            .setDisplay(LockMachineController.remainingText(context))
+        updateClockText(context, view)
+        updateCooldownText(view)
     }
 
     /** 清后台的结果反馈展示这么久，之后按钮文字还原。 */
@@ -161,10 +199,23 @@ object LockMachineOverlayController {
      * 判定用的 [ForegroundApp.resolve] 在无障碍事件不可靠时会退回系统使用记录，
      * 所以「无障碍没开」不再等于「白名单失效」。
      */
-    fun evaluate(context: Context, foreground: String?) {
+        fun evaluate(context: Context, foreground: String?) {
         val applicationContext = context.applicationContext
         if (!LockMachineController.isActive(applicationContext)) {
             pendingLeaveSince = 0L
+            hide(applicationContext, force = true)
+            return
+        }
+        // 锁屏 / 息屏时**一律让开**，这是唯一一条比「在白名单里」还靠前的规则。
+        //
+        // 锁机层画得在锁屏之上，而锁屏不是一个 Activity —— 两路前台感知都看不见它，
+        // 于是「不在白名单里」恒成立、层就赖在锁屏上。用户按电源键亮屏看到的是锁机页
+        // 而不是自己的锁屏，**密码键盘出不来、手机进不去**。这是误锁里最严重的一种：
+        // 锁住的是手机本身。解开锁屏后下一次 tick 会重新按前台决定要不要盖，不会漏锁。
+        if (ForegroundApp.screenUnavailable(applicationContext)) {
+            pendingLeaveSince = 0L
+            // [诊断]
+            Log.d("XianLock", "eval -> 屏幕不可用（锁屏/息屏），让开")
             hide(applicationContext, force = true)
             return
         }
@@ -265,6 +316,8 @@ object LockMachineOverlayController {
     @Suppress("DEPRECATION")
     fun show(context: Context) {
         val applicationContext = context.applicationContext
+        // tick 靠它问「锁机还在不在、屏幕可用没」，层没有时也不能丢 —— 见 lastContext 注释
+        lastContext = applicationContext
         if (overlayView != null) {
             updateContent(applicationContext)
             return
@@ -367,6 +420,7 @@ object LockMachineOverlayController {
             LockQuotes.applyTo(view, applicationContext)
             view.animate().alpha(1f).setDuration(220L).start()
             updateContent(applicationContext)
+            keepTicking = true
             handler.post(tickRunnable)
         } catch (_: Exception) {
         }
@@ -380,6 +434,7 @@ object LockMachineOverlayController {
      * 系统会为我们自己的悬浮窗补一个窗口事件，那个自事件会把层当成「切到了贤」而撤掉。
      */
     fun hide(context: Context, force: Boolean = false) {
+        lastContext = context.applicationContext
         val view = overlayView ?: return
         if (!force && System.currentTimeMillis() - lastShowAt < DEBOUNCE_MILLIS) return
         // [诊断]
@@ -389,7 +444,9 @@ object LockMachineOverlayController {
         cooldownEndsAt = 0L
         // 这层没了，列表也跟着没了：下次新建必须重建，别被旧指纹判成「没变」
         whitelistSignature = -1
-        handler.removeCallbacks(tickRunnable)
+        // ⚠️ **不要** removeCallbacks(tickRunnable)：层被收起不等于锁机结束 ——
+        // 息屏/锁屏让开、切进白名单让开都会走到这里，而那两种情况下 tick 是唯一
+        // 会把层盖回来的东西。让它自己按 keepTicking 决定停不停（锁机结束那一刻才停）。
         handler.removeCallbacks(restoreClearButtonLabel)
         val applicationContext = context.applicationContext
         val windowManager = applicationContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager

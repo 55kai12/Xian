@@ -143,6 +143,13 @@
         android:layout_height="1dp"
         android:background="@color/nav_divider" />
 
+    <!-- 昨天未完成的横幅。默认 gone，当天首次进任务页且有未完成项时才显示。
+         必须给 include 一个 id：viewBinding 只在有 id 时才展开被包含布局的子视图，
+         否则拿不到里面的按钮。 -->
+    <include
+        android:id="@+id/yesterdayBanner"
+        layout="@layout/view_yesterday_banner" />
+
     <!-- 空状态 -->
     <TextView
         android:id="@+id/emptyView"

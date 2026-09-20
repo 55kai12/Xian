@@ -2,6 +2,7 @@ package com.xian.focus
 
 import android.content.Context
 import com.xian.focus.data.Countdown
+import com.xian.focus.data.CountdownCalendar
 import java.util.Calendar
 
 /**
@@ -56,8 +57,20 @@ object CountdownReminderScheduler {
     /**
      * 倒计日的「下一次」目标日期：每年重复的取今年，今年已过就顺延一年。
      * 列表显示、剩余天数、提醒三者必须用同一口径，所以放在这里由各方共用。
+     *
+     * 农历条目恒定按年重复 —— 用户记的是「农历八月十五」，每年的公历位置自己会挪，
+     * 所以这里不看 repeatYearly，一律走农历换算（保存时会把 repeatYearly 置真，
+     * 好让列表后缀、关联任务那些既有判断不用为农历再开岔路）。
      */
     fun effectiveTargetDate(countdown: Countdown, now: Long = System.currentTimeMillis()): Long {
+        if (countdown.calendarType == CountdownCalendar.LUNAR) {
+            return LunarCalendar.nextOccurrence(
+                countdown.lunarMonth,
+                countdown.lunarDay,
+                countdown.lunarLeap,
+                now
+            )
+        }
         if (!countdown.repeatYearly) return countdown.targetDate
         val target = Calendar.getInstance().apply { timeInMillis = countdown.targetDate }
         target.set(Calendar.YEAR, Calendar.getInstance().apply { timeInMillis = now }.get(Calendar.YEAR))

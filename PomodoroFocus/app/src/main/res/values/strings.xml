@@ -82,6 +82,15 @@
     <string name="empty_pending">暂无待办任务，点下方新增任务</string>
     <string name="empty_completed">还没有完成的任务</string>
 
+    <!-- 昨日未完成横幅：当天首次打开贤时弹一次 -->
+    <string name="yesterday_banner_format">昨天，您有 %1$d 个事件尚未达成</string>
+    <string name="yesterday_move_all">全部移到今天</string>
+    <string name="yesterday_details">查看详情</string>
+    <string name="yesterday_dismiss_today">今日不再提醒</string>
+    <string name="yesterday_moved_format">已把 %1$d 个事件移到今天</string>
+    <string name="yesterday_details_title">昨天的未完成</string>
+    <string name="yesterday_details_empty">昨天没有未完成的事件</string>
+
     <string name="accessibility_description">用于专注锁机：检测你是否切出“贤”，并在锁机时显示全屏锁机覆盖层。不会读取或保存任何输入内容。</string>
     <string name="overlay_permission_title">需要悬浮窗权限</string>
     <string name="overlay_permission_message">锁机时需要在其他应用上层显示全屏锁机覆盖层，请在设置中允许“显示在其他应用上层”。</string>
@@ -274,6 +283,10 @@
     <string name="schedule_next_format">下次锁机：%1$s</string>
     <string name="schedule_saved_next">已保存，下次锁机：%1$s</string>
     <string name="schedule_locked_now">当前正处在锁机时段内，已立刻开始锁机</string>
+    <string name="schedule_locked_title">锁机进行中</string>
+    <string name="schedule_locked_message">锁机正在进行中，现在改定时时段等于把这次锁机的依据抽走，所以要先说明一下。\n\n确认后这次改动会生效，但**不会**消耗你的退出额度 —— 改设置不等于退出锁机。</string>
+    <string name="schedule_locked_confirm">确认修改</string>
+    <string name="schedule_pin_title">输入密码</string>
     <string name="lock_end_at_format">预计结束：%1$s</string>
     <string name="time_today_format">今天 %1$s</string>
     <string name="time_tomorrow_format">明天 %1$s</string>
@@ -534,6 +547,60 @@
     <string name="countdown_days_past">天前</string>
     <string name="countdown_yearly_suffix"> · 每年</string>
     <string name="countdown_date_format">yyyy年MM月dd日</string>
+    <string name="countdown_calendar_solar">公历</string>
+    <string name="countdown_calendar_lunar">农历</string>
+    <string name="countdown_date_lunar_full">农历 %1$s · %2$s</string>
+    <string name="countdown_lunar_pick_title">选择农历日期</string>
+    <string name="countdown_lunar_leap">闰月</string>
+    <string name="countdown_lunar_leap_note">该年若没有这个闰月，按普通月份算</string>
+    <string name="lunar_date_format">%1$s%2$s</string>
+    <string name="lunar_leap_prefix">闰</string>
+    <string-array name="lunar_months">
+        <item>正月</item>
+        <item>二月</item>
+        <item>三月</item>
+        <item>四月</item>
+        <item>五月</item>
+        <item>六月</item>
+        <item>七月</item>
+        <item>八月</item>
+        <item>九月</item>
+        <item>十月</item>
+        <item>冬月</item>
+        <item>腊月</item>
+    </string-array>
+    <string-array name="lunar_days">
+        <item>初一</item>
+        <item>初二</item>
+        <item>初三</item>
+        <item>初四</item>
+        <item>初五</item>
+        <item>初六</item>
+        <item>初七</item>
+        <item>初八</item>
+        <item>初九</item>
+        <item>初十</item>
+        <item>十一</item>
+        <item>十二</item>
+        <item>十三</item>
+        <item>十四</item>
+        <item>十五</item>
+        <item>十六</item>
+        <item>十七</item>
+        <item>十八</item>
+        <item>十九</item>
+        <item>二十</item>
+        <item>廿一</item>
+        <item>廿二</item>
+        <item>廿三</item>
+        <item>廿四</item>
+        <item>廿五</item>
+        <item>廿六</item>
+        <item>廿七</item>
+        <item>廿八</item>
+        <item>廿九</item>
+        <item>三十</item>
+    </string-array>
 
     <!-- ===== 事件设置 ===== -->
     <string name="event_sort_title">事件排序方式</string>

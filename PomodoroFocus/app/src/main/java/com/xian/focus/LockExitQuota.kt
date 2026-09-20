@@ -11,7 +11,12 @@ import java.util.Calendar
  * 别在调用方 consume，否则一条退出路径会被扣两次。
  */
 object LockExitQuota {
-    const val MONTHLY_LIMIT = 2
+    /**
+     * 每月额度。**别调回 2**：定时时段反复自然到期看起来也像「退出」，用户遇到几次
+     * 「今天已经退过了」就会认定这个功能坏了。4 次足够覆盖「真有事要进去拿东西」，
+     * 又还不至于随手就能靠额度把每天重复的时段全躲掉。
+     */
+    const val MONTHLY_LIMIT = 4
 
     /** 主动退出前的冷静期秒数。覆盖层弹窗和锁机设置页共用。 */
     const val COOLDOWN_SECONDS = 30

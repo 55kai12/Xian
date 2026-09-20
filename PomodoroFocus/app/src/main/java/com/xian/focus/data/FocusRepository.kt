@@ -101,6 +101,11 @@ class FocusRepository(
         taskDao.getCompletedSnapshot(templateId, dueDate)
     }
 
+    /** 某模板在某天的任意快照（含未完成的），给「移到今天」判重用。 */
+    suspend fun getSnapshotOn(templateId: Int, dueDate: Long) = withContext(Dispatchers.IO) {
+        taskDao.getSnapshotOn(templateId, dueDate)
+    }
+
     suspend fun deleteCompletedSnapshot(templateId: Int, dueDate: Long) = withContext(Dispatchers.IO) {
         taskDao.deleteCompletedSnapshot(templateId, dueDate)
     }
