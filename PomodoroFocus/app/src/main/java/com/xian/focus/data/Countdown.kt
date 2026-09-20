@@ -19,9 +19,13 @@ data class Countdown(
      * 历法：[CountdownCalendar.SOLAR] 直接看 [targetDate]，
      * [CountdownCalendar.LUNAR] 改看 [lunarMonth] / [lunarDay] / [lunarLeap]。
      *
-     * 农历条目**不走** [repeatYearly] 的分支：农历月日本身就是「每年这天」，
-     * 存成一次性日期毫无意义（明年的公历位置会挪）。保存时会把 repeatYearly 一并置真，
-     * 让列表后缀、关联任务那些既有判断不用为农历再开一条岔路。
+     * 农历条目**也走** [repeatYearly]（v2.0.91 起）：
+     * - `repeatYearly = true` → 每年的农历这一天，公历位置逐年自己挪（见 [LunarCalendar.nextOccurrence]）。
+     * - `repeatYearly = false` → 只算一次，落点就是保存时换算出的 [targetDate]。
+     *   农历记的是月日、本身不含年份，所以「只算一次」必须靠 [targetDate] 这个公历锚点。
+     *
+     * ⚠️ v2.0.87~2.0.90 期间农历被强制恒为「按年重复」（保存时把 repeatYearly 置真、UI 藏掉开关）。
+     * 那条约束已解除 —— 一次性的农历日子（今年祖父母金婚之类）是真实需求。
      */
     val calendarType: Int = CountdownCalendar.SOLAR,
     /** 农历月 1..12，仅 [calendarType] = 农历时有意义。 */

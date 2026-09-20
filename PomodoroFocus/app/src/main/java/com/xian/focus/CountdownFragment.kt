@@ -178,50 +178,31 @@ class CountdownFragment : Fragment() {
         }
         dialogView.addView(dateButton)
 
-        // 每年重复 + 删除（水平排列）
-        val repeatRow = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, 24, 0, 0)
-        }
+        // ---- 日期文案与历法切换（必须在 repeatText 之前：它的点击回调要刷新日期）----
+
         // 用布尔量记状态，而不是去判断文案里有没有「✓」—— 文案是要翻译的，靠它做逻辑一翻就废。
+        // ⚠️ 声明必须排在 lunarSolarDate() 之前：那个函数要先读它判断「取下一次」还是「取今年那次」。
         var repeatChecked = countdown?.repeatYearly == true
-        val repeatText = TextView(requireContext()).apply {
-            text = getString(
-                if (repeatChecked) R.string.countdown_repeat_yearly_on else R.string.countdown_repeat_yearly
+
+        /**
+         * 农历条目的公历落点。**两种语义要分开**（v2.0.91 起）：
+         * - 重复：取「下一次」（今年已过就明年）—— 与列表/提醒口径一致，明年自然还会再来；
+         * - 不重复：取**今年的**那一天，哪怕已经过了。
+         *   ⚠️ 不能直接复用 [LunarCalendar.nextOccurrence]：它保证返回未来，
+         *   会把「今年八月十五已过」的一次性条目悄悄挪到明年，跟「只算一次」矛盾。
+         */
+        fun lunarSolarDate(): Long {
+            if (repeatChecked) {
+                return LunarCalendar.nextOccurrence(selectedLunarMonth, selectedLunarDay, selectedLunarLeap)
+            }
+            val thisYear = LunarCalendar.solarToLunar(System.currentTimeMillis()).year
+            return LunarCalendar.lunarToSolar(
+                thisYear,
+                selectedLunarMonth,
+                selectedLunarDay,
+                selectedLunarLeap
             )
-            textSize = 14f
-            setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            setOnClickListener {
-                repeatChecked = !repeatChecked
-                text = getString(
-                    if (repeatChecked) R.string.countdown_repeat_yearly_on else R.string.countdown_repeat_yearly
-                )
-            }
         }
-        repeatRow.addView(repeatText)
-        if (countdown != null) {
-            val deleteButton = TextView(requireContext()).apply {
-                text = getString(R.string.action_delete)
-                textSize = 14f
-                setTextColor(ContextCompat.getColor(requireContext(), R.color.danger_alt))
-                setPadding(24, 0, 0, 0)
-                setOnClickListener {
-                    viewModel.deleteCountdown(countdown)
-                    toastMovedToRecycleBin()
-                    currentDialog?.dismiss()
-                }
-            }
-            repeatRow.addView(deleteButton)
-        }
-        dialogView.addView(repeatRow)
-
-        // ---- 日期文案与历法切换 ----
-
-        /** 农历条目在「下一次」的公历落点。提醒、关联任务、列表都走同一个换算口径。 */
-        fun lunarSolarDate(): Long =
-            LunarCalendar.nextOccurrence(selectedLunarMonth, selectedLunarDay, selectedLunarLeap)
 
         fun dateText(): String = if (selectedCalendar == CountdownCalendar.LUNAR) {
             getString(
@@ -247,11 +228,48 @@ class CountdownFragment : Fragment() {
             val normalColor = ContextCompat.getColor(requireContext(), R.color.text_secondary)
             solarText.setTextColor(if (isLunar) normalColor else selectedColorValue)
             lunarText.setTextColor(if (isLunar) selectedColorValue else normalColor)
-            // 农历条目恒定按年重复（「每年的八月十五」），开关没有第二种合法状态，索性不显示。
-            // 删除按钮跟它同一行，不能整行藏掉。
-            repeatText.visibility = if (isLunar) View.GONE else View.VISIBLE
             dateButton.text = targetDateLabel()
         }
+
+        // 每年重复 + 删除（水平排列）
+        val repeatRow = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(0, 24, 0, 0)
+        }
+        val repeatText = TextView(requireContext()).apply {
+            text = getString(
+                if (repeatChecked) R.string.countdown_repeat_yearly_on else R.string.countdown_repeat_yearly
+            )
+            textSize = 14f
+            setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            setOnClickListener {
+                repeatChecked = !repeatChecked
+                text = getString(
+                    if (repeatChecked) R.string.countdown_repeat_yearly_on else R.string.countdown_repeat_yearly
+                )
+                // 农历条目的落点跟这个开关联动（重复取「下一次」、不重复取「今年那次」），
+                // 所以切完必须刷新日期文案 —— 否则用户看到的是切换前的旧日子。
+                if (selectedCalendar == CountdownCalendar.LUNAR) refreshCalendarRow()
+            }
+        }
+        repeatRow.addView(repeatText)
+        if (countdown != null) {
+            val deleteButton = TextView(requireContext()).apply {
+                text = getString(R.string.action_delete)
+                textSize = 14f
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.danger_alt))
+                setPadding(24, 0, 0, 0)
+                setOnClickListener {
+                    viewModel.deleteCountdown(countdown)
+                    toastMovedToRecycleBin()
+                    currentDialog?.dismiss()
+                }
+            }
+            repeatRow.addView(deleteButton)
+        }
+        dialogView.addView(repeatRow)
 
         solarText.setOnClickListener {
             // 从农历切回来：把当前的公历落点接过来当起点，日期不会跳回打开弹窗那一刻的值
@@ -348,16 +366,18 @@ class CountdownFragment : Fragment() {
                 }
                 val repeatYearly = repeatChecked
                 val isLunar = selectedCalendar == CountdownCalendar.LUNAR
-                // 农历条目存下的 targetDate 只是「下一次的公历落点」，给提醒和关联任务一个具体时刻；
-                // 真正的目标日每次都由 effectiveTargetDate 按农历现算，所以它明年不会过期。
+                // 农历条目存下的 targetDate 有两层用途（v2.0.91 起）：
+                // - 重复时：只是「下一次的公历落点」，给提醒和关联任务一个具体时刻，
+                //   真正目标日每次由 effectiveTargetDate 按农历现算，所以它明年不会过期；
+                // - 不重复时：**它就是唯一一次的落点**（农历记的是月日、不含年份，
+                //   无法从月日反推「哪一年」，必须靠这个公历锚点）。
                 val savedTargetDate = if (isLunar) lunarSolarDate() else selectedTargetDate
                 if (countdown == null) {
                     viewModel.addCountdown(
                         Countdown(
                             title = title,
                             targetDate = savedTargetDate,
-                            // 农历恒定按年重复，这里直接定死；CountdownViewModel 落库前还会再归一化一次
-                            repeatYearly = isLunar || repeatYearly,
+                            repeatYearly = repeatYearly,
                             calendarType = selectedCalendar,
                             lunarMonth = selectedLunarMonth,
                             lunarDay = selectedLunarDay,
@@ -371,9 +391,8 @@ class CountdownFragment : Fragment() {
                     viewModel.updateCountdown(
                         countdown.copy(
                             title = title,
-                            targetDate = if (isLunar) savedTargetDate
-                            else if (repeatYearly) countdown.targetDate else selectedTargetDate,
-                            repeatYearly = isLunar || repeatYearly,
+                            targetDate = savedTargetDate,
+                            repeatYearly = repeatYearly,
                             calendarType = selectedCalendar,
                             lunarMonth = selectedLunarMonth,
                             lunarDay = selectedLunarDay,

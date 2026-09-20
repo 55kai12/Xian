@@ -65,7 +65,7 @@ class CountdownViewModel @Inject constructor(
     }
 
     fun addCountdown(raw: Countdown) = execute {
-        val countdown = normalize(raw)
+        val countdown = raw
         val countdownId = repository.insertCountdown(countdown).toInt()
         var linkedTaskId = 0
         if (isAutoLinkTaskEnabled()) {
@@ -95,7 +95,7 @@ class CountdownViewModel @Inject constructor(
     }
 
     fun updateCountdown(raw: Countdown) = execute {
-        val countdown = normalize(raw)
+        val countdown = raw
         repository.updateCountdown(countdown)
         CountdownReminderScheduler.sync(context, countdown)
         // 同步更新关联任务
@@ -157,20 +157,6 @@ class CountdownViewModel @Inject constructor(
         set(java.util.Calendar.SECOND, 0)
         set(java.util.Calendar.MILLISECOND, 0)
     }.timeInMillis
-
-    /**
-     * 农历条目恒定按年重复。
-     *
-     * 归一化放在落库这一步（而不是只靠弹窗把开关藏起来）：哪天多一个入口、
-     * 或者恢复备份带进来一条「农历但 repeatYearly=false」，都不会漏出去一个
-     * 只会显示「已过 N 天」、再也不会到来的条目。
-     */
-    private fun normalize(countdown: Countdown): Countdown =
-        if (countdown.calendarType == CountdownCalendar.LUNAR) {
-            countdown.copy(repeatYearly = true)
-        } else {
-            countdown
-        }
 
     private fun execute(block: suspend () -> Unit) {
         viewModelScope.launch {

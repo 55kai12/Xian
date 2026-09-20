@@ -49,7 +49,9 @@ class CountdownAdapter(
             val effectiveDate = viewModel.getEffectiveTargetDate(countdown)
             // 农历条目：把「八月十五」和它今年的公历落点一起给出来 ——
             // 只有公历用户认不出这是哪个农历日子，只有农历又不知道还剩几天。
-            // 不追加「· 每年」后缀：农历自带年复一年的含义，再加就显得啰嗦。
+            // 「· 每年」后缀只在真重复时加（v2.0.91 起农历也能是一次性的，那时加就是骗人）。
+            val yearlySuffix =
+                if (countdown.repeatYearly) context.getString(R.string.countdown_yearly_suffix) else ""
             binding.countdownDateText.text = if (countdown.calendarType == CountdownCalendar.LUNAR) {
                 context.getString(
                     R.string.countdown_date_lunar_full,
@@ -60,10 +62,9 @@ class CountdownAdapter(
                         countdown.lunarLeap
                     ),
                     dateFormat.format(Date(effectiveDate))
-                )
+                ) + yearlySuffix
             } else {
-                dateFormat.format(Date(effectiveDate)) +
-                        if (countdown.repeatYearly) context.getString(R.string.countdown_yearly_suffix) else ""
+                dateFormat.format(Date(effectiveDate)) + yearlySuffix
             }
 
             val days = viewModel.getDaysRemaining(countdown)

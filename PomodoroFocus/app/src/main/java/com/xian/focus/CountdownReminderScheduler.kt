@@ -58,12 +58,14 @@ object CountdownReminderScheduler {
      * 倒计日的「下一次」目标日期：每年重复的取今年，今年已过就顺延一年。
      * 列表显示、剩余天数、提醒三者必须用同一口径，所以放在这里由各方共用。
      *
-     * 农历条目恒定按年重复 —— 用户记的是「农历八月十五」，每年的公历位置自己会挪，
-     * 所以这里不看 repeatYearly，一律走农历换算（保存时会把 repeatYearly 置真，
-     * 好让列表后缀、关联任务那些既有判断不用为农历再开岔路）。
+     * 农历条目**同样看 [Countdown.repeatYearly]**（v2.0.91 起）：
+     * - 重复 → 按农历月日找下一次（公历位置逐年自己挪）；
+     * - 不重复 → 就用 [Countdown.targetDate]，那是保存时换算出的唯一一次落点。
+     *   ⚠️ 农历记的是月日、不含年份，所以「只算一次」无法从月日反推，必须靠这个公历锚点。
      */
     fun effectiveTargetDate(countdown: Countdown, now: Long = System.currentTimeMillis()): Long {
         if (countdown.calendarType == CountdownCalendar.LUNAR) {
+            if (!countdown.repeatYearly) return countdown.targetDate
             return LunarCalendar.nextOccurrence(
                 countdown.lunarMonth,
                 countdown.lunarDay,
