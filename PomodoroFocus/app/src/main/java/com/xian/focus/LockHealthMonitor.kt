@@ -87,6 +87,7 @@ object LockHealthMonitor {
         val message = context.getString(R.string.health_lost_message)
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_timer)
+            .setLargeIcon(NotifyIcon.large(context))
             .setContentTitle(context.getString(R.string.health_lost_title))
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))

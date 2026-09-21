@@ -93,6 +93,8 @@ class GuardService : Service() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
+            // 显式给图：不设的话国产 ROM 会拿系统缓存的「应用图标」顶上，覆盖安装后不刷新
+            .setLargeIcon(NotifyIcon.large(this))
             .setContentTitle(getString(R.string.guard_notification_title))
             .setContentText(getString(R.string.guard_notification_text))
             .setContentIntent(content)
