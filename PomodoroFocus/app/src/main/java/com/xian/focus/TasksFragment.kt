@@ -152,9 +152,15 @@ class TasksFragment : Fragment() {
         binding.calendarContent.onExpandSettled = { _ ->
             binding.calendarContent.interceptHorizontal = binding.calendarContent.expandState < 0.5f
         }
+        // 切周后选中日期一律落在「新一周里离原位置最近的那一天」（v2.0.92 起）：
+        // - 前进一周 → 下一周的**第一天**（周一）；
+        // - 后退一周 → 上一周的**最后一天**（周日）。
+        // 全周七天都是这两条：当前选中日只要落在本周内，上一周里离它最近的必是上周日，
+        // 下一周里离它最近的必是下周一，跟「原来停在周几」无关（所以不必再读 selectedDate）。
+        // ⚠️ 此前是「保持同一星期几」（+7 / -7），用户反馈切周在接缝处对不上。
         binding.calendarContent.onSwipeLeft = {
             weekStartMillis += 7L * DAY_MILLIS
-            selectedDate = (selectedDate ?: weekStartMillis) + 7L * DAY_MILLIS
+            selectedDate = weekStartMillis
             scrollCalendarToWeekStart()
             binding.weekCalendarStrip.setWeek(weekStartMillis, selectedDate ?: weekStartMillis)
             loadWeekTrend()
@@ -162,7 +168,7 @@ class TasksFragment : Fragment() {
         }
         binding.calendarContent.onSwipeRight = {
             weekStartMillis -= 7L * DAY_MILLIS
-            selectedDate = (selectedDate ?: weekStartMillis) - 7L * DAY_MILLIS
+            selectedDate = weekStartMillis + 6L * DAY_MILLIS
             scrollCalendarToWeekStart()
             binding.weekCalendarStrip.setWeek(weekStartMillis, selectedDate ?: weekStartMillis)
             loadWeekTrend()
