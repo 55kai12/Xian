@@ -630,8 +630,13 @@ internal fun TasksFragment.showEditTaskDialogCompat(task: Task) {
             renumberSubtasks()
         }
         dialogBinding.addSubtaskButton.setOnClickListener { addSubtaskRow() }
-        // 加载已有子任务
-        taskViewModel.subtasks.value.filter { it.taskId == task.id }.forEach { addSubtaskRow(it.title) }
+        // 加载已有子任务。
+        // ⚠️ v2.0.94：**只回填模板行**（`dueDate == null`）—— 重复任务展开后还会有
+        // 「每天一条」的勾选记录，把它们也当成标题回填，保存一次子任务列表就翻一番
+        // （而且全是同名重复项）。标题列表的唯一出处就是模板行。
+        taskViewModel.subtasks.value
+            .filter { it.taskId == task.id && it.dueDate == null }
+            .forEach { addSubtaskRow(it.title) }
 
         editDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.dialog_edit_task)

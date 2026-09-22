@@ -136,6 +136,16 @@ object LockMachineOverlayController {
                 hide(context, force = true)
                 return
             }
+            // v2.0.94：前台报的是输入法也当放行（理由见 evaluate 里那条）。
+            // 少了这一句，事件驱动的让开只能维持到下一次 tick —— 一秒后又盖上，
+            // 用户看到的还是「打字被打断」。同样只在「前台就是输入法」时成立。
+            if (foreground != null &&
+                FocusLockAccessibilityService.isInputMethodWindowShowing() &&
+                SystemAppAllowlist.isInputMethod(context, foreground)
+            ) {
+                hide(context, force = true)
+                return
+            }
         }
         view.findViewById<FlipClockView>(R.id.remainingText)
             .setDisplay(LockMachineController.remainingText(context))
@@ -232,6 +242,28 @@ object LockMachineOverlayController {
             pendingLeaveSince = 0L
             // [诊断]
             Log.d("XianLock", "eval fg=$foreground -> ALLOWED, hide (overlay was ${isShowing()})")
+            hide(applicationContext, force = true)
+            return
+        }
+        // ⚠️ v2.0.94：**前台报的是输入法**时，当成「用户还在原来那个应用里打字」。
+        //
+        // 第三方输入法（搜狗 / 讯飞 / 语音）的 IME 窗不是 Activity，`ForegroundApp.resolve()`
+        // 那两路（无障碍事件 + 系统使用记录）**都看不见它**；真正会走到这里的是另一条：
+        // IME 横向窗/候选栏抢到焦点时，无障碍事件报的包名就是输入法包名。
+        // 上面 `isAllowed` 只按包名认输入法，靠 `enabledInputMethodList` —— 覆盖不到
+        // 「刚装上还没被列进来」或「系统当前输入法不是它」的输入法。
+        //
+        // ⚠️ **只看这一种情况**：必须在「无障碍窗口栈确认有 IME 窗口」**且**
+        // 「前台包名本身就是输入法」时才放行。不能写成「有 IME 就不盖」——
+        // 那样用户弹着输入法切到非白名单应用就会漏锁（输入法不一定随切换立刻收起）。
+        // 拿不到窗口信息（无障碍没开）时不放行，行为与改动前一致。
+        if (foreground != null &&
+            FocusLockAccessibilityService.isInputMethodWindowShowing() &&
+            SystemAppAllowlist.isInputMethod(applicationContext, foreground)
+        ) {
+            // [诊断]
+            Log.d("XianLock", "eval fg=$foreground -> 前台是输入法，不盖")
+            pendingLeaveSince = 0L
             hide(applicationContext, force = true)
             return
         }

@@ -3,7 +3,7 @@ import android.content.Context
 import androidx.room.*
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class,Habit::class,HabitLog::class],version=13,exportSchema=false)
+@Database(entities=[Task::class,PomodoroRecord::class,Subtask::class,Countdown::class,Habit::class,HabitLog::class],version=14,exportSchema=false)
 abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstract fun pomodoroRecordDao():PomodoroRecordDao; abstract fun subtaskDao():SubtaskDao; abstract fun countdownDao():CountdownDao; abstract fun habitDao():HabitDao
  companion object {
   @Volatile private var instance:AppDatabase?=null
@@ -94,4 +94,12 @@ abstract class AppDatabase:RoomDatabase(){ abstract fun taskDao():TaskDao; abstr
     database.execSQL("ALTER TABLE countdowns ADD COLUMN lunarLeap INTEGER NOT NULL DEFAULT 0")
    }
   }
-  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9,MIGRATION_9_10,MIGRATION_10_11,MIGRATION_11_12,MIGRATION_12_13).build().also{instance=it} } } }
+  private val MIGRATION_13_14 = object : Migration(13, 14) {
+   override fun migrate(database: SupportSQLiteDatabase) {
+    // 子任务加日期维度：重复任务（每天/每周…）的勾选状态要按天各存各的，
+    // 否则「昨天勾了，今天也跟着勾上」（所有日期共用同一批子任务行）。
+    // 可空、无默认值 —— 存量行这一列全为 null，落回老行为（不分日期），升级前后一模一样。
+    database.execSQL("ALTER TABLE subtasks ADD COLUMN dueDate INTEGER")
+   }
+  }
+  fun getInstance(context:Context)=instance?: synchronized(this){ instance?:Room.databaseBuilder(context.applicationContext,AppDatabase::class.java,"focuslist.db").addMigrations(MIGRATION_1_2,MIGRATION_2_3,MIGRATION_3_4,MIGRATION_4_5,MIGRATION_5_6,MIGRATION_6_7,MIGRATION_7_8,MIGRATION_8_9,MIGRATION_9_10,MIGRATION_10_11,MIGRATION_11_12,MIGRATION_12_13,MIGRATION_13_14).build().also{instance=it} } } }

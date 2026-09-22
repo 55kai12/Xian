@@ -107,7 +107,20 @@ class FocusLockAccessibilityService : AccessibilityService() {
         // 锁机期间不许下拉通知栏：面板一露头就替用户按一次返回，把它收回去（函数自带节流）。
         // 这是**事后**拦截 —— 悬浮窗（TYPE_APPLICATION_OVERLAY）在系统状态栏面前没有任何
         // 优先级，没有 root 就拦不住「下拉」这个动作本身，只能做到「露头即收、点不了」。
-        if (LockMachineController.isActive(context)) collapseNotificationShade()
+        //
+        // ⚠️ v2.0.94：**只在 `WINDOW_STATE_CHANGED` 上试收**，不再理会 `WINDOWS_CHANGED`。
+        // 后者对每一次窗口层级变动都上报 —— 输入法弹出/收起、应用内弹个对话框、分屏拖一下
+        // 都会来一发，而它分不出「这是下拉通知栏」还是「用户正在打字」。偏偏
+        // `collapseNotificationShade()` 判错的代价是 `GLOBAL_ACTION_BACK`：面板没展开时
+        // 这一下会**退掉底下的应用**（函数注释自认）。于是用户在锁机里一用输入法就被连续
+        // 按返回键弹回桌面 —— 表现就是「锁机时抽风，一直返回」和「锁机时用不了键盘」
+        // 这**两个问题是同一个根因**。面板本身一定会带来 WINDOW_STATE_CHANGED
+        // （它从「不可见」变成「可见且拿到焦点」，systemui 必发），所以只留这一条不会漏拦。
+        if (LockMachineController.isActive(context) &&
+            eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+        ) {
+            collapseNotificationShade()
+        }
         if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val packageName = event.packageName?.toString() ?: return
 
@@ -297,6 +310,21 @@ class FocusLockAccessibilityService : AccessibilityService() {
     private fun collapseNotificationShade() {
         val now = SystemClock.elapsedRealtime()
         if (now - lastShadeCollapseAt < SHADE_COLLAPSE_INTERVAL_MILLIS) return
+        // ⚠️ v2.0.94：**有输入法窗口就一律不动**。
+        //
+        // 用户正在打字时按返回键是最糟的误判 —— 会连输入法带界面一起退掉。而输入法
+        // （含搜狗/讯飞这类第三方）几乎不会和「下拉通知面板」同时出现：手感上，
+        // 面板一拉开输入法就收了。所以这里一旦看到 IME 窗口，宁可这一轮不拦面板，
+        // 也不冒「把用户正在打的字退没」的风险。
+        //
+        // 保留这条是因为下面那条高度判据在个别 ROM 上会被 IME 窗口骗到：
+        // 「铺开」只看高度，而某些输入法（尤其横屏全屏手写、语音输入面板）的
+        // 窗口高度确实能超过屏幕四分之一。IME 不在 systemui 名下，但 `root` 偶尔取不到、
+        // 拿不到包名时下面会退到「只看高度」，那时这条就是唯一的防线。
+        val imeShowing = runCatching {
+            windows.orEmpty().any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+        }.getOrElse { false }
+        if (imeShowing) return
         val expanded = runCatching {
             val screenHeight = resources.displayMetrics.heightPixels
             windows.orEmpty().any { window ->
@@ -386,6 +414,21 @@ class FocusLockAccessibilityService : AccessibilityService() {
          */
         fun foregroundFromWindowStack(): String? =
             instance?.get()?.runCatching { queryForegroundPackage() }?.getOrNull()
+
+        /**
+         * 当前有没有输入法窗口开着（含第三方输入法的横向窗口）。
+         *
+         * 供锁机层判断「用户正在打字」用。写进 `SystemAppAllowlist` 那条路只能按**包名**认
+         * 输入法，而 IME 窗口本身不是 Activity、`ForegroundApp.resolve()` 那两路感知都看不见它；
+         * 只有无障碍的窗口栈能直接问到 `TYPE_INPUT_METHOD` 的窗口。
+         *
+         * 服务不在（无障碍没开 / 被 ROM 清掉）时返回 false —— 调用方按「没有输入法」处理，
+         * 与改动前的行为一致，不会因为拿不到就把锁机放开。
+         */
+        fun isInputMethodWindowShowing(): Boolean =
+            instance?.get()?.runCatching {
+                windows.orEmpty().any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+            }?.getOrNull() ?: false
 
         /**
          * 供锁机层每秒的自检兜底调用（见 `LockMachineOverlayController.tickRunnable`）。

@@ -130,6 +130,24 @@ class FocusRepository(
         subtaskDao.getByTaskId(taskId)
     }
 
+    /** 只删模板行（重复任务改标题用），各天的勾选记录留着。 */
+    suspend fun deleteSubtaskTemplates(taskId: Int) = withContext(Dispatchers.IO) {
+        subtaskDao.deleteTemplatesByTaskId(taskId)
+    }
+
+    /** 某任务在某天的子任务（模板行 + 那天的具体行）。 */
+    suspend fun getSubtasksOn(taskId: Int, day: Long) = withContext(Dispatchers.IO) {
+        subtaskDao.getByTaskIdOn(taskId, day)
+    }
+
+    suspend fun getDatedSubtasks(taskId: Int, day: Long) = withContext(Dispatchers.IO) {
+        subtaskDao.getDated(taskId, day)
+    }
+
+    suspend fun deleteDatedSubtasks(taskId: Int, day: Long) = withContext(Dispatchers.IO) {
+        subtaskDao.deleteDated(taskId, day)
+    }
+
     suspend fun getAllSubtasks() = withContext(Dispatchers.IO) {
         subtaskDao.getAll()
     }

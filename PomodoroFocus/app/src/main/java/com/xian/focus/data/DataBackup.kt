@@ -235,10 +235,18 @@ object DataBackup {
         return sheet.toString()
     }
 
-    /** subtasks.csv。「所属任务编号」指向 tasks.csv 的「编号」。 */
+    /**
+     * subtasks.csv。「所属任务编号」指向 tasks.csv 的「编号」。
+     *
+     * ⚠️ 「所属日期」是 v2.0.94 **追加在表尾**的列，不插到「状态」后面：
+     * 导入端是按列位置读的，插在中间会让 v2.0.93 及更早导出的备份整列错位且不报错。
+     * 空 = 不分日期（普通任务 / 重复任务的标题模板行），与旧备份的行为一致。
+     */
     private fun subtasksSheet(subtasks: List<Subtask>): String {
-        val sheet = Sheet("所属任务编号", "标题", "状态", "编号")
-        subtasks.forEach { s -> sheet.row(s.taskId, s.title, doneText(s.isCompleted), s.id) }
+        val sheet = Sheet("所属任务编号", "标题", "状态", "编号", "所属日期")
+        subtasks.forEach { s ->
+            sheet.row(s.taskId, s.title, doneText(s.isCompleted), s.id, s.dueDate?.let(::date).orEmpty())
+        }
         return sheet.toString()
     }
 

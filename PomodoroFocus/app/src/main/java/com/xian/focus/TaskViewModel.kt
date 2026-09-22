@@ -83,11 +83,26 @@ class TaskViewModel @Inject constructor(
         // 旧实现是无条件「删光再重插」，而 Subtask.isCompleted 默认 false，
         // 于是用户哪怕只改了个标题，所有已勾选的子任务也会被静默重置（数据丢失、无提示）。
         // 编辑弹窗里每行只带标题、没有 id，所以按标题配对；同名标题按出现顺序逐个消费。
+        //
+        // ⚠️ v2.0.94：重复任务的**各天勾选记录不能删**。它只删「模板行」
+        // （dueDate IS NULL），各天（dueDate=某天）的行原样留着 —— 改个标题不该把
+        // 这周勾过的全清掉。代价是标题改了之后，历史那些天的记录还挂着旧标题；
+        // 但那些天已经过去了、不会再展示，所以不处理。
+        val isRepeating = task.repeatRule != REPEAT_NONE
         val completedByTitle = HashMap<String, ArrayDeque<Boolean>>()
-        repository.getSubtasksByTaskId(task.id).forEach { subtask ->
-            completedByTitle.getOrPut(subtask.title) { ArrayDeque() }.addLast(subtask.isCompleted)
+        if (isRepeating) {
+            repository.getSubtasksByTaskId(task.id)
+                .filter { it.dueDate == null }
+                .forEach { subtask ->
+                    completedByTitle.getOrPut(subtask.title) { ArrayDeque() }.addLast(subtask.isCompleted)
+                }
+            repository.deleteSubtaskTemplates(task.id)
+        } else {
+            repository.getSubtasksByTaskId(task.id).forEach { subtask ->
+                completedByTitle.getOrPut(subtask.title) { ArrayDeque() }.addLast(subtask.isCompleted)
+            }
+            repository.deleteSubtasksByTaskId(task.id)
         }
-        repository.deleteSubtasksByTaskId(task.id)
         subtaskTitles.filter { it.isNotBlank() }.forEach { raw ->
             val title = raw.trim()
             val queue = completedByTitle[title]
@@ -103,8 +118,35 @@ class TaskViewModel @Inject constructor(
         repository.updateTasks(tasks.mapIndexed { index, task -> task.copy(sortOrder = index.toLong()) })
     }
 
-    fun toggleSubtask(subtask: Subtask) = execute {
-        repository.updateSubtask(subtask.copy(isCompleted = !subtask.isCompleted))
+    /**
+     * 勾选 / 取消勾选一个子任务。
+     *
+     * [day] 非空表示「这是重复任务的某一天」，勾选状态只写进那一天，别的日期不受影响
+     * （v2.0.94 之前所有日期共用同一行，于是「昨天勾了今天也跟着勾上」）。
+     *
+     * 写法的选择：**重复任务不复制整套子任务**，只在那天还没有对应行时才插一条。
+     * 因此 [Subtask.id] 为 0（适配器现造的「那天还没人勾过」的占位行）时按插入处理，
+     * 其余按更新 —— 更新只动 `isCompleted`，标题以模板为准。
+     */
+    fun toggleSubtask(subtask: Subtask, day: Long? = null) = execute {
+        if (day == null) {
+            // 普通任务 / 不分日期的老路径：一行一子任务，直接改。
+            repository.updateSubtask(subtask.copy(isCompleted = !subtask.isCompleted))
+            return@execute
+        }
+        if (subtask.id == 0) {
+            // 这天还没为这个子任务建过行 ⇒ 插一条已完成的。
+            repository.insertSubtask(
+                Subtask(
+                    taskId = subtask.taskId,
+                    title = subtask.title,
+                    isCompleted = true,
+                    dueDate = day
+                )
+            )
+        } else {
+            repository.updateSubtask(subtask.copy(isCompleted = !subtask.isCompleted))
+        }
     }
 
     fun deleteTask(task: Task) = execute {

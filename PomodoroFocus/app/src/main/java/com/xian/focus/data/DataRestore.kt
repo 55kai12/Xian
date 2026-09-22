@@ -301,14 +301,26 @@ object DataRestore {
         )
     }
 
-    /** subtasks.csv：所属任务编号,标题,状态,编号 */
+    /**
+     * subtasks.csv：所属任务编号,标题,状态,编号[,所属日期]
+     *
+     * 最后一列「所属日期」是 v2.0.94 追加的，**必须用 `getOrNull` 读** ——
+     * v2.0.93 及更早导出的备份只有 4 列，下标 4 会直接越界。
+     * 读不到（老备份）就是 null，落回「不分日期」的老行为，与升级前一致。
+     */
     private fun parseSheetSubtask(row: List<String>): Subtask? {
         if (row.size < 4) return null
         val id = row[3].trim().toIntOrNull() ?: return null
         val taskId = row[0].trim().toIntOrNull() ?: return null
         val title = row[1]
         if (title.isBlank()) return null
-        return Subtask(id = id, taskId = taskId, title = title, isCompleted = doneOf(row[2]))
+        return Subtask(
+            id = id,
+            taskId = taskId,
+            title = title,
+            isCompleted = doneOf(row[2]),
+            dueDate = row.getOrNull(4)?.let { parseSheetDay(it) }
+        )
     }
 
     /** records.csv：任务编号,开始时间,结束时间,时长(分钟),类型,状态,编号 */
@@ -1008,7 +1020,9 @@ object DataRestore {
             id = id,
             taskId = taskId,
             title = title,
-            isCompleted = row[3].trim() == TRUE_MARK
+            isCompleted = row[3].trim() == TRUE_MARK,
+            // 同样是押表尾的列：老备份只有 4 列，读不到就是 null（不分日期）。
+            dueDate = row.getOrNull(4)?.let { parseSheetDay(it) }
         )
     }
 

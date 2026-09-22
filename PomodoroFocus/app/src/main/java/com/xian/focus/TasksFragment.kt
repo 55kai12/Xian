@@ -26,6 +26,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.haibin.calendarview.CalendarView
 import com.jaredrummler.materialspinner.MaterialSpinner
 import com.xian.focus.data.FocusRepository
+import com.xian.focus.data.Subtask
 import com.xian.focus.data.Task
 import com.xian.focus.databinding.FragmentTasksBinding
 import com.xian.focus.service.FocusTimerService
@@ -415,6 +416,10 @@ class TasksFragment : Fragment() {
     private fun selectDate(dayMillis: Long) {
         selectedDate = dayMillis
         renderCurrentList()
+        // 子任务的勾选状态是按天存的，换天必须重新组装一遍 —— 否则一天切过去，
+        // 展开的子任务还挂着上一天谁勾过谁没勾。放在 render 之后：列表先落地，
+        // 这一下再把它引用的子任务数据换掉并刷新（v2.0.94）。
+        updateSubtaskCounts()
     }
 
     private fun mondayOfWeek(time: Long): Long {
@@ -458,7 +463,22 @@ class TasksFragment : Fragment() {
             onToggleTask = { task ->
                 taskViewModel.toggleComplete(task) { loadWeekTrend(); renderCurrentList() }
             },
-            onToggleSubtask = { subtask -> taskViewModel.toggleSubtask(subtask) },
+            onToggleSubtask = { subtask ->
+                // 重复任务传「当前选中日」：勾选状态只落到那一天（v2.0.94）。
+                // 普通任务传 null，走原来的一行一子任务逻辑。判据与 buildOccurrencesForDay 一致：
+                // 只有「没被实例化过的重复模板」才按天存；普通任务和已完成/移动产生的快照
+                // （templateId != 0）都是独立的一行任务，子任务自然也独立。
+                val task = taskViewModel.pendingTasks.value.firstOrNull { it.id == subtask.taskId }
+                val isPerDay = task != null &&
+                    task.repeatRule != TaskViewModel.REPEAT_NONE &&
+                    task.templateId == 0
+                // 日期取「这行子任务自己带的」（适配器已经按当天组装好），退回当前选中日；
+                // 一律归一化到零点，与落库口径一致。
+                val rawDay = subtask.dueDate ?: selectedDate
+                val day = if (rawDay != null) startOfDay(rawDay) else null
+                // day 拿不到就退回老逻辑（宁可这次按模板行改，也不能写一条日期不明的记录）
+                taskViewModel.toggleSubtask(subtask, if (isPerDay && day != null) day else null)
+            },
             onEditTask = { task -> showEditTaskDialog(task) },
             onDeleteTask = { task -> deleteTaskWithConfirm(task) },
             onImageClick = { task -> task.imageUri?.takeIf { it.isNotBlank() }?.let { showImagePreview(it) } },
@@ -1084,15 +1104,71 @@ class TasksFragment : Fragment() {
         binding.weekCalendarStrip.invalidate()
     }
 
+    /**
+     * 按**当前选中日**组装每个任务的子任务列表与计数。
+     *
+     * v2.0.94 起子任务有了日期维度：重复任务（每天/每周…）的勾选状态按天各存各的，
+     * 所以这里不能再用 `groupBy { it.taskId }` 一把梭 —— 那样所有日期会共用同一批行，
+     * 表现就是「昨天勾了，今天也跟着勾上」。
+     *
+     * 组装规则（[subtasksForDay] 是唯一出处）：
+     * - 普通任务：`dueDate` 为 null 的那几行，行为与改动前完全一致。
+     * - 重复任务：**标题模板**取自 `dueDate == null` 的行（保持编辑时的顺序），
+     *   每天拿它跟那天（`dueDate == 目标日`）的勾选记录比对 —— 标题对得上就用那天那条的
+     *   `isCompleted`，对不上（那天还没勾过）就现造一条 `id = 0` 的未完成行。
+     *   这样「新加的子任务」在过去的日期也看得见（显示未勾选），不会因为那天没记录就凭空少一行。
+     */
     private fun updateSubtaskCounts() {
         val all = taskViewModel.subtasks.value
-        val map = HashMap<Int, Pair<Int, Int>>()
+        val day = selectedDate
+        val counts = HashMap<Int, Pair<Int, Int>>()
+        val perTask = HashMap<Int, List<Subtask>>()
         all.groupBy { it.taskId }.forEach { (taskId, list) ->
-            map[taskId] = list.size to list.count { it.isCompleted }
+            val forDay = subtasksForDay(list, taskId, day)
+            perTask[taskId] = forDay
+            counts[taskId] = forDay.size to forDay.count { it.isCompleted }
         }
-        taskAdapter.subtaskCounts = map
-        taskAdapter.subtasksMap = all.groupBy { it.taskId }
+        taskAdapter.subtaskCounts = counts
+        taskAdapter.subtasksMap = perTask
         taskAdapter.notifyItemRangeChanged(0, taskAdapter.itemCount)
+    }
+
+    /**
+     * 一个任务的子任务在 [day] 这一天的样子。
+     *
+     * [day] 为 null（还没选日期）时退回「不分日期」的读法。非重复任务永远走这条路。
+     */
+    private fun subtasksForDay(
+        all: List<Subtask>,
+        taskId: Int,
+        day: Long?
+    ): List<Subtask> {
+        val isRepeating = taskViewModel.pendingTasks.value
+            .firstOrNull { it.id == taskId }
+            ?.let { it.repeatRule != TaskViewModel.REPEAT_NONE && it.templateId == 0 }
+            ?: false
+        if (!isRepeating || day == null) {
+            return all.filter { it.dueDate == null }
+        }
+        // 归一化到当天零点：周条点击、周切换、日历选日三处传进来的毫秒未必都是零点口径，
+        // 而落库时统一按 startOfDay 存 —— 这里不归一就会「存进去查不出来」，点一下没反应。
+        val target = startOfDay(day)
+        val templates = all.filter { it.dueDate == null }
+        val dated = all.filter { it.dueDate == target }
+        // 同一天的勾选记录按标题索引：同名标题按出现顺序逐个消费（与编辑保存的配对口径一致）。
+        val byTitle = HashMap<String, ArrayDeque<Subtask>>()
+        dated.forEach { byTitle.getOrPut(it.title) { ArrayDeque() }.addLast(it) }
+        return templates.map { template ->
+            val queue = byTitle[template.title]
+            val match = if (queue.isNullOrEmpty()) null else queue.removeFirst()
+            match ?: Subtask(
+                id = 0,
+                taskId = taskId,
+                title = template.title,
+                isCompleted = false,
+                dueDate = target
+            )
+        }
     }
 
 

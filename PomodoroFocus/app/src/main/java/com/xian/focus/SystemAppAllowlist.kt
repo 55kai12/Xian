@@ -30,8 +30,33 @@ object SystemAppAllowlist {
         "com.samsung.android.incallui",
         // 权限控制器
         "com.android.permissioncontroller",
-        "com.google.android.permissioncontroller",
-        // 常见输入法兜底；正常路径靠系统当前输入法动态识别，这里只防万一
+        "com.google.android.permissioncontroller"
+    )
+
+    /** 判断某个包名是否属于"即使锁机也必须放行"的系统组件。 */
+    fun isEssential(context: Context, packageName: String): Boolean {
+        if (packageName.isBlank()) return true
+        if (packageName in ESSENTIAL_PACKAGES) return true
+        return isInputMethod(context, packageName)
+    }
+
+    /**
+     * 这个包名**只是一个输入法**吗（不含来电/状态栏那种）。
+     *
+     * 与 [isEssential] 的区别：那个答的是「要不要放行」，这个答的是「它是不是输入法」。
+     * 锁机层用它判断「前台报的包名是输入法 ⇒ 用户还在原来那个应用里打字」——
+     * 只有输入法才适用那条豁免，来电界面适用别的规则，不能混。
+     *
+     * 同时也兜住内置包名表里的那几个常见输入法（用户刚装上、还没进 `enabledInputMethodList` 时）。
+     */
+    fun isInputMethod(context: Context, packageName: String): Boolean {
+        if (packageName.isBlank()) return false
+        if (packageName in INPUT_METHOD_PACKAGES) return true
+        return packageName in inputMethodPackages(context)
+    }
+
+    /** 常见输入法包名兜底；正常路径靠系统当前输入法动态识别，这里只防万一。 */
+    private val INPUT_METHOD_PACKAGES = setOf(
         "com.google.android.inputmethod.latin",
         "com.android.inputmethod.latin",
         "com.baidu.input",
@@ -40,13 +65,6 @@ object SystemAppAllowlist {
         "com.iflytek.inputmethod.miui",
         "com.netease.nim.input"
     )
-
-    /** 判断某个包名是否属于"即使锁机也必须放行"的系统组件。 */
-    fun isEssential(context: Context, packageName: String): Boolean {
-        if (packageName.isBlank()) return true
-        if (packageName in ESSENTIAL_PACKAGES) return true
-        return packageName in inputMethodPackages(context)
-    }
 
     /** 动态识别当前输入法：不同机型/用户安装的输入法包名无法穷举。 */
     private fun inputMethodPackages(context: Context): Set<String> {
