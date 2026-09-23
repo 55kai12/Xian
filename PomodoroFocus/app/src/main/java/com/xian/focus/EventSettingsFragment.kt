@@ -87,6 +87,8 @@ class EventSettingsFragment : Fragment() {
         binding.showOrderNumberSwitch.isChecked = prefs.getBoolean("show_order_number", false)
         binding.showNoteSwitch.isChecked = prefs.getBoolean("show_note", false)
         binding.showHolidaySwitch.isChecked = prefs.getBoolean("show_holiday", true)
+        binding.subtaskAutoCompleteSwitch.isChecked =
+            prefs.getBoolean(TaskViewModel.KEY_SUBTASK_AUTO_COMPLETE, false)
     }
 
     private fun setupListeners() {
@@ -160,6 +162,10 @@ class EventSettingsFragment : Fragment() {
         binding.showHolidaySwitch.setOnCheckedChangeListener { _, v ->
             prefs.edit().putBoolean("show_holiday", v).apply()
             HolidayStore.invalidateCache()
+        }
+        // 开关只落盘，真正的判断在 TaskViewModel.autoCompleteParent（勾子任务那一刻现读）。
+        binding.subtaskAutoCompleteSwitch.setOnCheckedChangeListener { _, v ->
+            prefs.edit().putBoolean(TaskViewModel.KEY_SUBTASK_AUTO_COMPLETE, v).apply()
         }
     }
 

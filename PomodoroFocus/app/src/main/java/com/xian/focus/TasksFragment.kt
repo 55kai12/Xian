@@ -1124,7 +1124,10 @@ class TasksFragment : Fragment() {
         val counts = HashMap<Int, Pair<Int, Int>>()
         val perTask = HashMap<Int, List<Subtask>>()
         all.groupBy { it.taskId }.forEach { (taskId, list) ->
-            val forDay = subtasksForDay(list, taskId, day)
+            // 只有「重复任务的模板行」才按天存子任务；普通任务与快照都是独立的一行任务。
+            val isRepeating = taskViewModel.pendingTasks.value
+                .firstOrNull { it.id == taskId }?.isRepeatTemplate() == true
+            val forDay = subtasksForDay(list, taskId, day, isRepeating)
             perTask[taskId] = forDay
             counts[taskId] = forDay.size to forDay.count { it.isCompleted }
         }
@@ -1132,45 +1135,6 @@ class TasksFragment : Fragment() {
         taskAdapter.subtasksMap = perTask
         taskAdapter.notifyItemRangeChanged(0, taskAdapter.itemCount)
     }
-
-    /**
-     * 一个任务的子任务在 [day] 这一天的样子。
-     *
-     * [day] 为 null（还没选日期）时退回「不分日期」的读法。非重复任务永远走这条路。
-     */
-    private fun subtasksForDay(
-        all: List<Subtask>,
-        taskId: Int,
-        day: Long?
-    ): List<Subtask> {
-        val isRepeating = taskViewModel.pendingTasks.value
-            .firstOrNull { it.id == taskId }
-            ?.let { it.repeatRule != TaskViewModel.REPEAT_NONE && it.templateId == 0 }
-            ?: false
-        if (!isRepeating || day == null) {
-            return all.filter { it.dueDate == null }
-        }
-        // 归一化到当天零点：周条点击、周切换、日历选日三处传进来的毫秒未必都是零点口径，
-        // 而落库时统一按 startOfDay 存 —— 这里不归一就会「存进去查不出来」，点一下没反应。
-        val target = startOfDay(day)
-        val templates = all.filter { it.dueDate == null }
-        val dated = all.filter { it.dueDate == target }
-        // 同一天的勾选记录按标题索引：同名标题按出现顺序逐个消费（与编辑保存的配对口径一致）。
-        val byTitle = HashMap<String, ArrayDeque<Subtask>>()
-        dated.forEach { byTitle.getOrPut(it.title) { ArrayDeque() }.addLast(it) }
-        return templates.map { template ->
-            val queue = byTitle[template.title]
-            val match = if (queue.isNullOrEmpty()) null else queue.removeFirst()
-            match ?: Subtask(
-                id = 0,
-                taskId = taskId,
-                title = template.title,
-                isCompleted = false,
-                dueDate = target
-            )
-        }
-    }
-
 
     override fun onDestroyView() {
         _binding = null

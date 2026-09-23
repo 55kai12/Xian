@@ -132,6 +132,7 @@ class TaskViewModel @Inject constructor(
         if (day == null) {
             // 普通任务 / 不分日期的老路径：一行一子任务，直接改。
             repository.updateSubtask(subtask.copy(isCompleted = !subtask.isCompleted))
+            autoCompleteParent(subtask.taskId, null)
             return@execute
         }
         if (subtask.id == 0) {
@@ -147,6 +148,62 @@ class TaskViewModel @Inject constructor(
         } else {
             repository.updateSubtask(subtask.copy(isCompleted = !subtask.isCompleted))
         }
+        autoCompleteParent(subtask.taskId, day)
+    }
+
+    /**
+     * 「子任务全勾完 ⇒ 顺便把任务也勾上」（设置里可关，**默认关**）。
+     *
+     * ⚠️ 只做**单向**：取消某个子任务**不会**把任务退回未完成。任务可能是用户自己
+     * 手勾的、可能是这条规则刚才替他勾的，两种来源分不出来 —— 分不出来就不猜，
+     * 免得把他手动完成的记录悄悄抹掉。
+     *
+     * [day] 的语义与 [toggleSubtask] 一致：重复任务的模板必须指明是哪一天，
+     * 否则「昨天全勾完了」会被算成「今天也全勾完了」。
+     */
+    private suspend fun autoCompleteParent(taskId: Int, day: Long?) {
+        val prefs = appContext.getSharedPreferences("event_settings", Context.MODE_PRIVATE)
+        if (!prefs.getBoolean(KEY_SUBTASK_AUTO_COMPLETE, false)) return
+        val task = repository.getTaskById(taskId) ?: return
+        if (task.isCompleted) return
+        // 只有模板行才有「按天」的概念；快照是独立的一行任务，它的子任务不分天。
+        val isTemplate = task.isRepeatTemplate()
+        val visible = subtasksForDay(
+            repository.getSubtasksByTaskId(taskId), taskId, day, isTemplate
+        )
+        if (visible.isEmpty() || visible.any { !it.isCompleted }) return
+        // 重复模板要把「哪一天」写进 dueDate —— 模板自己的 dueDate 是起始日，不是今天。
+        markCompleted(
+            if (isTemplate && day != null) task.copy(dueDate = startOfDayMillis(day)) else task
+        )
+    }
+
+    /**
+     * 把一个任务标记为已完成。重复模板 ⇒ 写那天（`task.dueDate`）的完成快照，
+     * 模板本身保持未完成、明天照常出现。
+     *
+     * 调用方负责把目标日期写进 `task.dueDate`（见 [toggleComplete] / [autoCompleteParent]）。
+     */
+    private suspend fun markCompleted(task: Task) {
+        val occurrenceDate = task.dueDate
+        if (task.isRepeatTemplate() && occurrenceDate != null) {
+            if (repository.getCompletedSnapshot(task.id, occurrenceDate) == null) {
+                repository.insertTask(
+                    task.copy(
+                        id = 0,
+                        isCompleted = true,
+                        completedPomodoros = task.estimatedPomodoros,
+                        dueDate = occurrenceDate,
+                        templateId = task.id,
+                        createdAt = System.currentTimeMillis()
+                    )
+                )
+            }
+            return
+        }
+        val updated = task.copy(isCompleted = true)
+        repository.updateTask(updated)
+        syncReminder(updated)
     }
 
     fun deleteTask(task: Task) = execute {
@@ -173,20 +230,7 @@ class TaskViewModel @Inject constructor(
         val occurrenceDate = task.dueDate
         when {
             // 重复任务模板：勾选当天 = 写入"当天完成快照"，模板本身保持未完成，之后每天自动出现
-            task.repeatRule != REPEAT_NONE && task.templateId == 0 && occurrenceDate != null -> {
-                if (repository.getCompletedSnapshot(task.id, occurrenceDate) == null) {
-                    repository.insertTask(
-                        task.copy(
-                            id = 0,
-                            isCompleted = true,
-                            completedPomodoros = task.estimatedPomodoros,
-                            dueDate = occurrenceDate,
-                            templateId = task.id,
-                            createdAt = System.currentTimeMillis()
-                        )
-                    )
-                }
-            }
+            task.isRepeatTemplate() && occurrenceDate != null -> markCompleted(task)
             // 已完成的快照：取消勾选 = 删除当天快照，模板当天恢复未完成
             task.templateId != 0 && task.isCompleted && occurrenceDate != null -> {
                 repository.deleteCompletedSnapshot(task.templateId, occurrenceDate)
@@ -313,5 +357,12 @@ class TaskViewModel @Inject constructor(
         const val REPEAT_DAILY = "daily"
         const val REPEAT_WEEKLY = "weekly"
         const val REPEAT_MONTHLY = "monthly"
+
+        /**
+         * 「子任务全部勾完 ⇒ 顺手把任务也勾上」的开关，存在 `event_settings` 里
+         * （和「显示已完成」那批同类设置放一起，见 EventSettingsFragment）。
+         * **默认关**：新行为不主动改老用户的既有习惯。
+         */
+        const val KEY_SUBTASK_AUTO_COMPLETE = "subtask_auto_complete"
     }
 }

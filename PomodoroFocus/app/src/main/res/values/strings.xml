@@ -347,6 +347,8 @@
     <string name="show_event_index">显示事件顺序数字</string>
     <string name="show_event_note">显示事件备注</string>
     <string name="show_holiday_mark">显示法定节假日标记</string>
+    <string name="subtask_auto_complete_task">子任务全部勾完时，自动完成任务</string>
+    <string name="subtask_auto_complete_desc">只单向生效：取消子任务不会把任务退回未完成</string>
     <string name="daily_blessing">每日祈福</string>
     <string name="not_blessed_yet">尚未祈福</string>
     <string name="settings_desc">每日目标、关于、清除数据</string>

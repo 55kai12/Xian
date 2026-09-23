@@ -291,11 +291,20 @@ class FocusLockAccessibilityService : AccessibilityService() {
     /**
      * 锁机期间把下拉出来的通知面板收回去。
      *
-     * 判据两条：**是 systemui 的 TYPE_SYSTEM 窗口**（不是应用窗口、不是输入法）
+     * 判据：**是 systemui 的 TYPE_SYSTEM 窗口**（不是应用窗口、不是输入法）
      * + **它铺开了**（高度超过屏幕四分之一 —— 状态栏本身只有一两百像素）。
      * 只看包名不行：状态栏窗口是**一直存在**的，会把「下拉」和「只是状态栏在刷新」
      * 混为一谈，然后不停替用户按返回。只看高度也不行：个别 ROM 折叠时也报满屏 ——
      * 两条一起看才够稳。
+     *
+     * ⚠️ v2.0.95：上面那句「个别 ROM 折叠时也报满屏」的**真身是音量面板**。
+     * 音量面板的窗口类型是 `TYPE_VOLUME_OVERLAY`，而无障碍只把窗口分成
+     * 应用 / 输入法 / 无障碍浮层 / 分屏分隔条 / **其余一律 TYPE_SYSTEM** ——
+     * 音量面板正好落在最后一档，包名也是 com.android.systemui，国产 ROM 又把它
+     * 做成全屏窗口。于是「按一下音量键」满足「高度够」这一条，被判成「通知面板展开了」，
+     * 接着按返回 ⇒ **底下的应用被退掉**（用户报的「一按音量键就返回」）。
+     * 通知面板必然**贴顶且横跨整屏**，音量面板是屏幕右侧的窄卡片 —— 这两条把它挡掉。
+     * 判据万一不成立也**不返回**（只是这一轮不收面板），比误按要安全得多。
      *
      * ⚠️ v2.0.83 删掉了原来的第三条判据「它拿着焦点」（`window.isFocused`）——
      * 那是想错了一件事：**锁机层自己是 `TYPE_APPLICATION_OVERLAY` 且可获焦**，
@@ -326,23 +335,42 @@ class FocusLockAccessibilityService : AccessibilityService() {
         }.getOrElse { false }
         if (imeShowing) return
         val expanded = runCatching {
-            val screenHeight = resources.displayMetrics.heightPixels
+            val metrics = resources.displayMetrics
+            val screenHeight = metrics.heightPixels
+            val screenWidth = metrics.widthPixels
             windows.orEmpty().any { window ->
                 if (window.type != AccessibilityWindowInfo.TYPE_SYSTEM) return@any false
                 // 节点的 bounds 只能写进传进去的 Rect —— AccessibilityNodeInfo 没有无参 getter
                 val bounds = Rect()
                 val root = window.root
+                val pkg = root?.packageName?.toString()
                 if (root != null) {
                     // 拿得到节点就顺带核包名：同 ROM 里过路的系统面板不止通知栏
                     // （vivo 的侧滑返回层 com.vivo.upslide 也是 TYPE_SYSTEM），别认错人。
-                    val pkg = root.packageName?.toString()
                     if (!pkg.isNullOrBlank() && !pkg.contains("systemui")) return@any false
                     root.getBoundsInScreen(bounds)
                 } else {
                     // 拿不到节点就退到窗口自己的 bounds —— 同一块屏，量出来的高度一样。
                     window.getBoundsInScreen(bounds)
                 }
-                bounds.height() * 4 > screenHeight
+                // ⚠️ 三条**必须同时成立**。只看高度会误伤音量面板：
+                // 音量面板（TYPE_VOLUME_OVERLAY）在无障碍里同样归到 TYPE_SYSTEM、包名同样是
+                // systemui，而国产 ROM 普遍把它做成全屏窗口 —— 高度这一条单独成立，
+                // 于是「按一下音量键」被当成「通知面板展开了」，接着按返回，
+                // **把底下的应用退掉**（v2.0.94 用户报的「一按音量键就返回」）。
+                // 通知面板必然贴顶且横跨整屏；音量面板是屏幕右侧的窄卡片，两条都不满足。
+                val tall = bounds.height() * 4 > screenHeight
+                val atTop = bounds.top <= 0
+                val fullWidth = bounds.width() * 20 >= screenWidth * 19
+                // [诊断] 逐窗记一条（判据不成立也记）：将来「为什么没拦到」或「为什么误按了」
+                // 都能从这行直接读出各窗口的实际位置和大小，不用再靠猜。
+                Log.d(
+                    "XianLock",
+                    "shadeProbe pkg=$pkg box=(${bounds.left},${bounds.top}," +
+                        "${bounds.right},${bounds.bottom}) screen=${screenWidth}x$screenHeight " +
+                        "tall=$tall top=$atTop full=$fullWidth"
+                )
+                tall && atTop && fullWidth
             }
         }.getOrElse { false }
         if (!expanded) return
