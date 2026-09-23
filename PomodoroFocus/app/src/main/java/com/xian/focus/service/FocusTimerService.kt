@@ -18,7 +18,6 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.xian.focus.MainActivity
-import com.xian.focus.NotifyIcon
 import com.xian.focus.R
 import com.xian.focus.TimerEngine
 import com.xian.focus.TimerState
@@ -99,7 +98,6 @@ class FocusTimerService : LifecycleService() {
     private fun buildTimerNotification(state: TimerState) =
         NotificationCompat.Builder(this, TIMER_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_timer)
-            .setLargeIcon(NotifyIcon.large(this))
             .setContentTitle(getString(R.string.app_name))
             .setContentText("${phaseText(state)} · ${formatSeconds(state.remainingSeconds)}")
             .setContentIntent(buildContentIntent())
@@ -112,7 +110,6 @@ class FocusTimerService : LifecycleService() {
     private fun showFocusFinishedNotification() {
         val notification = NotificationCompat.Builder(this, FINISH_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_timer)
-            .setLargeIcon(NotifyIcon.large(this))
             .setContentTitle(getString(R.string.focus_finished_title))
             .setContentText(getString(R.string.focus_finished_text))
             .setContentIntent(buildContentIntent())

@@ -99,7 +99,6 @@ class LockMachineService : LifecycleService() {
             NOTIFICATION_ID,
             NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
-                .setLargeIcon(NotifyIcon.large(this))
                 .setContentTitle(getString(R.string.custom_lock))
                 .setContentText(getString(R.string.lock_machine_finished))
                 .setOngoing(false)
@@ -125,7 +124,6 @@ class LockMachineService : LifecycleService() {
     private fun buildNotification(): android.app.Notification =
         NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_idle_lock)
-            .setLargeIcon(NotifyIcon.large(this))
             .setContentTitle(getString(R.string.lock_machine_notification))
             .setContentText(getString(R.string.lock_machine_running, LockMachineController.remainingText(this)))
             .setOngoing(true)
