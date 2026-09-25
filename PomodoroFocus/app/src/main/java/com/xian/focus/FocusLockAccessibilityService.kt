@@ -48,6 +48,18 @@ class FocusLockAccessibilityService : AccessibilityService() {
     /** 上次收起通知面板的时刻；给 [collapseNotificationShade] 节流，别拖一下就按十次返回。 */
     private var lastShadeCollapseAt = 0L
 
+    /**
+     * 上一次采样时，通知面板窗口是不是「贴顶、横跨整屏、高过屏高四分之一」的展开形态。
+     *
+     * ⚠️ **这个值单独没有任何意义** —— 它只用来回答「这一次是不是刚变的」。
+     * 见 [collapseNotificationShade]：判据是「由未展开**变成**展开」，不是「现在是展开」。
+     * 原因见那个函数的长注释（v2.0.98 的根因）。
+     */
+    private var shadeExpandedAtLastProbe = false
+
+    /** 上一次采样的时刻（单调时钟）。隔太久说明状态不可信，那时一律不按返回。 */
+    private var shadeProbedAt = 0L
+
     private val limitTicker = object : Runnable {
         override fun run() {
             // 必须兜住异常：tick 里崩一下，下面这行 postDelayed 就不会执行，计时从此永久停摆
@@ -285,14 +297,25 @@ class FocusLockAccessibilityService : AccessibilityService() {
     /**
      * 锁机期间把下拉出来的通知面板收回去。
      *
-     * v2.0.97 起是**四道闸**，全过才动 `GLOBAL_ACTION_BACK`：
+     * v2.0.98 起是**五道闸**，全过才动 `GLOBAL_ACTION_BACK`：
+     * 0. **刚刚由未展开变成展开**（v2.0.98 新增，最要紧的一条）—— 见最后一段；
      * 1. 屏幕正在用（没息屏、没停在锁屏）—— [ForegroundApp.screenUnavailable]；
      * 2. 锁机层正盖着 —— 层不在说明用户此刻没被锁着，谈不上「防绕过」；
      * 3. 没有输入法窗口（v2.0.94 起，用户正在打字时绝不动）；
      * 4. 有一个 systemui 的 `TYPE_SYSTEM` 窗口**既贴顶、又横跨整屏、又高过屏高四分之一**，
      *    而且它的根节点类名命中 [SHADE_CLASS_HINTS]。
      *
-     * ⚠️ **为什么闸 1 和闸 4 非有不可** —— 这条路修到第四轮了，每轮都栽在同一件事上：
+     * ⚠️ **闸 0 的来由（v2.0.98，第五轮）**：闸 1~4 全都过了，用户仍然报「在系统应用 /
+     * 锁机页上操作时被退回上一层」。往回推只剩一种可能 —— **闸 4 那组几何判据在这台机器上
+     * 恒成立**（`NotificationShadeWindowView` 在部分 ROM 上折叠着也报满屏，正是 v2.0.95
+     * 注释里那句「个别 ROM 折叠时也报满屏」的真身）。于是只要闸 1~3 成立
+     * （= 用户正在操作锁机界面：层盖着、屏幕可用、没弹输入法），**任何一次窗口状态变化
+     * 都会替用户按一次返回** —— 弹密码面板、弹确认框、按音量键、点开通知…
+     * 表现就是「锁机时到处乱返回」。结论：**「现在是展开」这个形态判断在这台机器上没有
+     * 区分度**，改用「**刚刚发生的变化**」：折叠态与展开态若报告同一套边界，跃变永远不发生，
+     * 这条功能静默失效，但绝不误按（失败方向仍是「不按」，见下）。
+     *
+     * ⚠️ **为什么闸 1 和闸 4 非有不可** —— 这条路修到第五轮了，每轮都栽在同一件事上：
      * **无障碍眼里的 `TYPE_SYSTEM` 是个大杂烩**。通知面板、系统锁屏、音量面板
      * 在无障碍里全都是「systemui 的 `TYPE_SYSTEM` 窗口」，**几何也一模一样**：
      *
@@ -324,6 +347,23 @@ class FocusLockAccessibilityService : AccessibilityService() {
      */
     private fun collapseNotificationShade() {
         val now = SystemClock.elapsedRealtime()
+
+        // ⚠️ **先采样，不管这次动不动手**：下面那条判据完全建立在「刚刚由未展开变成展开」上，
+        // 状态一陈旧它就没有意义，所以每次进来先把状态刷新成当前值，再决定动不动手。
+        val expandedNow = isShadeExpandedNow()
+        val expandedBefore = shadeExpandedAtLastProbe
+        val probedAtBefore = shadeProbedAt
+        shadeExpandedAtLastProbe = expandedNow
+        shadeProbedAt = now
+
+        // 闸 0（v2.0.98 新增，也是最要紧的一条）：**必须是刚刚变的**，不是「现在是展开的」。
+        // 见函数注释最后一段：那个窗口在部分 ROM 上**折叠着也报全屏**，
+        // 「一直如此」于是被当成了「展开了」，后面几道闸一过就按返回。
+        val justExpanded = expandedNow && !expandedBefore &&
+            now - probedAtBefore < SHADE_PROBE_TRUST_MILLIS
+        if (!justExpanded) return
+
+        // 节流：用户按住往下拖时事件是连发的，别一下按出一串返回。
         if (now - lastShadeCollapseAt < SHADE_COLLAPSE_INTERVAL_MILLIS) return
 
         // 闸 1：息屏 / 锁屏还没解开 —— 一律不动。
@@ -341,63 +381,67 @@ class FocusLockAccessibilityService : AccessibilityService() {
         // （含搜狗/讯飞这类第三方）几乎不会和「下拉通知面板」同时出现：手感上，
         // 面板一拉开输入法就收了。所以这里一旦看到 IME 窗口，宁可这一轮不拦面板，
         // 也不冒「把用户正在打的字退没」的风险。
-        //
-        // 保留这条是因为下面那条高度判据在个别 ROM 上会被 IME 窗口骗到：
-        // 「铺开」只看高度，而某些输入法（尤其横屏全屏手写、语音输入面板）的
-        // 窗口高度确实能超过屏幕四分之一。IME 不在 systemui 名下，但 `root` 偶尔取不到、
-        // 拿不到包名时下面会退到「只看高度」，那时这条就是唯一的防线。
-        val imeShowing = runCatching {
-            windows.orEmpty().any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
-        }.getOrElse { false }
-        if (imeShowing) return
-        val expanded = runCatching {
-            val metrics = resources.displayMetrics
-            val screenHeight = metrics.heightPixels
-            val screenWidth = metrics.widthPixels
-            windows.orEmpty().any { window ->
-                if (window.type != AccessibilityWindowInfo.TYPE_SYSTEM) return@any false
-                // 节点的 bounds 只能写进传进去的 Rect —— AccessibilityNodeInfo 没有无参 getter
-                val bounds = Rect()
-                val root = window.root
-                val pkg = root?.packageName?.toString()
-                if (root != null) {
-                    // 拿得到节点就顺带核包名：同 ROM 里过路的系统面板不止通知栏
-                    // （vivo 的侧滑返回层 com.vivo.upslide 也是 TYPE_SYSTEM），别认错人。
-                    if (!pkg.isNullOrBlank() && !pkg.contains("systemui")) return@any false
-                    root.getBoundsInScreen(bounds)
-                } else {
-                    // 拿不到节点就退到窗口自己的 bounds —— 同一块屏，量出来的高度一样。
-                    window.getBoundsInScreen(bounds)
-                }
-                // ⚠️ 四条**必须同时成立**。前三条（几何）管「它是不是正展开着」，
-                // 第四条（类名）管「它是不是那个窗口」—— 缺一不可：
-                // · 只有几何 ⇒ 音量面板和系统锁屏**全都满足**（vivo 把音量面板做成全屏窗口，
-                //   锁屏本来就是全屏贴顶），于是「按一下音量键」被判成「面板展开了」，
-                //   接着按返回、**把底下的应用退掉**（v2.0.94 / v2.0.95 用户报过两次）。
-                // · 只有类名 ⇒ 那个窗口**一直存在**（平时就一条状态栏那么高），
-                //   等于「一直按返回」。
-                val className = root?.className?.toString()
-                val tall = bounds.height() * 4 > screenHeight
-                val atTop = bounds.top <= 0
-                val fullWidth = bounds.width() * 20 >= screenWidth * 19
-                // 这一条挡的正是音量面板：它的类名是 `VolumeDialog*`，不含通知面板的特征串。
-                val isShade = isShadeClass(className)
-                // [诊断] 逐窗记一条（判据不成立也记）：将来「为什么没拦到」或「为什么误按了」
-                // 都能从这行直接读出各窗口的类名、位置和大小，不用再靠猜。
-                Log.d(
-                    "XianLock",
-                    "shadeProbe cls=$className box=(${bounds.left},${bounds.top}," +
-                        "${bounds.right},${bounds.bottom}) screen=${screenWidth}x$screenHeight " +
-                        "tall=$tall top=$atTop full=$fullWidth shade=$isShade"
-                )
-                tall && atTop && fullWidth && isShade
-            }
-        }.getOrElse { false }
-        if (!expanded) return
+        if (imeWindowShowing()) return
+
         lastShadeCollapseAt = now
-        Log.d("XianLock", "shadeCollapse <- 面板确认展开，替用户按一次返回")
+        Log.d("XianLock", "shadeCollapse <- 面板刚展开，替用户按一次返回")
         performGlobalAction(GLOBAL_ACTION_BACK)
     }
+
+    /**
+     * 采样：现在有没有一个 systemui 的 `TYPE_SYSTEM` 窗口**既贴顶、又横跨整屏、
+     * 又高过屏高四分之一**，而且它的根节点类名命中 [SHADE_CLASS_HINTS]。
+     *
+     * ⚠️ **这是「采样」，不是判据**。单独拿它当判据就等于「一直按返回」——
+     * 必须和上一次采样比出「由假变真」才算数，见 [collapseNotificationShade] 的注释。
+     */
+    private fun isShadeExpandedNow(): Boolean = runCatching {
+        val metrics = resources.displayMetrics
+        val screenHeight = metrics.heightPixels
+        val screenWidth = metrics.widthPixels
+        windows.orEmpty().any { window ->
+            if (window.type != AccessibilityWindowInfo.TYPE_SYSTEM) return@any false
+            // 节点的 bounds 只能写进传进去的 Rect —— AccessibilityNodeInfo 没有无参 getter
+            val bounds = Rect()
+            val root = window.root
+            val pkg = root?.packageName?.toString()
+            if (root != null) {
+                // 拿得到节点就顺带核包名：同 ROM 里过路的系统面板不止通知栏
+                // （vivo 的侧滑返回层 com.vivo.upslide 也是 TYPE_SYSTEM），别认错人。
+                if (!pkg.isNullOrBlank() && !pkg.contains("systemui")) return@any false
+                root.getBoundsInScreen(bounds)
+            } else {
+                // 拿不到节点就退到窗口自己的 bounds —— 同一块屏，量出来的高度一样。
+                window.getBoundsInScreen(bounds)
+            }
+            // ⚠️ 四条**必须同时成立**。前三条（几何）管「它是不是展开着」，
+            // 第四条（类名）管「它是不是那个窗口」—— 缺一不可：
+            // · 只有几何 ⇒ 音量面板和系统锁屏**全都满足**（vivo 把音量面板做成全屏窗口，
+            //   锁屏本来就是全屏贴顶），于是「按一下音量键」被判成「面板展开了」，
+            //   接着按返回、**把底下的应用退掉**（v2.0.94 / v2.0.95 用户报过两次）。
+            // · 只有类名 ⇒ 那个窗口**一直存在**，等于「一直按返回」。
+            val className = root?.className?.toString()
+            val tall = bounds.height() * 4 > screenHeight
+            val atTop = bounds.top <= 0
+            val fullWidth = bounds.width() * 20 >= screenWidth * 19
+            // 这一条挡的正是音量面板：它的类名是 `VolumeDialog*`，不含通知面板的特征串。
+            val isShade = isShadeClass(className)
+            // [诊断] 逐窗记一条（判据不成立也记）：将来「为什么没拦到」或「为什么误按了」
+            // 都能从这行直接读出各窗口的类名、位置和大小，不用再靠猜。
+            Log.d(
+                "XianLock",
+                "shadeProbe cls=$className box=(${bounds.left},${bounds.top}," +
+                    "${bounds.right},${bounds.bottom}) screen=${screenWidth}x$screenHeight " +
+                    "tall=$tall top=$atTop full=$fullWidth shade=$isShade"
+            )
+            tall && atTop && fullWidth && isShade
+        }
+    }.getOrElse { false }
+
+    /** 现在有没有输入法窗口开着（含第三方输入法的横向窗）。 */
+    private fun imeWindowShowing(): Boolean = runCatching {
+        windows.orEmpty().any { it.type == AccessibilityWindowInfo.TYPE_INPUT_METHOD }
+    }.getOrElse { false }
 
     /**
      * 类名里有没有「通知面板」的特征串 —— 用来把音量面板这类系统窗口挡在外头。
@@ -430,6 +474,17 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
         /** 收起通知面板的最小间隔：用户按住往下拖时事件是连发的，别一下按出一串返回。 */
         private const val SHADE_COLLAPSE_INTERVAL_MILLIS = 800L
+
+        /**
+         * 「上一次采样」超过这么久就作废 —— 那时不再认为状态变化是「刚刚发生」的。
+         *
+         * 为什么要这条：判据从「现在是展开」改成「刚刚变成展开」之后，「刚刚」得有依据。
+         * 采样在锁机层盖着时由每秒 tick 兜着（见 `LockMachineOverlayController.tickRunnable`），
+         * 所以正常情况下这次进来离上次不到一秒。**超过三秒还没采过一次**，说明采样链断了
+         * （层没盖着、或者服务刚起来），这时「上一次是未展开」这句话就毫无参考价值，
+         * 按「不是刚刚展开」处理 —— 宁可这一轮不拦，也绝不误按返回键。
+         */
+        private const val SHADE_PROBE_TRUST_MILLIS = 3_000L
 
         /**
          * 「闪一下的系统层」包名 —— 它们拿到焦点窗口只说明系统 UI 露出来了，
