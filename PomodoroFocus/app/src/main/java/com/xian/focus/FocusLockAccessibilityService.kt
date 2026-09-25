@@ -96,32 +96,26 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val eventType = event?.eventType ?: return
-        // 除「窗口状态变化」外还要收「窗口层级变化」：下拉通知面板在部分 ROM 上只是把状态栏
-        // 窗口撑大（或换个层级），并不新建窗口，也就没有 WINDOW_STATE_CHANGED 可等。
-        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            eventType != AccessibilityEvent.TYPE_WINDOWS_CHANGED
-        ) {
-            return
-        }
+        // 只收「窗口状态变化」。
+        // ⚠️ `TYPE_WINDOWS_CHANGED`（窗口层级变动）**已经不再收**：它对着每一次层级变动上报
+        // —— 输入法弹出/收起、应用内弹个对话框、分屏拖一下都会来一发，而面板判据分不出
+        // 「这是下拉通知栏」还是「用户正在打字」，判错的代价是按一次返回键退掉底下的应用。
+        // 当初收它是想兜「ROM 靠撑大窗口来展开面板、不发状态变化」的机型，但那条路本来
+        // 就没生效过（收到后立刻被下面的 return 挡掉）。面板展开必然拿到焦点、必发状态变化。
+        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val context = applicationContext
         // 锁机期间不许下拉通知栏：面板一露头就替用户按一次返回，把它收回去（函数自带节流）。
         // 这是**事后**拦截 —— 悬浮窗（TYPE_APPLICATION_OVERLAY）在系统状态栏面前没有任何
         // 优先级，没有 root 就拦不住「下拉」这个动作本身，只能做到「露头即收、点不了」。
         //
-        // ⚠️ v2.0.94：**只在 `WINDOW_STATE_CHANGED` 上试收**，不再理会 `WINDOWS_CHANGED`。
-        // 后者对每一次窗口层级变动都上报 —— 输入法弹出/收起、应用内弹个对话框、分屏拖一下
-        // 都会来一发，而它分不出「这是下拉通知栏」还是「用户正在打字」。偏偏
-        // `collapseNotificationShade()` 判错的代价是 `GLOBAL_ACTION_BACK`：面板没展开时
-        // 这一下会**退掉底下的应用**（函数注释自认）。于是用户在锁机里一用输入法就被连续
-        // 按返回键弹回桌面 —— 表现就是「锁机时抽风，一直返回」和「锁机时用不了键盘」
-        // 这**两个问题是同一个根因**。面板本身一定会带来 WINDOW_STATE_CHANGED
-        // （它从「不可见」变成「可见且拿到焦点」，systemui 必发），所以只留这一条不会漏拦。
-        if (LockMachineController.isActive(context) &&
-            eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-        ) {
+        // ⚠️ 这条路**已经修到第四轮**（v2.0.80~.82 判据恒假、从没生效 → .83 删判据
+        // → .94 收窄成只在窗口状态变化时试收 → .95 给几何判据补了「贴顶 + 全宽」），
+        // 每一轮都是「换个姿势误伤」。这一轮误伤的是**系统锁屏（输不了手机密码）**和
+        // **音量面板（一按音量键就退掉应用）**。判据在 v2.0.97 被重做，理由写在
+        // `collapseNotificationShade` 的注释里 —— **动这个函数之前先读那段。**
+        if (LockMachineController.isActive(context)) {
             collapseNotificationShade()
         }
-        if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val packageName = event.packageName?.toString() ?: return
 
         // [诊断] 抓「左滑返回那一下，系统报的前台包名是什么」。
@@ -291,35 +285,57 @@ class FocusLockAccessibilityService : AccessibilityService() {
     /**
      * 锁机期间把下拉出来的通知面板收回去。
      *
-     * 判据：**是 systemui 的 TYPE_SYSTEM 窗口**（不是应用窗口、不是输入法）
-     * + **它铺开了**（高度超过屏幕四分之一 —— 状态栏本身只有一两百像素）。
-     * 只看包名不行：状态栏窗口是**一直存在**的，会把「下拉」和「只是状态栏在刷新」
-     * 混为一谈，然后不停替用户按返回。只看高度也不行：个别 ROM 折叠时也报满屏 ——
-     * 两条一起看才够稳。
+     * v2.0.97 起是**四道闸**，全过才动 `GLOBAL_ACTION_BACK`：
+     * 1. 屏幕正在用（没息屏、没停在锁屏）—— [ForegroundApp.screenUnavailable]；
+     * 2. 锁机层正盖着 —— 层不在说明用户此刻没被锁着，谈不上「防绕过」；
+     * 3. 没有输入法窗口（v2.0.94 起，用户正在打字时绝不动）；
+     * 4. 有一个 systemui 的 `TYPE_SYSTEM` 窗口**既贴顶、又横跨整屏、又高过屏高四分之一**，
+     *    而且它的根节点类名命中 [SHADE_CLASS_HINTS]。
      *
-     * ⚠️ v2.0.95：上面那句「个别 ROM 折叠时也报满屏」的**真身是音量面板**。
-     * 音量面板的窗口类型是 `TYPE_VOLUME_OVERLAY`，而无障碍只把窗口分成
-     * 应用 / 输入法 / 无障碍浮层 / 分屏分隔条 / **其余一律 TYPE_SYSTEM** ——
-     * 音量面板正好落在最后一档，包名也是 com.android.systemui，国产 ROM 又把它
-     * 做成全屏窗口。于是「按一下音量键」满足「高度够」这一条，被判成「通知面板展开了」，
-     * 接着按返回 ⇒ **底下的应用被退掉**（用户报的「一按音量键就返回」）。
-     * 通知面板必然**贴顶且横跨整屏**，音量面板是屏幕右侧的窄卡片 —— 这两条把它挡掉。
-     * 判据万一不成立也**不返回**（只是这一轮不收面板），比误按要安全得多。
+     * ⚠️ **为什么闸 1 和闸 4 非有不可** —— 这条路修到第四轮了，每轮都栽在同一件事上：
+     * **无障碍眼里的 `TYPE_SYSTEM` 是个大杂烩**。通知面板、系统锁屏、音量面板
+     * 在无障碍里全都是「systemui 的 `TYPE_SYSTEM` 窗口」，**几何也一模一样**：
      *
-     * ⚠️ v2.0.83 删掉了原来的第三条判据「它拿着焦点」（`window.isFocused`）——
-     * 那是想错了一件事：**锁机层自己是 `TYPE_APPLICATION_OVERLAY` 且可获焦**，
-     * 用户下拉时焦点并不会转给面板（真机 `dumpsys window` 实证：面板 `mHasSurface=true`
-     * 展开着，`mCurrentFocus` 仍是 `com.xian.focus type=2038`）。于是那条判据永远为 false，
-     * 函数每次都直接返回 —— v2.0.80 ~ 2.0.82 的「禁下拉」根本一次都没生效过。
+     * | 窗口 | 无障碍类型 | 包名 | 几何 | 谁挡它 |
+     * | --- | --- | --- | --- | --- |
+     * | 通知面板（展开） | `TYPE_SYSTEM` | systemui | 全屏贴顶 | 应当放行 |
+     * | 系统锁屏（keyguard） | `TYPE_SYSTEM` | systemui | 全屏贴顶 | **闸 1** |
+     * | 音量面板 | `TYPE_SYSTEM` | systemui | 全屏贴顶 | **闸 4 的类名** |
      *
-     * 满足就 `GLOBAL_ACTION_BACK`：面板展开时这条只收起面板，不会退掉底下的应用。
-     * 万一判错（面板其实没展开），代价是多按一次返回、回到桌面 —— 而锁机层会立刻重新盖上，
-     * 比漏拦轻得多（漏拦意味着用户能进通知栏点「设置」把锁机拆了）。
+     * v2.0.95 只补了「贴顶 + 全宽」两条**几何**判据，挡不住这两个 —— 它俩本来就满足。
+     * 于是 `GLOBAL_ACTION_BACK` 落到了绝不该落的地方：用户在**手机锁屏上输密码**时被替按
+     * 返回（密码界面退掉、**手机进不去**），以及**按一下音量键**就被判成「面板展开」、
+     * 底下的应用被退掉。**几何这条路已经走到头了**，所以这一轮换成「类名 + 屏幕状态」。
+     *
+     * ⚠️ **但也不能反过来只看类名**：Android 10 起 keyguard 与通知面板**共用同一个窗口**
+     * （`NotificationShadeWindowView`，keyguard 是它的一部分），类名分不开；而且这个窗口
+     * **一直存在**（平时就一条状态栏那么高）。所以分工是：
+     * **类名管「这是不是那个窗口」，几何管「它是不是正展开着」**，缺一不可。
+     *
+     * ⚠️ **失败方向必须是「不按」**。`GLOBAL_ACTION_BACK` 不可撤销，判错的代价直接落在
+     * 用户脸上；漏拦的代价只是这条防绕过暂时失效（用户能下拉看一眼通知）。
+     * 所以任何一道闸拿不准都放过 —— 这是硬要求，改判据时别动摇。
+     *
+     * ⚠️ 存档一笔：v2.0.83 删掉的第三条判据「它拿着焦点」（`window.isFocused`）是**错的** ——
+     * 锁机层自己是 `TYPE_APPLICATION_OVERLAY` 且可获焦，用户下拉时焦点并不转给面板
+     * （真机 `dumpsys window` 实证：面板 `mHasSurface=true` 展开着，`mCurrentFocus` 仍是
+     * `com.xian.focus type=2038`）。那条判据恒为 false，函数每次都直接返回 ——
+     * v2.0.80 ~ 2.0.82 的「禁下拉」**一次都没生效过**。**别再把它加回来。**
      */
     private fun collapseNotificationShade() {
         val now = SystemClock.elapsedRealtime()
         if (now - lastShadeCollapseAt < SHADE_COLLAPSE_INTERVAL_MILLIS) return
-        // ⚠️ v2.0.94：**有输入法窗口就一律不动**。
+
+        // 闸 1：息屏 / 锁屏还没解开 —— 一律不动。
+        // 系统锁屏与通知面板在无障碍里长得一模一样（见上面的表），少了这一条，
+        // 用户在自己的锁屏上输手机密码时就会被替按返回键，表现就是「密码输不进去、手机进不去」。
+        if (ForegroundApp.screenUnavailable(applicationContext)) return
+
+        // 闸 2：锁机层没盖着 —— 用户此刻没被锁在任何界面上，这时候按返回只会退掉
+        // 他自己正在用的应用，纯亏。
+        if (!LockMachineOverlayController.isShowing()) return
+
+        // 闸 3：看到输入法窗口就一律不动（v2.0.94 起）。
         //
         // 用户正在打字时按返回键是最糟的误判 —— 会连输入法带界面一起退掉。而输入法
         // （含搜狗/讯飞这类第三方）几乎不会和「下拉通知面板」同时出现：手感上，
@@ -353,30 +369,46 @@ class FocusLockAccessibilityService : AccessibilityService() {
                     // 拿不到节点就退到窗口自己的 bounds —— 同一块屏，量出来的高度一样。
                     window.getBoundsInScreen(bounds)
                 }
-                // ⚠️ 三条**必须同时成立**。只看高度会误伤音量面板：
-                // 音量面板（TYPE_VOLUME_OVERLAY）在无障碍里同样归到 TYPE_SYSTEM、包名同样是
-                // systemui，而国产 ROM 普遍把它做成全屏窗口 —— 高度这一条单独成立，
-                // 于是「按一下音量键」被当成「通知面板展开了」，接着按返回，
-                // **把底下的应用退掉**（v2.0.94 用户报的「一按音量键就返回」）。
-                // 通知面板必然贴顶且横跨整屏；音量面板是屏幕右侧的窄卡片，两条都不满足。
+                // ⚠️ 四条**必须同时成立**。前三条（几何）管「它是不是正展开着」，
+                // 第四条（类名）管「它是不是那个窗口」—— 缺一不可：
+                // · 只有几何 ⇒ 音量面板和系统锁屏**全都满足**（vivo 把音量面板做成全屏窗口，
+                //   锁屏本来就是全屏贴顶），于是「按一下音量键」被判成「面板展开了」，
+                //   接着按返回、**把底下的应用退掉**（v2.0.94 / v2.0.95 用户报过两次）。
+                // · 只有类名 ⇒ 那个窗口**一直存在**（平时就一条状态栏那么高），
+                //   等于「一直按返回」。
+                val className = root?.className?.toString()
                 val tall = bounds.height() * 4 > screenHeight
                 val atTop = bounds.top <= 0
                 val fullWidth = bounds.width() * 20 >= screenWidth * 19
+                // 这一条挡的正是音量面板：它的类名是 `VolumeDialog*`，不含通知面板的特征串。
+                val isShade = isShadeClass(className)
                 // [诊断] 逐窗记一条（判据不成立也记）：将来「为什么没拦到」或「为什么误按了」
-                // 都能从这行直接读出各窗口的实际位置和大小，不用再靠猜。
+                // 都能从这行直接读出各窗口的类名、位置和大小，不用再靠猜。
                 Log.d(
                     "XianLock",
-                    "shadeProbe pkg=$pkg box=(${bounds.left},${bounds.top}," +
+                    "shadeProbe cls=$className box=(${bounds.left},${bounds.top}," +
                         "${bounds.right},${bounds.bottom}) screen=${screenWidth}x$screenHeight " +
-                        "tall=$tall top=$atTop full=$fullWidth"
+                        "tall=$tall top=$atTop full=$fullWidth shade=$isShade"
                 )
-                tall && atTop && fullWidth
+                tall && atTop && fullWidth && isShade
             }
         }.getOrElse { false }
         if (!expanded) return
         lastShadeCollapseAt = now
+        Log.d("XianLock", "shadeCollapse <- 面板确认展开，替用户按一次返回")
         performGlobalAction(GLOBAL_ACTION_BACK)
     }
+
+    /**
+     * 类名里有没有「通知面板」的特征串 —— 用来把音量面板这类系统窗口挡在外头。
+     *
+     * ⚠️ **不许往里加状态栏 / 通用容器类名**（`StatusBarWindowView`、`FrameLayout`…）：
+     * 那个窗口是一直存在的，加进去就等于「一直按返回」。这一列只收下拉面板独有的名字。
+     * ⚠️ 认不出来返回 false（=不拦）—— 见 [collapseNotificationShade] 里
+     * 「失败方向必须是『不按』」那条。
+     */
+    private fun isShadeClass(className: String?): Boolean =
+        !className.isNullOrBlank() && SHADE_CLASS_HINTS.any { className.contains(it) }
 
     /** 本进程的悬浮层（限额层或锁机层）是不是正显示着 —— 它们抢焦点时的包名都是本应用。 */
     private fun selfOverlayShowing(): Boolean =
@@ -417,6 +449,22 @@ class FocusLockAccessibilityService : AccessibilityService() {
          * 忽略它是安全的：用户真的滑走时，目标应用（或桌面）会补发自己的窗口事件，
          * 前台照样能跟上。手势层只是中间闪过的那一帧。
          */
+        /**
+         * 通知面板的类名特征串（用 `contains` 匹配 —— ROM 的包名前缀各不相同：
+         * 新版是 `com.android.systemui.shade.NotificationShadeWindowView`，
+         * 旧版是 `com.android.systemui.statusbar.phone.…`）。
+         *
+         * 只用来回答「这个窗口是不是通知面板」，**不负责判断它有没有展开**（那是几何的活）。
+         * ⚠️ **不许再加状态栏 / 通用容器类名**（`StatusBarWindowView`、`FrameLayout`…）：
+         * 那个窗口是一直存在的，加进去就等于「一直按返回」。
+         */
+        private val SHADE_CLASS_HINTS = listOf(
+            "NotificationShade",
+            "NotificationPanel",
+            "NotificationStackScroll",
+            "ShadeHeader"
+        )
+
         private val SYSTEM_UI_PACKAGES = setOf(
             "com.android.systemui",
             "com.miui.systemui",
