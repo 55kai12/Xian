@@ -23,8 +23,8 @@ android {
         applicationId = "com.xian.focus"
         minSdk = 26
         targetSdk = 35
-        versionCode = 298
-        versionName = "2.0.98"
+        versionCode = 299
+        versionName = "2.0.99"
     }
 
     signingConfigs {

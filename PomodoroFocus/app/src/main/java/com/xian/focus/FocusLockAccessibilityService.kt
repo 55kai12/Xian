@@ -116,15 +116,15 @@ class FocusLockAccessibilityService : AccessibilityService() {
         // 就没生效过（收到后立刻被下面的 return 挡掉）。面板展开必然拿到焦点、必发状态变化。
         if (eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val context = applicationContext
-        // 锁机期间不许下拉通知栏：面板一露头就替用户按一次返回，把它收回去（函数自带节流）。
-        // 这是**事后**拦截 —— 悬浮窗（TYPE_APPLICATION_OVERLAY）在系统状态栏面前没有任何
-        // 优先级，没有 root 就拦不住「下拉」这个动作本身，只能做到「露头即收、点不了」。
+        // 锁机期间不许下拉通知栏 —— **v2.0.99 起已停用**（`collapseNotificationShade`
+        // 第一行就返回，两处入口一起失效）。原意是「面板一露头就替用户按一次返回」的
+        // 事后拦截：悬浮窗（TYPE_APPLICATION_OVERLAY）在系统状态栏面前没有优先级，
+        // 没有 root 就拦不住「下拉」这个动作本身，只能做到「露头即收、点不了」。
         //
-        // ⚠️ 这条路**已经修到第四轮**（v2.0.80~.82 判据恒假、从没生效 → .83 删判据
-        // → .94 收窄成只在窗口状态变化时试收 → .95 给几何判据补了「贴顶 + 全宽」），
-        // 每一轮都是「换个姿势误伤」。这一轮误伤的是**系统锁屏（输不了手机密码）**和
-        // **音量面板（一按音量键就退掉应用）**。判据在 v2.0.97 被重做，理由写在
-        // `collapseNotificationShade` 的注释里 —— **动这个函数之前先读那段。**
+        // ⚠️ 但这条路**修了五轮，每轮都以「用户被替按返回键」收场**（.80~.82 判据恒假
+        // 从没生效 → .83 删判据 → .94 收窄触发源 → .95 加几何 → .97 换类名 → .98 加跃变），
+        // 最重的一次是**用户在手机锁屏上输不进密码**。判据在无 root 下没有可靠解，
+        // 全部理由写在 `collapseNotificationShade` 函数体开头 —— **动它之前先读那段。**
         if (LockMachineController.isActive(context)) {
             collapseNotificationShade()
         }
@@ -297,6 +297,11 @@ class FocusLockAccessibilityService : AccessibilityService() {
     /**
      * 锁机期间把下拉出来的通知面板收回去。
      *
+     * ⚠️ **v2.0.99 起整条停用**（[SHADE_BLOCK_ENABLED] = false，函数体第一行就返回）。
+     * 停用理由写在函数体开头 —— **恢复之前先读那一段**，它是这条路上第五次返工的结论。
+     *
+     * 下面这一段是**停用前（v2.0.98）**的判据与踩坑记录，留档备查：
+     *
      * v2.0.98 起是**五道闸**，全过才动 `GLOBAL_ACTION_BACK`：
      * 0. **刚刚由未展开变成展开**（v2.0.98 新增，最要紧的一条）—— 见最后一段；
      * 1. 屏幕正在用（没息屏、没停在锁屏）—— [ForegroundApp.screenUnavailable]；
@@ -346,6 +351,22 @@ class FocusLockAccessibilityService : AccessibilityService() {
      * v2.0.80 ~ 2.0.82 的「禁下拉」**一次都没生效过**。**别再把它加回来。**
      */
     private fun collapseNotificationShade() {
+        // ⚠️ **v2.0.99：整条功能已停用**（[SHADE_BLOCK_ENABLED] 恒为 false，改回 true 即可恢复）。
+        //
+        // 为什么停而不是再修：这条路修了五轮（见函数注释），每一轮的结局都是「用户手机被
+        // 替按了一次返回键」—— 最重的一次是他在自己的手机锁屏上输不进密码。
+        // 而判据本身**在无 root 下没有可靠解**：通知面板 / 系统锁屏 / 音量面板在无障碍里
+        // 全是「systemui 的 TYPE_SYSTEM 窗口」，几何也完全同型；唯一能分辨的类名，
+        // Android 10 起又被 keyguard 与通知面板共用（`NotificationShadeWindowView`）。
+        // 更要命的是闸 1 与闸 2 **同源**：都读 `ForegroundApp.screenUnavailable()`。
+        // ROM 那条判断一失灵（vivo 定制锁屏上确实会），闸 1 放行、锁机层也照样盖着不撤，
+        // 闸 2 于是跟着放行 —— 两道闸一起失效，只剩闸 0 撑着，而锁屏亮起本身就可能是
+        // 一次「shade 由未展开变展开」。
+        //
+        // 它挡的东西值多少：无非「锁机期间从通知面板点进设置」。而**系统设置本来就是零宽限
+        // 盖死**的，从通知进任何应用也都会被锁机层盖回来 —— 这条路本来就绕不过去。
+        // 拿「用户可能解不开手机」去换「通知面板点不了」，这个交换从一开始就不划算。
+        if (!SHADE_BLOCK_ENABLED) return
         val now = SystemClock.elapsedRealtime()
 
         // ⚠️ **先采样，不管这次动不动手**：下面那条判据完全建立在「刚刚由未展开变成展开」上，
@@ -471,6 +492,18 @@ class FocusLockAccessibilityService : AccessibilityService() {
 
         /** 主动查窗口的最小间隔 —— 别每秒都去翻窗口栈。 */
         private const val WINDOW_QUERY_INTERVAL_MILLIS = 5_000L
+
+        /**
+         * 「锁机期间禁止下拉通知栏」总开关 —— **默认 false（关闭）**，v2.0.99 起。
+         *
+         * 关掉不是「懒得修」，是这条路在无 root 下**没有可靠判据**（论证见
+         * [collapseNotificationShade] 函数体开头那段），而它每一次判错都直接作用在
+         * 用户身上 —— 替他按一次不可撤销的返回键。代价与收益完全不成比例。
+         *
+         * 留在代码里是为了「以后还有别的办法」：改成 true 就恢复原来那套五道闸，
+         * 两处入口（无障碍窗口事件、锁机层每秒 tick）都会跟着生效。
+         */
+        private const val SHADE_BLOCK_ENABLED = false
 
         /** 收起通知面板的最小间隔：用户按住往下拖时事件是连发的，别一下按出一串返回。 */
         private const val SHADE_COLLAPSE_INTERVAL_MILLIS = 800L

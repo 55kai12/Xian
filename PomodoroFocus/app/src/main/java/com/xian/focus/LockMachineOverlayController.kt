@@ -117,8 +117,9 @@ object LockMachineOverlayController {
             hide(context, force = true)
             return
         }
-        // 锁机期间不许下拉通知栏：主驱动是无障碍的窗口事件，这里每秒兜一次底 ——
-        // 面板停住之后可能不再产生新事件，光靠事件会漏（函数自带节流，不会连按返回）。
+        // 锁机期间不许下拉通知栏（**v2.0.99 起已停用** —— 那个函数第一行就返回，
+        // 停用理由见其函数体开头）：主驱动是无障碍的窗口事件，这里每秒兜一次底，
+        // 面板停住之后可能不再产生新事件。
         FocusLockAccessibilityService.collapseShadeIfNeeded()
         // 每秒对一次「现在到底该不该盖」。
         //
