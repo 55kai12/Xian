@@ -63,8 +63,13 @@
             android:layout_marginStart="12dp"
             android:background="@drawable/bg_habit_punch"
             android:gravity="center"
+            android:maxLines="1"
             android:textColor="?attr/colorBrandContent"
             android:textSize="13sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="13sp"
+            app:autoSizeMinTextSize="9sp"
+            app:autoSizeStepGranularity="1sp"
+            app:autoSizeTextType="uniform" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
