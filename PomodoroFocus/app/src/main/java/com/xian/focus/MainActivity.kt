@@ -1,6 +1,7 @@
 package com.xian.focus
 
 import android.Manifest
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -50,6 +51,17 @@ class MainActivity : AppCompatActivity() {
         override fun handleOnBackPressed() {
             Toast.makeText(this@MainActivity, R.string.lock_back_blocked, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    /**
+     * 系统字体缩放的钳制入口之二（界面侧）。
+     *
+     * `FocusApplication` 换掉的 base context **管不到 Activity** —— Activity 的 base
+     * context 由 ActivityThread 单独创建，两个是平行的。少了这一处，悬浮层字体被钳住了、
+     * 界面还是原始倍数，看起来像「只有锁机页正常」。
+     */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(FontScale.cap(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
