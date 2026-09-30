@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
+import android.os.SystemClock
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -22,6 +23,19 @@ import android.widget.Toast
 object AppLimitOverlayController {
     private var overlayView: View? = null
     private var showingPackage: String? = null
+
+    /**
+     * 「返回桌面」的宽限期（见 [mayAutoShow]）。给**滞后**留的：桌面的前台信息可能晚 1~2 秒才到
+     * （使用记录入库延迟、或窗口事件被厂商过渡层顶掉），这期间读到的前台还是被限应用。
+     *
+     * 刻意只有 1.5 秒：这窗口里用户若马上切回被限应用，层会晚一拍才盖上 ——
+     * 拿「最多 1.5 秒的迟盖」换掉「刚收起又弹回来」，这个代价才划算。
+     */
+    private const val DISMISS_GRACE_MILLIS = 1_500L
+
+    /** 用户最后一次点「返回桌面」的包名与时刻。 */
+    private var dismissedPackage: String? = null
+    private var dismissedAt = 0L
 
     fun isShowing(): Boolean = overlayView != null
 
@@ -47,13 +61,7 @@ object AppLimitOverlayController {
             requestBonus(appContext, view, packageName)
         }
         view.findViewById<View>(R.id.limitHomeButton).setOnClickListener {
-            runCatching {
-                appContext.startActivity(
-                    Intent(Intent.ACTION_MAIN)
-                        .addCategory(Intent.CATEGORY_HOME)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                )
-            }
+            goHome(appContext, packageName)
         }
         updateDetail(appContext, view, packageName)
 
@@ -87,6 +95,56 @@ object AppLimitOverlayController {
     fun hide(context: Context) {
         if (overlayView == null) return
         hideNow(context.applicationContext)
+    }
+
+    /**
+     * 「返回桌面」按钮：**先收层，再回桌面**，两件事都得做。
+     *
+     * ⚠️ 只发 HOME intent 是不够的。这层是 `TYPE_APPLICATION_OVERLAY`，**浮在桌面之上** ——
+     * 光回桌面它照样盖着整个屏幕，而它的撤销时机完全交给 2 秒一次的轮询，
+     * 用户体感就是「按了返回桌面没反应」。
+     *
+     * 更关键的是**必须把两个前台缓存一起作废**：系统把「桌面 resumed」写进使用记录有延迟
+     * （几百毫秒到几秒），下一拍轮询读到的前台**还是那个被限应用** ⇒
+     * `applyOverlay()` 判定「还在被限应用里」⇒ `show()` ⇒ 刚收起的层又被盖回来。
+     * 这就是「点了返回桌面，它又弹一次」的来源。
+     *
+     * 作废之后那一拍前台是「不知道」：只收不盖，也不记账（宁可少记不虚增），
+     * 等真实记录落库再按新的前台判定。
+     */
+    private fun goHome(appContext: Context, packageName: String) {
+        hideNow(appContext)
+        dismissedPackage = packageName
+        dismissedAt = SystemClock.elapsedRealtime()
+        // 两条驱动链各有一份前台缓存，谁是当前驱动方都要作废 —— 只清一份会漏。
+        AppLimitWatcher.invalidateForeground()
+        FocusLockAccessibilityService.invalidateForeground()
+        runCatching {
+            appContext.startActivity(
+                Intent(Intent.ACTION_MAIN)
+                    .addCategory(Intent.CATEGORY_HOME)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+    }
+
+    /**
+     * 自动重盖前的闸 —— 只压「刚被主动收起的那一个应用」。
+     *
+     * 光作废前台缓存还不够：无障碍那条链作废后会**立刻重查一次窗口栈**
+     * （[FocusLockAccessibilityService.foregroundPackageForTick]），而那一瞬桌面可能还没接管，
+     * 查回来仍是被限应用 ⇒ 层又被盖上。所以这里再留一小段宽限。
+     *
+     * ⚠️ **到期必须自动失效，不许改成永久**；前台一旦确认换成别的应用也立刻作废 ——
+     * 否则用户从桌面点回被限应用时会被误压，等于把这个 bug 修成「永远不拦」，比原样更糟。
+     */
+    fun mayAutoShow(foreground: String?): Boolean {
+        val pkg = dismissedPackage ?: return true
+        if (foreground != null && foreground != pkg) {
+            dismissedPackage = null      // 用户确实离开了，标记作废
+            return true
+        }
+        return SystemClock.elapsedRealtime() - dismissedAt >= DISMISS_GRACE_MILLIS
     }
 
     /** 会随时间变的部分：今日可用额度（含加时）与加时按钮。 */

@@ -83,6 +83,20 @@ object AppLimitWatcher {
 
     fun usageAccessIntent(): Intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
 
+    /**
+     * 把缓存的前台应用作废，下一拍重新从系统使用记录里确认。
+     *
+     * 用在「用户在被限层上点了返回桌面」（见 `AppLimitOverlayController.goHome`）：
+     * 此刻系统还没把「桌面 resumed」写进使用记录，缓存里的旧前台会让 [applyOverlay]
+     * 把刚收起的层又盖回来。
+     *
+     * 作废后那一拍 `foreground` 为 null：[credit] 不记账、[applyOverlay] 只收不盖 ——
+     * 与「拿不准时宁可少记、宁可不管」的既有口径一致。
+     */
+    fun invalidateForeground() {
+        foreground = null
+    }
+
     /** 由 [GuardService] 每 [POLL_MILLIS] 调一次。 */
     fun tick(context: Context) {
         if (!hasUsageAccess(context)) return
@@ -135,10 +149,14 @@ object AppLimitWatcher {
     }
 
     private fun applyOverlay(context: Context, packageName: String?) {
+        // 先无条件喂一次当前前台，让「刚被主动收起」的标记有机会被前台变化清掉 ——
+        // 这一步必须在 isLocked 判定之前，否则前台换成桌面时走的是 else 分支，标记永远清不掉。
+        val mayShow = AppLimitOverlayController.mayAutoShow(packageName)
         if (packageName != null &&
             AppLimitStore.isLocked(context, packageName) &&
             !LockMachineController.isActive(context) &&
-            !LockOverlayController.isShowing()
+            !LockOverlayController.isShowing() &&
+            mayShow
         ) {
             AppLimitOverlayController.show(context, packageName)
         } else {

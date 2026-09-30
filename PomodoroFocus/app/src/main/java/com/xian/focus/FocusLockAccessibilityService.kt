@@ -234,13 +234,16 @@ class FocusLockAccessibilityService : AccessibilityService() {
         lastTickAt = now
 
         val packageName = foregroundPackageForTick() ?: return
+        // 同 AppLimitWatcher.applyOverlay：先无条件喂一次当前前台，让「刚被主动收起」的标记
+        // 有机会被前台变化清掉，再拿它决定这一拍要不要重盖。
+        val mayShow = AppLimitOverlayController.mayAutoShow(packageName)
         val deltaSeconds = pendingMillis / 1_000L
         if (deltaSeconds <= 0L) return
         pendingMillis -= deltaSeconds * 1_000L
 
         if (AppLimitStore.isLocked(context, packageName)) {
             // 锁机覆盖层优先级更高，不跟它抢同一块屏
-            if (!LockMachineController.isActive(context) && !LockOverlayController.isShowing()) {
+            if (!LockMachineController.isActive(context) && !LockOverlayController.isShowing() && mayShow) {
                 AppLimitOverlayController.show(context, packageName)
             }
             return
@@ -430,6 +433,25 @@ class FocusLockAccessibilityService : AccessibilityService() {
          */
         fun collapseShadeIfNeeded() {
             instance?.get()?.runCatching { collapseNotificationShade() }
+        }
+
+        /**
+         * 把缓存的前台应用作废（连同它的确认时刻与窗口查询节流），
+         * 下一拍由 [foregroundPackageForTick] 重新问一次系统。
+         *
+         * 用在「用户在被限层上点了返回桌面」（见 `AppLimitOverlayController.goHome`）。
+         * 桌面那一下的窗口事件很可能被厂商的过渡层顶掉 —— `com.vivo.upslide` 之类，
+         * 它们在 [SYSTEM_UI_PACKAGES] 里被直接丢掉，缓存会一直停在被限应用上，
+         * 于是刚收起的层下一秒又被盖回来。
+         *
+         * 服务不在（无障碍没开 / 被 ROM 清掉）时什么都不做，不影响别的判定。
+         */
+        fun invalidateForeground() {
+            instance?.get()?.let { service ->
+                service.foregroundPackage = null
+                service.foregroundConfirmedAt = 0L
+                service.lastWindowQueryAt = 0L
+            }
         }
     }
 }
