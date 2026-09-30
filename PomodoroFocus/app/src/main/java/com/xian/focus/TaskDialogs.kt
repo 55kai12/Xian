@@ -634,8 +634,10 @@ internal fun TasksFragment.showEditTaskDialogCompat(task: Task) {
         // ⚠️ v2.0.94：**只回填模板行**（`dueDate == null`）—— 重复任务展开后还会有
         // 「每天一条」的勾选记录，把它们也当成标题回填，保存一次子任务列表就翻一番
         // （而且全是同名重复项）。标题列表的唯一出处就是模板行。
+        // ⚠️ 用 `subtaskOwnerId()` 而不是 `task.id`：当天完成 / 移到今天写出的快照 id 与模板
+        // 不同，直接拿快照 id 过滤会一条都回填不上（编辑弹窗里子任务全空）。
         taskViewModel.subtasks.value
-            .filter { it.taskId == task.id && it.dueDate == null }
+            .filter { it.taskId == task.subtaskOwnerId() && it.dueDate == null }
             .forEach { addSubtaskRow(it.title) }
 
         editDialog = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())

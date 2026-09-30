@@ -272,13 +272,16 @@ class TaskAdapter(
         }
 
         private fun bindSubtasks(task: Task) {
-            val (total, done) = subtaskCounts[task.id] ?: (0 to 0)
+            // 子任务挂在**所有者**（重复任务的模板行）上：当天完成 / 移到今天写出的快照，
+            // 它的 id 与模板不同 ⇒ 这里必须换算，否则查不到、子任务整段消失。
+            val ownerId = task.subtaskOwnerId()
+            val (total, done) = subtaskCounts[ownerId] ?: (0 to 0)
             if (total <= 0) {
                 binding.subtaskSection.visibility = View.GONE
                 return
             }
             binding.subtaskSection.visibility = View.VISIBLE
-            val isExpanded = expandedTaskIds.contains(task.id)
+            val isExpanded = expandedTaskIds.contains(ownerId)
             binding.subtaskToggleButton.text = if (isExpanded) {
                 context.getString(R.string.subtask_collapse_count, done, total)
             } else {
@@ -288,7 +291,7 @@ class TaskAdapter(
 
             if (isExpanded) {
                 binding.subtaskContainer.removeAllViews()
-                val subtasks = subtasksMap[task.id] ?: emptyList()
+                val subtasks = subtasksMap[ownerId] ?: emptyList()
                 subtasks.forEachIndexed { index, st ->
                     val row = android.widget.LinearLayout(binding.root.context).apply {
                         orientation = android.widget.LinearLayout.HORIZONTAL
@@ -327,10 +330,10 @@ class TaskAdapter(
             }
 
             binding.subtaskToggleButton.setOnClickListener {
-                if (expandedTaskIds.contains(task.id)) {
-                    expandedTaskIds.remove(task.id)
+                if (expandedTaskIds.contains(ownerId)) {
+                    expandedTaskIds.remove(ownerId)
                 } else {
-                    expandedTaskIds.add(task.id)
+                    expandedTaskIds.add(ownerId)
                 }
                 notifyItemChanged(adapterPosition)
             }

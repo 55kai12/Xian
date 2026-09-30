@@ -88,27 +88,34 @@ class TaskViewModel @Inject constructor(
         // （dueDate IS NULL），各天（dueDate=某天）的行原样留着 —— 改个标题不该把
         // 这周勾过的全清掉。代价是标题改了之后，历史那些天的记录还挂着旧标题；
         // 但那些天已经过去了、不会再展示，所以不处理。
-        val isRepeating = task.repeatRule != REPEAT_NONE
+        // ⚠️ 子任务只挂在**所有者**（重复任务的模板行）上，快照（当天完成 / 移到今天写出的
+        // 那一行）只是那天的实例、id 与模板不同 —— 拿快照自己的 id 去读写会另立一份行，
+        // 模板那份还留在原地，表现就是「编辑完子任务，清单上没有任何变化」。
+        val ownerId = task.subtaskOwnerId()
+        // 「按天存」的判据也一律看**所有者**：快照会继承模板的 repeatRule，拿快照自己判
+        // 会得出同样的结论，但 id 一旦用错就可能把模板的各天勾选记录整片删掉。
+        val owner = if (ownerId == task.id) task else repository.getTaskById(ownerId)
+        val isRepeating = (owner ?: task).repeatRule != REPEAT_NONE
         val completedByTitle = HashMap<String, ArrayDeque<Boolean>>()
         if (isRepeating) {
-            repository.getSubtasksByTaskId(task.id)
+            repository.getSubtasksByTaskId(ownerId)
                 .filter { it.dueDate == null }
                 .forEach { subtask ->
                     completedByTitle.getOrPut(subtask.title) { ArrayDeque() }.addLast(subtask.isCompleted)
                 }
-            repository.deleteSubtaskTemplates(task.id)
+            repository.deleteSubtaskTemplates(ownerId)
         } else {
-            repository.getSubtasksByTaskId(task.id).forEach { subtask ->
+            repository.getSubtasksByTaskId(ownerId).forEach { subtask ->
                 completedByTitle.getOrPut(subtask.title) { ArrayDeque() }.addLast(subtask.isCompleted)
             }
-            repository.deleteSubtasksByTaskId(task.id)
+            repository.deleteSubtasksByTaskId(ownerId)
         }
         subtaskTitles.filter { it.isNotBlank() }.forEach { raw ->
             val title = raw.trim()
             val queue = completedByTitle[title]
             val isCompleted = if (queue.isNullOrEmpty()) false else queue.removeFirst()
             repository.insertSubtask(
-                Subtask(taskId = task.id, title = title, isCompleted = isCompleted)
+                Subtask(taskId = ownerId, title = title, isCompleted = isCompleted)
             )
         }
         doRefresh()

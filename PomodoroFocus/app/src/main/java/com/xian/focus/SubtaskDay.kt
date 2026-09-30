@@ -12,6 +12,22 @@ fun Task.isRepeatTemplate(): Boolean =
     repeatRule != TaskViewModel.REPEAT_NONE && templateId == 0
 
 /**
+ * 该任务实例的**子任务所有者 id**。
+ *
+ * 子任务的行只挂在「任务定义」上：
+ * - 重复任务 ⇒ 模板行（`templateId == 0`，`repeatRule != none`）；
+ * - 普通任务 ⇒ 它自己。
+ *
+ * 快照行（`templateId != 0`，即「当天完成」或「移到今天」写出来的那一条）只是
+ * **那一天的一个实例**，它的 `id` 与模板不同 —— 拿快照自己的 id 去查子任务会一条都查不到，
+ * 表现就是「移到今天 / 当天完成之后，任务的子任务凭空消失」。
+ *
+ * 库内行数不变式（见 `docs/验收检查标准.md` TSK-17）：模板行 + 有勾选的天各一条，
+ * **不随天数复制标题列表** ⇒ 快照**绝不能**另立一份子任务行，一律换算回模板。
+ */
+fun Task.subtaskOwnerId(): Int = if (templateId != 0) templateId else id
+
+/**
  * 「某个任务在某一天的子任务长什么样」的**唯一出处**。
  *
  * 两种形态：
