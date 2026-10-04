@@ -61,7 +61,11 @@ class LockFragment : Fragment() {
         selectedWhitelist.addAll(LockMachineController.whitelist(requireContext()))
         slotDraft.clear()
         slotDraft.addAll(LockMachineScheduler.slots(requireContext()))
-        binding.duration30.isChecked = true
+        // ⚠️ 刻意**不预选**任何时长（v2.1.5）：以前默认选中 30，用户没点就被按 30 分钟锁上，
+        // 而「锁太久」在这类自控应用里是最危险的方向。选定必须由用户明着点一下 ——
+        // 「一个圈都没选」由 toggleLock() 里 duration<=0 那道拦截兜住，别再另立标志位：
+        // 屏幕旋转后系统恢复的是 RadioGroup 状态而不是标志位，标志位会把合法操作拦死。
+        renderLastDurationHint()
         binding.root.post { binding.root.staggerScrollContent() }
         updateWhitelistButton()
 
@@ -77,10 +81,27 @@ class LockFragment : Fragment() {
         // clearCheck() 会把 checkedId 回调成 -1，所以这边要判一下再动，
         // 否则两个监听会互相触发。
         binding.durationRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            if (checkedId != -1) binding.durationCustom.isChecked = false
+            if (checkedId != -1) {
+                binding.durationCustom.isChecked = false
+                // ⚠️ 选了预设就把输入框清空：它此刻**不生效**，留在框里的数字会骗人 ——
+                // 「框里写着 2、实际按 30 锁」就是这么来的。数字没丢，切回自定义会带回来
+                // （见 restoreCustomMinutes）。
+                binding.customDurationInput.setText("")
+            }
         }
         binding.durationCustom.setOnCheckedChangeListener { _, checked ->
-            if (checked) binding.durationRadioGroup.clearCheck()
+            if (checked) {
+                binding.durationRadioGroup.clearCheck()
+                restoreCustomMinutes()
+            }
+        }
+        // 点输入框即视为选中「自定义」。那个圆点**没有文字**、命中区只有一个圆点大小，
+        // 点歪一点输入框就白填了 —— 这两条把整块输入区都变成「自定义」的开关。
+        binding.customDurationInput.setOnFocusChangeListener { _, focused ->
+            if (focused) binding.durationCustom.isChecked = true
+        }
+        binding.customDurationRow.setOnClickListener {
+            binding.durationCustom.isChecked = true
         }
         // 输入了分钟数就默认选中自定义 —— 填了数字却忘了点圆点、结果按 30 分钟锁上，
         // 那才是真的坑。想改回预设，点一下上面四个圈就行。
@@ -91,16 +112,10 @@ class LockFragment : Fragment() {
             it.toString().toIntOrNull()
                 ?.let { minutes -> LockMachineController.saveCustomMinutes(requireContext(), minutes) }
         }
-        // 带出上次用过的自定义分钟数。圆点必须放到**下一帧**再同步：
-        // 实测把 `isChecked = true` 直接跟在 setText 后面，重启进程后圆点仍是未选中
-        // （值和圆点都空），于是变成「框里写着 45、实际按 30 分钟锁」—— 比不预填更坑。
-        LockMachineController.customMinutes(requireContext()).takeIf { it > 0 }?.let { minutes ->
-            binding.customDurationInput.setText(minutes.toString())
-            binding.root.post {
-                binding.durationCustom.isChecked = true
-                binding.durationRadioGroup.clearCheck()
-            }
-        }
+        // ⚠️ 这里**不再预填、也不预选**自定义（v2.1.5）。以前进页面就把上次的数字写进框、
+        // 并自动选中「自定义」圈，等于替用户做了一个他没做的选择。现在「上次用了多久」只走
+        // lastDurationHint 那条提示（见 renderLastDurationHint）；上次敲过的自定义数字则在
+        // 用户**自己点了自定义圈之后**由 restoreCustomMinutes() 带出来。
         binding.addSlotButton.setOnClickListener { addSlot() }
         binding.saveScheduleButton.setOnClickListener { saveSchedule() }
         binding.cancelScheduleButton.setOnClickListener { cancelSchedule() }
@@ -187,6 +202,28 @@ class LockFragment : Fragment() {
         )
     }
 
+    /**
+     * 把上次敲过的自定义分钟数带回来。**只在框空着时填** ——
+     * 已经有数字就不覆盖（用户可能刚改成别的，比如从预设切回来又手动改过）。
+     */
+    private fun restoreCustomMinutes() {
+        if (!binding.customDurationInput.text.isNullOrEmpty()) return
+        LockMachineController.customMinutes(requireContext()).takeIf { it > 0 }
+            ?.let { binding.customDurationInput.setText(it.toString()) }
+    }
+
+    /**
+     * 「上次用了 X 分钟」那条提示。**只提示，不预选** ——
+     * 锁机页不替用户选时长，这条只是让他知道上次锁了多久，省得从头想。
+     * 没锁过就整条收起来，不占位置。
+     */
+    private fun renderLastDurationHint() {
+        val last = LockMachineController.lastDurationMinutes(requireContext())
+        binding.lastDurationHint.text =
+            if (last > 0) getString(R.string.lock_last_duration_hint, last) else ""
+        binding.lastDurationHint.visibility = if (last > 0) View.VISIBLE else View.GONE
+    }
+
     private fun toggleLock() {
         val context = requireContext()
         if (LockMachineController.isActive(context)) {
@@ -213,17 +250,28 @@ class LockFragment : Fragment() {
         } else {
             when (binding.durationRadioGroup.checkedRadioButtonId) {
                 R.id.duration15 -> 15
+                R.id.duration30 -> 30
                 R.id.duration60 -> 60
                 R.id.duration90 -> 90
-                else -> 30
+                // 一个圈都没选中（进页面刻意不预选）⇒ 不锁。这里就是「必须点圆圈才能开始锁机」
+                // 这条规则的执行点：没有任何静默默认值能绕过它。
+                else -> 0
             }
         }
         if (duration <= 0) {
-            toast(getString(R.string.custom_minutes_hint))
+            toast(
+                if (binding.durationCustom.isChecked) getString(R.string.custom_minutes_required)
+                else getString(R.string.lock_select_duration)
+            )
             return
         }
-        LockMachineService.start(context, duration.coerceIn(1, 600))
-        toast(getString(R.string.lock_machine_running, getString(R.string.duration_minutes, duration)))
+        val applied = duration.coerceIn(1, 600)
+        LockMachineService.start(context, applied)
+        // 记住这次用户**自己**选的时长。只走这条手动路径 —— 定时锁机到点自动开的不算
+        // （那走 LockMachineScheduler，不经过这里）。
+        LockMachineController.saveLastDuration(context, applied)
+        renderLastDurationHint()
+        toast(getString(R.string.lock_machine_running, getString(R.string.duration_minutes, applied)))
         updateUi()
     }
 

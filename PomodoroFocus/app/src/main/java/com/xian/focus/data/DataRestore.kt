@@ -590,6 +590,11 @@ object DataRestore {
                     count++
                 }
 
+                "锁机上次时长(分钟)" -> value.trim().toIntOrNull()?.takeIf { it > 0 }?.let {
+                    LockMachineController.saveLastDuration(context, it)
+                    count++
+                }
+
                 "锁机格言" -> {
                     LockQuotes.save(context, value)
                     count++

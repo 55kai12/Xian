@@ -440,6 +440,11 @@ object DataBackup {
             LockMachineController.customMinutes(context),
             "上次敲过的自定义锁机分钟数；0 表示还没用过"
         )
+        sheet.row(
+            "锁机上次时长(分钟)",
+            LockMachineController.lastDurationMinutes(context),
+            "上次手动开锁选的时长（只用来给个提示）；0 表示还没手动锁过"
+        )
 
         val quotes = LockQuotes.list(context)
         sheet.row(

@@ -167,6 +167,19 @@
                     android:textSize="16sp"
                     android:textStyle="bold" />
 
+                <TextView
+                    android:id="@+id/lastDurationHint"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_value_chip"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="5dp"
+                    android:textColor="?attr/colorBrandContent"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
                 <RadioGroup
                     android:id="@+id/durationRadioGroup"
                     android:layout_width="match_parent"
@@ -212,6 +225,7 @@
                 </RadioGroup>
 
                 <LinearLayout
+                    android:id="@+id/customDurationRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"

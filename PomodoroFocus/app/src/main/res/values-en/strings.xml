@@ -118,6 +118,9 @@
     <string name="custom_lock_dialog_title">Custom lock</string>
     <string name="lock_duration">Lock duration</string>
     <string name="custom_minutes_hint">Custom minutes</string>
+    <string name="lock_last_duration_hint">Last time %1$d min · tap a circle to apply</string>
+    <string name="lock_select_duration">Pick a lock duration first (tap a circle)</string>
+    <string name="custom_minutes_required">Enter minutes between 1 and 600</string>
     <string name="whitelist_apps">Allowed apps</string>
     <string name="whitelist_selected_count">%1$d selected</string>
 

@@ -20,6 +20,12 @@ object LockMachineController {
     private const val KEY_WHITELIST = "lock_whitelist"
     private const val KEY_CUSTOM_MINUTES = "lock_custom_minutes"
 
+    /**
+     * 上次「开始锁机」用的时长（分钟）。只用于锁机页那条「上次用了 X 分钟」提示 ——
+     * 锁机页刻意**不预选**任何圆圈（不让用户没点就被锁上），所以需要一个只读的提示来源。
+     */
+    private const val KEY_LAST_DURATION = "lock_last_duration_minutes"
+
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
@@ -103,6 +109,19 @@ object LockMachineController {
 
     fun saveCustomMinutes(context: Context, minutes: Int) {
         if (minutes > 0) prefs(context).edit().putInt(KEY_CUSTOM_MINUTES, minutes).apply()
+    }
+
+    /**
+     * 上次「开始锁机」用的时长（分钟）；0 = 还没锁过。
+     *
+     * ⚠️ 只在**用户主动选**的那条路上写（`LockFragment.toggleLock`）。定时时段自动起锁传进来的是
+     * 「该时段剩余多久」，不是用户选的时长，混进来会把提示带偏。
+     */
+    fun lastDurationMinutes(context: Context): Int =
+        prefs(context).getInt(KEY_LAST_DURATION, 0)
+
+    fun saveLastDuration(context: Context, minutes: Int) {
+        if (minutes > 0) prefs(context).edit().putInt(KEY_LAST_DURATION, minutes).apply()
     }
 
     fun isAllowed(context: Context, packageName: String): Boolean =
