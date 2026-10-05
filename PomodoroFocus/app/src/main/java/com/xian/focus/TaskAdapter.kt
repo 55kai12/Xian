@@ -296,7 +296,14 @@ class TaskAdapter(
                     val row = android.widget.LinearLayout(binding.root.context).apply {
                         orientation = android.widget.LinearLayout.HORIZONTAL
                         gravity = android.view.Gravity.CENTER_VERTICAL
+                        layoutParams = android.widget.LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT
+                        )
                         setPadding(0, (6 * resources.displayMetrics.density).toInt(), 0, 0)
+                        // 整行都算点按区：点哪儿都只切换完成。不挂这个的话，点文字/空白会冒泡到
+                        // root 的 onEditTask，弹出编辑任务弹窗 —— 圆标才 18dp，误触必中那一发。
+                        setOnClickListener { onToggleSubtask(st) }
                     }
                     val radio = android.widget.ImageView(binding.root.context).apply {
                         layoutParams = android.widget.LinearLayout.LayoutParams(
