@@ -56,7 +56,25 @@ class TasksFragment : Fragment() {
     private lateinit var taskAdapter: TaskAdapter
     private var weekStartMillis = 0L
     internal val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    /**
+     * 当前选中日。
+     *
+     * ⚠️ **子任务的勾选是按天存的**，装配表（`subtaskCounts` / `subtasksMap`）也跟着这一天算。
+     * 所以**凡是改这里，就必须重算装配表** —— 否则页面翻到了新的一天，挂在列表上的子任务行
+     * 还是上一天那批（行里带着上一天的 `dueDate`），用户在这一天勾选，`onToggleSubtask`
+     * 读的是**行自己带的日期**，记录就落到**另一天**去。表现：「昨天勾完，今天跟着勾上」。
+     *
+     * 之前是「每个调用点自己记得调 `updateSubtaskCounts()`」，结果 4 个赋值点只对了 2 个
+     * （`showYesterdayDetails` 从横幅跳到昨天时就漏了，冷启动与翻周也漏）。现在钉在 setter 上，
+     * 下一个调用点想漏也漏不掉。
+     */
     internal var selectedDate: Long? = null
+        set(value) {
+            if (field == value) return
+            field = value
+            updateSubtaskCounts()
+        }
+
     internal var imageSelectionCallback: ((Uri) -> Unit)? = null
     internal val imagePicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
@@ -880,13 +898,16 @@ class TasksFragment : Fragment() {
                 launch {
                     while (true) {
                         try {
-                            taskViewModel.pendingTasks.collect {
-                                renderCurrentList()
-                                // 任务增删 / 勾选后趋势线必须跟着重算。
-                                // 只靠切周和 onResume 触发的话，删掉已完成任务后曲线还挂着旧数据 ——
-                                // 看起来就像「删了还在」。（周视图圆环走 renderCurrentList，一直是实时更新的。）
-                                loadWeekTrend()
-                            }
+                        taskViewModel.pendingTasks.collect {
+                            renderCurrentList()
+                            // 子任务装配表要跟着这张任务表走（判「是否按天存」要看任务）。
+                            // 少了这一下，「移到今天」写完新快照后，装配表还停在上一版任务表上。
+                            updateSubtaskCounts()
+                            // 任务增删 / 勾选后趋势线必须跟着重算。
+                            // 只靠切周和 onResume 触发的话，删掉已完成任务后曲线还挂着旧数据 ——
+                            // 看起来就像「删了还在」。（周视图圆环走 renderCurrentList，一直是实时更新的。）
+                            loadWeekTrend()
+                        }
                             break
                         } catch (e: Exception) {
                             android.util.Log.e("TasksFragment", "pendingTasks collect error", e)
