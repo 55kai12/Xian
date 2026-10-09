@@ -272,43 +272,27 @@ class TaskViewModel @Inject constructor(
     /**
      * 把一批任务挪到指定那一天（「昨天未完成 → 全部移到今天」用）。
      *
-     * 三类任务语义不同，**都在这里收口**，别让调用方各写各的：
+     * ⚠️ **重复任务一律跳过**（v2.1.8）—— 模板（`repeatRule != none && templateId == 0`）
+     * 和它的快照（`templateId != 0`）都不动。理由：模板是**规则**，它每天本来就把实例
+     * 带出来一份，「今天」那条已经在了，压根没有可挪的东西。硬挪只有两种干法，都错：
      *
-     *  · 普通任务 —— 直接改 `dueDate`。
-     *  · 重复任务模板带出的**虚拟实例**（`templateId == 0 && repeatRule != none`）——
-     *    模板本身不能动（它是规则，不是某一天的事情），要让它「今天真的出现一条」，
-     *    唯一做法是在目标日写一条快照。目标日已经有快照就跳过，别重复建。
-     *  · 已有快照的实例（`templateId != 0`）—— 改快照的日期，相当于把它挪过去。
+     *  · 在目标日写快照 —— 把「虚拟实例」钉成一条实体行，用户看到的就是
+     *    「重复任务也被移了」这个多余动作，还会在「已移 N 条」里虚报一条；
+     *  · 改模板的 `dueDate` —— 锚点被污染，之后的重复日期整体漂移。
+     *
+     * 只处理普通任务：直接改 `dueDate`。
      *
      * 返回真的动过手的条数：调用方拿它做提示，比传进来的总数诚实
-     * （昨天有 3 条、其中 1 条今天本来就有快照 ⇒ 只说「已移 2 条」）。
+     * （昨天有 3 条、其中 2 条是重复任务 ⇒ 只说「已移 1 条」）。
      */
     suspend fun moveTasksToDay(tasks: List<Task>, targetDay: Long): Int {
         var moved = 0
         tasks.forEach { task ->
+            // 重复系列（模板 + 它的快照）没有「挪」的概念，跳过。
+            if (task.repeatRule != REPEAT_NONE || task.templateId != 0) return@forEach
             runCatching {
-                when {
-                    // 重复模板：在目标日补一条未完成快照
-                    task.repeatRule != REPEAT_NONE && task.templateId == 0 -> {
-                        if (repository.getSnapshotOn(task.id, targetDay) == null) {
-                            repository.insertTask(
-                                task.copy(
-                                    id = 0,
-                                    dueDate = targetDay,
-                                    templateId = task.id,
-                                    isCompleted = false,
-                                    createdAt = System.currentTimeMillis()
-                                )
-                            )
-                            moved++
-                        }
-                    }
-                    // 快照 / 普通任务：改日期
-                    else -> {
-                        repository.updateTask(task.copy(dueDate = targetDay))
-                        moved++
-                    }
-                }
+                repository.updateTask(task.copy(dueDate = targetDay))
+                moved++
             }
         }
         if (moved > 0) doRefresh()
