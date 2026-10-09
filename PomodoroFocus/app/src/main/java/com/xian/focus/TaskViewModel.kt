@@ -289,7 +289,8 @@ class TaskViewModel @Inject constructor(
         var moved = 0
         tasks.forEach { task ->
             // 重复系列（模板 + 它的快照）没有「挪」的概念，跳过。
-            if (task.repeatRule != REPEAT_NONE || task.templateId != 0) return@forEach
+            // 判据与「昨天未完成」横幅同源（Task.isRepeatSeries），别在这另写一份。
+            if (task.isRepeatSeries()) return@forEach
             runCatching {
                 repository.updateTask(task.copy(dueDate = targetDay))
                 moved++

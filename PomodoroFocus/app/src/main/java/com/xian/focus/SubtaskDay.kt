@@ -12,6 +12,19 @@ fun Task.isRepeatTemplate(): Boolean =
     repeatRule != TaskViewModel.REPEAT_NONE && templateId == 0
 
 /**
+ * 这条任务属于**重复系列**：模板行本身，或它带出的某天快照（`templateId != 0`）。
+ *
+ * 与 [isRepeatTemplate] 的区别：那个只认模板行，这个把「模板 + 它的快照」当一类。
+ * 此类任务**没有「挪到某一天」的概念** —— 模板是规则（每天都成立），快照只是某天的实例。
+ *
+ * 判据必须与下游同源，否则又会分家：`moveTasksToDay()` 拿它跳过、
+ * 「昨天未完成」横幅拿它过滤，两处用同一把尺子才不会出现
+ * 「横幅说有 3 个没完成、点一下只移了 1 个」。
+ */
+fun Task.isRepeatSeries(): Boolean =
+    repeatRule != TaskViewModel.REPEAT_NONE || templateId != 0
+
+/**
  * 该任务实例的**子任务所有者 id**。
  *
  * 子任务的行只挂在「任务定义」上：

@@ -303,11 +303,16 @@ class TasksFragment : Fragment() {
      * 只会带出那一天本来该有的实例，所以这里不需要额外过滤日期；但**普通任务里
      * `dueDate == null` 的会被归到「今天」**（见那个函数里的注释），传昨天时它们不会出现，
      * 正是我们要的。
+     *
+     * **只算普通任务**（v2.1.9）：重复系列（模板 + 它的快照）一律不计 —— 它每天都在、
+     * 没有「挪过去」的概念，`moveTasksToDay` 也正是跳过它们。两边同源，才不会出现
+     * 「横幅说有 3 个没完成、点一下只移了 1 个」。昨天剩下的**只有**重复任务时列表为空
+     * ⇒ 横幅不出现，「查看详情」也不会只列出挪不动的条目。
      */
     private fun yesterdayBannerTasks(): List<Task> {
         val day = startOfDay(System.currentTimeMillis() - DAY_MILLIS)
         return buildOccurrencesForDay(taskViewModel.pendingTasks.value, day)
-            .filter { !it.isCompleted }
+            .filter { !it.isCompleted && !it.isRepeatSeries() }
     }
 
     /** 「全部移到今天」：把昨天那些未完成的改到今天。 */
