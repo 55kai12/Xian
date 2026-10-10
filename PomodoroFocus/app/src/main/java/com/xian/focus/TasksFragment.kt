@@ -975,10 +975,9 @@ class TasksFragment : Fragment() {
      *
      * 只在同一完成态区域内交换，和拖拽排序的规则一致，不跨「未完成 / 已完成」两段。
      *
-     * 写回时只把 `templateId == 0` 的真实行交给 reorderTasks：列表里的重复任务行是
-     * 「模板行的当天副本」（id 就是模板 id、dueDate 被改成了当天），把这种对象整行写回
-     * 会顺手把模板的起始日期也改掉 —— 而 weekly / monthly 的判断锚点正是它。
-     * 所以这里按系列 id 映射回真实模板行再重排。
+     * 写回时按**系列 id** 映射回库内真实行再排：列表里的重复任务行是「模板行的当天副本」
+     * （id 就是模板 id、dueDate 被改成了当天），直接拿它去排会让人以为「排的是那一行」。
+     * 真正的防线在写库侧 —— `TaskDao.updateSortOrder` 只改 `sortOrder` 一列，这层映射是双保险。
      */
     private fun moveTaskRow(task: Task, delta: Int) {
         val shown = taskAdapter.currentList

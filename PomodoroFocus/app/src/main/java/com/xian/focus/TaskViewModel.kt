@@ -121,8 +121,16 @@ class TaskViewModel @Inject constructor(
         doRefresh()
     }
 
+    /**
+     * 按显示顺序写 `sortOrder`。
+     *
+     * ⚠️ 传进来的多半是**显示对象**（适配器 `currentList`），其中重复任务的未完成实例是
+     * 「模板行的当天副本」—— `id` 就是模板 id、`dueDate` 被改成了当前查看的那一天。
+     * 所以这里**只认 id**，落库也只改 `sortOrder` 一列：把这种副本整行写回会把模板的
+     * `dueDate` 一起覆盖（锚点被推到今天 ⇒ 早于那天的重复实例全部消失，v2.1.10 修）。
+     */
     fun reorderTasks(tasks: List<Task>) = execute {
-        repository.updateTasks(tasks.mapIndexed { index, task -> task.copy(sortOrder = index.toLong()) })
+        repository.updateTaskSortOrders(tasks.map { it.id })
     }
 
     /**

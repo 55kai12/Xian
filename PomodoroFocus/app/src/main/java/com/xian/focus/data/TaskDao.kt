@@ -64,8 +64,16 @@ interface TaskDao {
     @Update
     suspend fun updateTask(task: Task)
 
-    @Update
-    suspend fun updateTasks(tasks: List<Task>)
+    /**
+     * 只改 `sortOrder` 那一列 —— 排序**绝不能**用 `@Update` 整行写回。
+     *
+     * 清单里重复任务的未完成实例是「模板行的当天副本」（`buildOccurrencesForDay` 里
+     * `task.copy(dueDate = day)` 现造的，**id 就是模板 id、`dueDate` 是当前查看的那天**）。
+     * 整行写回会把模板的 `dueDate` 一并覆盖 ⇒ 锚点被推到今天 ⇒ `day < start` 把**早于那天**的
+     * 实例全部挡掉。用户看到的就是「长按拖一下，昨天的重复任务没了」（v2.1.10 修）。
+     */
+    @Query("UPDATE tasks SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun updateSortOrder(id: Int, sortOrder: Long)
 
     // ------------------------------------------------------------------ 回收站
 

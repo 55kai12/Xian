@@ -64,8 +64,16 @@ class FocusRepository(
         taskDao.updateTask(task.normalizeRepeatTemplate())
     }
 
-    suspend fun updateTasks(tasks: List<Task>) = withContext(Dispatchers.IO) {
-        taskDao.updateTasks(tasks.map { it.normalizeRepeatTemplate() })
+    /**
+     * 按给定顺序给任务写 `sortOrder`（拖拽排序 / 左滑上下移用）。
+     *
+     * 刻意**不走** [updateTask] 那种整行写回：调用方给的是**显示对象**，
+     * 而重复任务的未完成实例是「模板行的当天副本」（`dueDate` = 当前查看的那天），
+     * 整行写回会把模板的锚点一起改掉。见 `TaskDao.updateSortOrder`。
+     * 所以这里只要 id 顺序 —— 行内其它字段一个字都不碰。
+     */
+    suspend fun updateTaskSortOrders(orderedIds: List<Int>) = withContext(Dispatchers.IO) {
+        orderedIds.forEachIndexed { index, id -> taskDao.updateSortOrder(id, index.toLong()) }
     }
 
     /**
