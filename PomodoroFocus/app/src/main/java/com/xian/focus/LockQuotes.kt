@@ -20,10 +20,10 @@ object LockQuotes {
 
     /** 首次的示例文案。用户没动过编辑框时就摆这一份，不至于一进去是空白。 */
     private val DEFAULTS = listOf(
-        "此刻的克制，是明天的自由。",
-        "你不需要很厉害才能开始，你需要开始才会很厉害。",
-        "专注做一件事，比同时抓十件更接近终点。",
-        "再撑一会儿，这一关就过去了。"
+        "不去永远不知道结果，要允许一切发生—Fy",
+        "我必须考虑这是不是我此生仅有的机会—Showmaker",
+        "大雪深埋来时路 不要把梦想埋没",
+        "我知道你为什么而来"
     )
 
     private fun prefs(context: Context) = context.applicationContext
